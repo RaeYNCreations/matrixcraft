@@ -15,6 +15,9 @@ public class MatrixCraftMod {
     public MatrixCraftMod(IEventBus modEventBus, ModContainer modContainer) {
         LOGGER.info("MatrixCraft initializing...");
         
+        // Register particles - THIS IS CRITICAL!
+        com.raeyncraft.matrixcraft.particle.MatrixParticles.register(modEventBus);
+        
         // Register config
         modContainer.registerConfig(ModConfig.Type.CLIENT, MatrixCraftConfig.SPEC);
         
