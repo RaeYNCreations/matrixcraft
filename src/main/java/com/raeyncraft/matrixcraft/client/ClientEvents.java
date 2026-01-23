@@ -12,9 +12,27 @@ public class ClientEvents {
     
     @SubscribeEvent
     public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(MatrixParticles.BULLET_TRAIL.get(), 
-            MatrixParticles.BulletTrailParticle.Provider::new);
-        event.registerSpriteSet(MatrixParticles.BULLET_IMPACT.get(), 
-            MatrixParticles.BulletImpactParticle.Provider::new);
+        MatrixCraftMod.LOGGER.info("========================================");
+        MatrixCraftMod.LOGGER.info("REGISTERING PARTICLE PROVIDERS!");
+        
+        try {
+            event.registerSpriteSet(MatrixParticles.BULLET_TRAIL.get(), 
+                MatrixParticles.BulletTrailParticle.Provider::new);
+            MatrixCraftMod.LOGGER.info("✓ Registered BULLET_TRAIL provider");
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.error("✗ Failed to register BULLET_TRAIL: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        try {
+            event.registerSpriteSet(MatrixParticles.BULLET_IMPACT.get(), 
+                MatrixParticles.BulletImpactParticle.Provider::new);
+            MatrixCraftMod.LOGGER.info("✓ Registered BULLET_IMPACT provider");
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.error("✗ Failed to register BULLET_IMPACT: " + e.getMessage());
+            e.printStackTrace();
+        }
+        
+        MatrixCraftMod.LOGGER.info("========================================");
     }
 }

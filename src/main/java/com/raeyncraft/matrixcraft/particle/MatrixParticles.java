@@ -46,13 +46,12 @@ public class MatrixParticles {
             this.initialSize = width * 3.0F;
             this.quadSize = this.initialSize;
             
-            // GREEN color - bright enough for shader detection but not white
-            // Total brightness = 0.8 + 1.5 + 0.8 = 3.1 (triggers shader at >2.5)
-            // But green is dominant so it looks green not white
+            // BRIGHT GREEN color (not purple!)
+            // Total brightness = 0.6 + 1.9 + 0.6 = 3.1 (triggers shader)
             this.rCol = 0.6f;  // Some red for cyan tint
             this.gCol = 1.9f;  // DOMINANT green
             this.bCol = 0.6f;  // Some blue for cyan tint
-            this.alpha = 0.2f; // Slightly transparent
+            this.alpha = 0.2f; // Fairly opaque
         }
         
         @Override
@@ -75,7 +74,7 @@ public class MatrixParticles {
             
             float fadeStart = 0.6F;
             if (lifeProgress > fadeStart) {
-                this.alpha = 0.9f * (1.0F - (lifeProgress - fadeStart) / (1.0F - fadeStart));
+                this.alpha = 0.8f * (1.0F - (lifeProgress - fadeStart) / (1.0F - fadeStart));
             }
         }
         
@@ -101,7 +100,7 @@ public class MatrixParticles {
         protected BulletImpactParticle(ClientLevel level, double x, double y, double z, 
                                        double xSpeed, double ySpeed, double zSpeed) {
             super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-            this.lifetime = 15;
+            this.lifetime = 20; // Normal lifetime
             this.gravity = 0.2F;
             this.hasPhysics = true;
             this.friction = 0.95F;
@@ -111,13 +110,12 @@ public class MatrixParticles {
             this.yd = ySpeed * speed;
             this.zd = zSpeed * speed;
             
-            this.quadSize = 0.25F;
+            this.quadSize = 0.3F; // Visible but not huge
             
-            // YELLOW-WHITE impact sparks
-            // Total = 1.2 + 1.2 + 0.6 = 3.0 (triggers shader)
-            this.rCol = 1.2F;  // Red
-            this.gCol = 1.2F;  // Yellow = red + green
-            this.bCol = 0.6F;  // Less blue = warmer yellow
+            // BRIGHT YELLOW-ORANGE sparks
+            this.rCol = 1.5F;
+            this.gCol = 1.3F;
+            this.bCol = 0.5F;
         }
         
         @Override

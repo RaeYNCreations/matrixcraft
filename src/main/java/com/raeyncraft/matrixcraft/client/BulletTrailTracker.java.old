@@ -29,15 +29,12 @@ public class BulletTrailTracker {
         }
     }
     
-    // Scan for ALL bullets each level tick - more reliable than entity events
     @SubscribeEvent
     public static void onLevelTick(LevelTickEvent.Post event) {
-        // Only on client side
         if (!event.getLevel().isClientSide()) {
             return;
         }
         
-        // Check if trails are enabled
         if (!MatrixCraftConfig.TRAILS_ENABLED.get()) {
             return;
         }
@@ -55,7 +52,6 @@ public class BulletTrailTracker {
                 continue;
             }
             
-            // Performance limiting
             if (processedThisTick >= MatrixCraftConfig.MAX_TRAILS_PER_TICK.get()) {
                 break;
             }
@@ -72,27 +68,33 @@ public class BulletTrailTracker {
             
             BulletTrailData data = trackedBullets.get(entityId);
             if (data == null) {
-                // New bullet - spawn initial particles
+                // New bullet detected - spawn trail BACKWARD toward shooter!
                 data = new BulletTrailData(currentPos);
                 trackedBullets.put(entityId, data);
                 
-                // Spawn particles immediately for new bullets
-                Vec3 motion = entity.getDeltaMovement();
-                if (motion.length() > 0.01) {
-                    spawnInitialTrail(entity, currentPos, motion);
+                // Get bullet's velocity to trace backward
+                Vec3 velocity = entity.getDeltaMovement();
+                if (velocity.length() > 0.01) {
+                    // Spawn trail backward from current position toward where it came from
+                    spawnInitialBackwardTrail(entity, currentPos, velocity);
                 }
+                
+                // Also spawn at current position
+                spawnParticlesAtPosition(entity, currentPos);
             } else {
-                // Existing bullet - spawn trail particles if moved
+                // Spawn trail between last and current position
                 if (!currentPos.equals(data.lastPos)) {
-                    spawnTrailParticles(entity, data.lastPos, currentPos);
+                    spawnTrailBetweenPositions(entity, data.lastPos, currentPos);
                 }
+                
+                // Also spawn at current position
+                spawnParticlesAtPosition(entity, currentPos);
             }
             
             data.lastPos = currentPos;
             data.ticksSinceSpawn++;
             processedThisTick++;
             
-            // Clean up old entries
             if (data.ticksSinceSpawn > MatrixCraftConfig.TRAIL_LENGTH.get() || entity.isRemoved()) {
                 trackedBullets.remove(entityId);
             }
@@ -105,37 +107,67 @@ public class BulletTrailTracker {
         });
     }
     
-    // Spawn particles immediately when bullet first detected
-    private static void spawnInitialTrail(Entity bullet, Vec3 pos, Vec3 motion) {
+    // Spawn initial trail BACKWARD from where we first detect the bullet
+    private static void spawnInitialBackwardTrail(Entity bullet, Vec3 currentPos, Vec3 velocity) {
         if (!(bullet.level() instanceof ClientLevel clientLevel)) {
             return;
         }
         
-        int density = MatrixCraftConfig.TRAIL_DENSITY.get() * 3; // More initial particles
+        // Normalize velocity direction
+        Vec3 direction = velocity.normalize();
         
-        // Spawn particles along the motion vector (behind the bullet)
-        for (int i = 0; i < density; i++) {
-            double t = i / (double) density;
-            Vec3 particlePos = pos.add(motion.scale(-t * 0.3)); // Trail behind
+        // Spawn particles backward along the velocity vector
+        int backwardSteps = 20; // Spawn ~20 particles going backward
+        double stepSize = 0.5; // 0.5 blocks per step
+        
+        for (int i = 0; i < backwardSteps; i++) {
+            // Calculate position going backward
+            Vec3 particlePos = currentPos.subtract(direction.scale(i * stepSize));
             
             // Small random offset
-            double offsetX = (Math.random() - 0.5) * 0.02;
-            double offsetY = (Math.random() - 0.5) * 0.02;
-            double offsetZ = (Math.random() - 0.5) * 0.02;
+            double offsetX = (Math.random() - 0.5) * 0.05;
+            double offsetY = (Math.random() - 0.5) * 0.05;
+            double offsetZ = (Math.random() - 0.5) * 0.05;
             
-            // Use addAlwaysVisibleParticle to bypass distance culling!
             clientLevel.addAlwaysVisibleParticle(
                 MatrixParticles.BULLET_TRAIL.get(),
-                true, // Force spawn even far from player
+                true,
                 particlePos.x + offsetX,
                 particlePos.y + offsetY,
                 particlePos.z + offsetZ,
                 0, 0, 0
             );
         }
+        
+        MatrixCraftMod.LOGGER.info("Spawned backward trail from " + currentPos + " toward shooter");
     }
     
-    private static void spawnTrailParticles(Entity bullet, Vec3 lastPos, Vec3 currentPos) {
+    // Spawn particles directly at the bullet's current position
+    private static void spawnParticlesAtPosition(Entity bullet, Vec3 pos) {
+        if (!(bullet.level() instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        
+        int density = MatrixCraftConfig.TRAIL_DENSITY.get();
+        
+        for (int i = 0; i < density; i++) {
+            double offsetX = (Math.random() - 0.5) * 0.05;
+            double offsetY = (Math.random() - 0.5) * 0.05;
+            double offsetZ = (Math.random() - 0.5) * 0.05;
+            
+            clientLevel.addAlwaysVisibleParticle(
+                MatrixParticles.BULLET_TRAIL.get(),
+                true,
+                pos.x + offsetX,
+                pos.y + offsetY,
+                pos.z + offsetZ,
+                0, 0, 0
+            );
+        }
+    }
+    
+    // Fill in the trail between two positions
+    private static void spawnTrailBetweenPositions(Entity bullet, Vec3 lastPos, Vec3 currentPos) {
         if (!(bullet.level() instanceof ClientLevel clientLevel)) {
             return;
         }
@@ -144,28 +176,24 @@ public class BulletTrailTracker {
         Vec3 motion = currentPos.subtract(lastPos);
         double distance = motion.length();
         
-        // Don't spawn if bullet barely moved
         if (distance < 0.01) {
             return;
         }
         
-        // Spawn more particles for fast-moving bullets
         int particlesToSpawn = Math.max(density, (int)(density * (distance / 0.3)));
-        particlesToSpawn = Math.min(particlesToSpawn, density * 8); // Cap it
+        particlesToSpawn = Math.min(particlesToSpawn, density * 10);
         
         for (int i = 0; i < particlesToSpawn; i++) {
             double t = i / (double) particlesToSpawn;
             Vec3 particlePos = lastPos.add(motion.scale(t));
             
-            // Small random offset
             double offsetX = (Math.random() - 0.5) * 0.03;
             double offsetY = (Math.random() - 0.5) * 0.03;
             double offsetZ = (Math.random() - 0.5) * 0.03;
             
-            // Use addAlwaysVisibleParticle to bypass distance culling!
             clientLevel.addAlwaysVisibleParticle(
                 MatrixParticles.BULLET_TRAIL.get(),
-                true, // Force spawn even far from player
+                true,
                 particlePos.x + offsetX,
                 particlePos.y + offsetY,
                 particlePos.z + offsetZ,
@@ -214,7 +242,6 @@ public class BulletTrailTracker {
         }
     }
     
-    // Helper method to identify TacZ bullets
     private static boolean isTaczBullet(Entity entity) {
         String className = entity.getClass().getName();
         return className.equals("com.tacz.guns.entity.EntityKineticBullet");

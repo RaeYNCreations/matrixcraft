@@ -5,7 +5,9 @@ import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.particle.MatrixParticles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -21,11 +23,15 @@ public class BulletTrailTracker {
     
     private static class BulletTrailData {
         Vec3 lastPos;
+        Vec3 lastVelocity;
         int ticksSinceSpawn;
+        boolean wasAlive;
         
-        BulletTrailData(Vec3 pos) {
+        BulletTrailData(Vec3 pos, Vec3 velocity) {
             this.lastPos = pos;
+            this.lastVelocity = velocity;
             this.ticksSinceSpawn = 0;
+            this.wasAlive = true;
         }
     }
     
@@ -46,6 +52,9 @@ public class BulletTrailTracker {
         
         processedThisTick = 0;
         
+        // Track which bullets we've seen this tick
+        Set<Integer> bulletsSeenThisTick = new HashSet<>();
+        
         // Scan all entities for bullets
         for (Entity entity : mc.level.entitiesForRendering()) {
             if (!isTaczBullet(entity)) {
@@ -64,22 +73,21 @@ public class BulletTrailTracker {
             }
             
             Vec3 currentPos = entity.position();
+            Vec3 currentVelocity = entity.getDeltaMovement();
             int entityId = entity.getId();
+            
+            bulletsSeenThisTick.add(entityId);
             
             BulletTrailData data = trackedBullets.get(entityId);
             if (data == null) {
                 // New bullet detected - spawn trail BACKWARD toward shooter!
-                data = new BulletTrailData(currentPos);
+                data = new BulletTrailData(currentPos, currentVelocity);
                 trackedBullets.put(entityId, data);
                 
-                // Get bullet's velocity to trace backward
-                Vec3 velocity = entity.getDeltaMovement();
-                if (velocity.length() > 0.01) {
-                    // Spawn trail backward from current position toward where it came from
-                    spawnInitialBackwardTrail(entity, currentPos, velocity);
+                if (currentVelocity.length() > 0.01) {
+                    spawnInitialBackwardTrail(entity, currentPos, currentVelocity);
                 }
                 
-                // Also spawn at current position
                 spawnParticlesAtPosition(entity, currentPos);
             } else {
                 // Spawn trail between last and current position
@@ -87,44 +95,73 @@ public class BulletTrailTracker {
                     spawnTrailBetweenPositions(entity, data.lastPos, currentPos);
                 }
                 
-                // Also spawn at current position
                 spawnParticlesAtPosition(entity, currentPos);
+                
+                // Update stored data
+                data.lastPos = currentPos;
+                data.lastVelocity = currentVelocity;
             }
             
-            data.lastPos = currentPos;
             data.ticksSinceSpawn++;
             processedThisTick++;
             
-            if (data.ticksSinceSpawn > MatrixCraftConfig.TRAIL_LENGTH.get() || entity.isRemoved()) {
+            if (data.ticksSinceSpawn > MatrixCraftConfig.TRAIL_LENGTH.get()) {
                 trackedBullets.remove(entityId);
             }
         }
         
-        // Clean up removed bullets
-        trackedBullets.entrySet().removeIf(entry -> {
-            Entity entity = mc.level.getEntity(entry.getKey());
-            return entity == null || entity.isRemoved();
-        });
+        // Check for bullets that disappeared (hit something!)
+        Iterator<Map.Entry<Integer, BulletTrailData>> iterator = trackedBullets.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<Integer, BulletTrailData> entry = iterator.next();
+            int bulletId = entry.getKey();
+            BulletTrailData data = entry.getValue();
+            
+            // If bullet was alive last tick but not seen this tick = impact!
+            if (data.wasAlive && !bulletsSeenThisTick.contains(bulletId)) {
+                Vec3 impactPos = data.lastPos;
+                
+                // Check if there's a solid block at or near the impact position
+                BlockPos blockPos = BlockPos.containing(impactPos);
+                BlockState blockState = mc.level.getBlockState(blockPos);
+                
+                // Only spawn impact if bullet hit a solid block (not air/water)
+                boolean hitSolidBlock = !blockState.isAir() && 
+                                       blockState.isSolid() && 
+                                       !blockState.liquid();
+                
+                if (hitSolidBlock) {
+                    // Calculate impact normal (direction away from block)
+                    Vec3 impactNormal = data.lastVelocity.normalize().reverse();
+                    
+                    spawnImpactEffect(impactPos, impactNormal, mc.level);
+                    
+                    MatrixCraftMod.LOGGER.info("IMPACT on " + blockState.getBlock().getName().getString() + " at " + impactPos);
+                } else {
+                    MatrixCraftMod.LOGGER.info("Bullet despawned (no solid block): " + blockState.getBlock().getName().getString());
+                }
+                
+                iterator.remove();
+            } else if (!bulletsSeenThisTick.contains(bulletId)) {
+                iterator.remove();
+            } else {
+                data.wasAlive = true;
+            }
+        }
     }
     
-    // Spawn initial trail BACKWARD from where we first detect the bullet
     private static void spawnInitialBackwardTrail(Entity bullet, Vec3 currentPos, Vec3 velocity) {
         if (!(bullet.level() instanceof ClientLevel clientLevel)) {
             return;
         }
         
-        // Normalize velocity direction
         Vec3 direction = velocity.normalize();
-        
-        // Spawn particles backward along the velocity vector
-        int backwardSteps = 20; // Spawn ~20 particles going backward
-        double stepSize = 0.5; // 0.5 blocks per step
+        int backwardSteps = 20;
+        double stepSize = 0.5;
         
         for (int i = 0; i < backwardSteps; i++) {
-            // Calculate position going backward
             Vec3 particlePos = currentPos.subtract(direction.scale(i * stepSize));
             
-            // Small random offset
             double offsetX = (Math.random() - 0.5) * 0.05;
             double offsetY = (Math.random() - 0.5) * 0.05;
             double offsetZ = (Math.random() - 0.5) * 0.05;
@@ -138,11 +175,8 @@ public class BulletTrailTracker {
                 0, 0, 0
             );
         }
-        
-        MatrixCraftMod.LOGGER.info("Spawned backward trail from " + currentPos + " toward shooter");
     }
     
-    // Spawn particles directly at the bullet's current position
     private static void spawnParticlesAtPosition(Entity bullet, Vec3 pos) {
         if (!(bullet.level() instanceof ClientLevel clientLevel)) {
             return;
@@ -166,7 +200,6 @@ public class BulletTrailTracker {
         }
     }
     
-    // Fill in the trail between two positions
     private static void spawnTrailBetweenPositions(Entity bullet, Vec3 lastPos, Vec3 currentPos) {
         if (!(bullet.level() instanceof ClientLevel clientLevel)) {
             return;
@@ -202,20 +235,20 @@ public class BulletTrailTracker {
         }
     }
     
-    public static void spawnImpactEffect(Vec3 pos, Vec3 normal, Entity entity) {
+    private static void spawnImpactEffect(Vec3 pos, Vec3 normal, ClientLevel level) {
         if (!MatrixCraftConfig.IMPACTS_ENABLED.get()) {
+            MatrixCraftMod.LOGGER.warn("Impact particles disabled in config!");
             return;
         }
         
-        if (!(entity.level() instanceof ClientLevel clientLevel)) {
-            return;
-        }
+        MatrixCraftMod.LOGGER.info("Spawning " + MatrixCraftConfig.IMPACT_PARTICLE_COUNT.get() + " impact particles at " + pos);
         
         int count = MatrixCraftConfig.IMPACT_PARTICLE_COUNT.get();
         double speed = MatrixCraftConfig.IMPACT_PARTICLE_SPEED.get();
         double radius = MatrixCraftConfig.IMPACT_RADIUS.get();
         
         for (int i = 0; i < count; i++) {
+            // Random direction for spark burst
             double angle1 = Math.random() * Math.PI * 2;
             double angle2 = Math.random() * Math.PI * 0.5;
             
@@ -223,23 +256,36 @@ public class BulletTrailTracker {
             double vy = Math.sin(angle2) * Math.sin(angle1) * speed;
             double vz = Math.cos(angle2) * speed;
             
+            // Add some velocity in the impact normal direction
             vx += normal.x * speed * 0.5;
             vy += normal.y * speed * 0.5;
             vz += normal.z * speed * 0.5;
             
+            // Spread particles around impact point
             double offsetX = (Math.random() - 0.5) * radius;
             double offsetY = (Math.random() - 0.5) * radius;
             double offsetZ = (Math.random() - 0.5) * radius;
             
-            clientLevel.addAlwaysVisibleParticle(
-                MatrixParticles.BULLET_IMPACT.get(),
-                true,
-                pos.x + offsetX,
-                pos.y + offsetY,
-                pos.z + offsetZ,
-                vx, vy, vz
-            );
+            try {
+                level.addAlwaysVisibleParticle(
+                    MatrixParticles.BULLET_IMPACT.get(),
+                    true,
+                    pos.x + offsetX,
+                    pos.y + offsetY,
+                    pos.z + offsetZ,
+                    vx, vy, vz
+                );
+                
+                if (i == 0) {
+                    MatrixCraftMod.LOGGER.info("First impact particle spawned successfully!");
+                }
+            } catch (Exception e) {
+                MatrixCraftMod.LOGGER.error("Failed to spawn impact particle: " + e.getMessage());
+                e.printStackTrace();
+            }
         }
+        
+        MatrixCraftMod.LOGGER.info("Finished spawning impact particles");
     }
     
     private static boolean isTaczBullet(Entity entity) {
