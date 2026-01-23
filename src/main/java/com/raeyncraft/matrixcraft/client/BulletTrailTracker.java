@@ -68,11 +68,18 @@ public class BulletTrailTracker {
             
             BulletTrailData data = trackedBullets.get(entityId);
             if (data == null) {
-                // New bullet detected
+                // New bullet detected - spawn trail BACKWARD toward shooter!
                 data = new BulletTrailData(currentPos);
                 trackedBullets.put(entityId, data);
                 
-                // Spawn particles IMMEDIATELY at current position
+                // Get bullet's velocity to trace backward
+                Vec3 velocity = entity.getDeltaMovement();
+                if (velocity.length() > 0.01) {
+                    // Spawn trail backward from current position toward where it came from
+                    spawnInitialBackwardTrail(entity, currentPos, velocity);
+                }
+                
+                // Also spawn at current position
                 spawnParticlesAtPosition(entity, currentPos);
             } else {
                 // Spawn trail between last and current position
@@ -80,7 +87,7 @@ public class BulletTrailTracker {
                     spawnTrailBetweenPositions(entity, data.lastPos, currentPos);
                 }
                 
-                // ALSO spawn at current position for visibility
+                // Also spawn at current position
                 spawnParticlesAtPosition(entity, currentPos);
             }
             
@@ -100,6 +107,41 @@ public class BulletTrailTracker {
         });
     }
     
+    // Spawn initial trail BACKWARD from where we first detect the bullet
+    private static void spawnInitialBackwardTrail(Entity bullet, Vec3 currentPos, Vec3 velocity) {
+        if (!(bullet.level() instanceof ClientLevel clientLevel)) {
+            return;
+        }
+        
+        // Normalize velocity direction
+        Vec3 direction = velocity.normalize();
+        
+        // Spawn particles backward along the velocity vector
+        int backwardSteps = 20; // Spawn ~20 particles going backward
+        double stepSize = 0.5; // 0.5 blocks per step
+        
+        for (int i = 0; i < backwardSteps; i++) {
+            // Calculate position going backward
+            Vec3 particlePos = currentPos.subtract(direction.scale(i * stepSize));
+            
+            // Small random offset
+            double offsetX = (Math.random() - 0.5) * 0.05;
+            double offsetY = (Math.random() - 0.5) * 0.05;
+            double offsetZ = (Math.random() - 0.5) * 0.05;
+            
+            clientLevel.addAlwaysVisibleParticle(
+                MatrixParticles.BULLET_TRAIL.get(),
+                true,
+                particlePos.x + offsetX,
+                particlePos.y + offsetY,
+                particlePos.z + offsetZ,
+                0, 0, 0
+            );
+        }
+        
+        MatrixCraftMod.LOGGER.info("Spawned backward trail from " + currentPos + " toward shooter");
+    }
+    
     // Spawn particles directly at the bullet's current position
     private static void spawnParticlesAtPosition(Entity bullet, Vec3 pos) {
         if (!(bullet.level() instanceof ClientLevel clientLevel)) {
@@ -108,17 +150,14 @@ public class BulletTrailTracker {
         
         int density = MatrixCraftConfig.TRAIL_DENSITY.get();
         
-        // Spawn multiple particles at this exact position
         for (int i = 0; i < density; i++) {
-            // Small random offset for visual variety
             double offsetX = (Math.random() - 0.5) * 0.05;
             double offsetY = (Math.random() - 0.5) * 0.05;
             double offsetZ = (Math.random() - 0.5) * 0.05;
             
-            // Force spawn with addAlwaysVisibleParticle
             clientLevel.addAlwaysVisibleParticle(
                 MatrixParticles.BULLET_TRAIL.get(),
-                true, // Force render
+                true,
                 pos.x + offsetX,
                 pos.y + offsetY,
                 pos.z + offsetZ,
@@ -141,7 +180,6 @@ public class BulletTrailTracker {
             return;
         }
         
-        // More particles for fast bullets
         int particlesToSpawn = Math.max(density, (int)(density * (distance / 0.3)));
         particlesToSpawn = Math.min(particlesToSpawn, density * 10);
         

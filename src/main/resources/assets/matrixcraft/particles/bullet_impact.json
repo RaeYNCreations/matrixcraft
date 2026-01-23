@@ -1,6 +1,8 @@
 {
   "textures": [
     "matrixcraft:bullet_impact_0",
-    "matrixcraft:bullet_impact_1"
+    "matrixcraft:bullet_impact_0_e",
+    "matrixcraft:bullet_impact_1",
+    "matrixcraft:bullet_impact_1_e"
   ]
 }
