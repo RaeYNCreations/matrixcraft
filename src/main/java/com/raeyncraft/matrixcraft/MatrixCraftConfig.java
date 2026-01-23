@@ -37,15 +37,15 @@ public class MatrixCraftConfig {
             
         TRAIL_LENGTH = builder
             .comment("Length of bullet trails in ticks (higher = longer trails)")
-            .defineInRange("length", 20, 1, 100);
+            .defineInRange("length", 15, 1, 100);
             
         TRAIL_DENSITY = builder
             .comment("Number of particles spawned per tick (higher = denser trail)")
-            .defineInRange("density", 3, 1, 10);
+            .defineInRange("density", 2, 1, 10);
             
         TRAIL_WIDTH = builder
             .comment("Width/size of trail particles")
-            .defineInRange("width", 0.15, 0.01, 1.0);
+            .defineInRange("width", 0.08, 0.01, 1.0);  // Reduced from 0.15 to 0.08
             
         TRAIL_RED = builder
             .comment("Red color component (0-255)")
@@ -61,7 +61,7 @@ public class MatrixCraftConfig {
             
         TRAIL_ALPHA = builder
             .comment("Trail transparency (0.0 = invisible, 1.0 = fully opaque)")
-            .defineInRange("alpha", 0.8, 0.0, 1.0);
+            .defineInRange("alpha", 0.5, 0.0, 1.0);  // Reduced from 0.8 to 0.5
             
         TRAIL_GLOW = builder
             .comment("Enable glowing effect on trails")

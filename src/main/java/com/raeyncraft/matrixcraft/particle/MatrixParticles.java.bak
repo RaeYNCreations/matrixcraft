@@ -1,15 +1,20 @@
 package com.raeyncraft.matrixcraft.particle;
 
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.raeyncraft.matrixcraft.MatrixCraftConfig;
+import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.core.particles.ParticleType;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.util.Mth;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 public class MatrixParticles {
     public static final DeferredRegister<ParticleType<?>> PARTICLES = 
@@ -25,7 +30,7 @@ public class MatrixParticles {
         PARTICLES.register(eventBus);
     }
     
-    // Matrix-style shockwave particle
+    // Matrix-style shockwave particle that faces the camera
     public static class BulletTrailParticle extends TextureSheetParticle {
         private final float initialSize;
         
@@ -48,7 +53,7 @@ public class MatrixParticles {
             this.zd = 0;
             
             // Start small and expand
-            this.initialSize = width * 0.5F;
+            this.initialSize = width * 2.0F; // Make it bigger
             this.quadSize = this.initialSize;
             
             // Get color from config
@@ -82,12 +87,14 @@ public class MatrixParticles {
             
             float lifeProgress = (float)this.age / (float)this.lifetime;
             
-            // Expand outward like a shockwave ripple
-            this.quadSize = this.initialSize + (this.initialSize * 2.0F * lifeProgress);
+            // Expand outward like a shockwave ripple - much more dramatic
+            this.quadSize = this.initialSize * (1.0F + lifeProgress * 3.0F);
             
-            // Fade out quickly at the end
-            if (lifeProgress > 0.7F) {
-                this.alpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue() * (1.0F - lifeProgress) / 0.3F;
+            // Fade out smoothly
+            float fadeStart = 0.6F;
+            if (lifeProgress > fadeStart) {
+                this.alpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue() 
+                    * (1.0F - (lifeProgress - fadeStart) / (1.0F - fadeStart));
             } else {
                 this.alpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue();
             }
@@ -127,7 +134,7 @@ public class MatrixParticles {
             this.yd = ySpeed * speed;
             this.zd = zSpeed * speed;
             
-            this.quadSize = 0.1F;
+            this.quadSize = 0.15F; // Make slightly bigger
             
             // Bright spark colors
             this.rCol = 1.0F;
