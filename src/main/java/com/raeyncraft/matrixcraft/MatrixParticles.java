@@ -1,5 +1,6 @@
 package com.raeyncraft.matrixcraft.particle;
 
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -24,17 +25,41 @@ public class MatrixParticles {
         PARTICLES.register(eventBus);
     }
     
-    // Client-side particle factory registration
+    // Matrix-style shockwave particle
     public static class BulletTrailParticle extends TextureSheetParticle {
+        private final float initialSize;
+        
         protected BulletTrailParticle(ClientLevel level, double x, double y, double z, 
                                      double xSpeed, double ySpeed, double zSpeed) {
             super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-            this.lifetime = 20;
+            
+            // Get config values
+            this.lifetime = MatrixCraftConfig.TRAIL_LENGTH.get();
+            float width = MatrixCraftConfig.TRAIL_WIDTH.get().floatValue();
+            
+            // Shockwave properties
             this.gravity = 0.0F;
             this.hasPhysics = false;
-            this.xd = xSpeed * 0.01;
-            this.yd = ySpeed * 0.01;
-            this.zd = zSpeed * 0.01;
+            this.friction = 1.0F;
+            
+            // No motion - particles stay in place like a shockwave ripple
+            this.xd = 0;
+            this.yd = 0;
+            this.zd = 0;
+            
+            // Start small and expand
+            this.initialSize = width * 0.5F;
+            this.quadSize = this.initialSize;
+            
+            // Get color from config
+            float r = MatrixCraftConfig.TRAIL_RED.get() / 255f;
+            float g = MatrixCraftConfig.TRAIL_GREEN.get() / 255f;
+            float b = MatrixCraftConfig.TRAIL_BLUE.get() / 255f;
+            
+            this.rCol = r;
+            this.gCol = g;
+            this.bCol = b;
+            this.alpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue();
         }
         
         @Override
@@ -43,10 +68,29 @@ public class MatrixParticles {
         }
         
         @Override
+        public int getLightColor(float partialTick) {
+            // Make it glow if enabled
+            if (MatrixCraftConfig.TRAIL_GLOW.get()) {
+                return 15728880; // Full brightness
+            }
+            return super.getLightColor(partialTick);
+        }
+        
+        @Override
         public void tick() {
             super.tick();
-            // Fade out over lifetime
-            this.alpha = 1.0F - ((float)this.age / (float)this.lifetime);
+            
+            float lifeProgress = (float)this.age / (float)this.lifetime;
+            
+            // Expand outward like a shockwave ripple
+            this.quadSize = this.initialSize + (this.initialSize * 2.0F * lifeProgress);
+            
+            // Fade out quickly at the end
+            if (lifeProgress > 0.7F) {
+                this.alpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue() * (1.0F - lifeProgress) / 0.3F;
+            } else {
+                this.alpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue();
+            }
         }
         
         public static class Provider implements ParticleProvider<SimpleParticleType> {
@@ -67,30 +111,53 @@ public class MatrixParticles {
         }
     }
     
+    // Impact particle with radial burst
     public static class BulletImpactParticle extends TextureSheetParticle {
         protected BulletImpactParticle(ClientLevel level, double x, double y, double z, 
                                        double xSpeed, double ySpeed, double zSpeed) {
             super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-            this.lifetime = 10;
-            this.gravity = 0.3F;
+            this.lifetime = 15;
+            this.gravity = 0.2F;
             this.hasPhysics = true;
-            this.xd = xSpeed;
-            this.yd = ySpeed;
-            this.zd = zSpeed;
+            this.friction = 0.95F;
+            
+            // Use impact speed
+            double speed = MatrixCraftConfig.IMPACT_PARTICLE_SPEED.get();
+            this.xd = xSpeed * speed;
+            this.yd = ySpeed * speed;
+            this.zd = zSpeed * speed;
+            
             this.quadSize = 0.1F;
+            
+            // Bright spark colors
+            this.rCol = 1.0F;
+            this.gCol = 0.9F;
+            this.bCol = 0.3F;
         }
         
         @Override
         public ParticleRenderType getRenderType() {
-            return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
+            return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
+        }
+        
+        @Override
+        public int getLightColor(float partialTick) {
+            return 15728880; // Full brightness for sparks
         }
         
         @Override
         public void tick() {
             super.tick();
+            
+            float lifeProgress = (float)this.age / (float)this.lifetime;
+            
             // Fade and shrink over lifetime
-            this.alpha = 1.0F - ((float)this.age / (float)this.lifetime);
-            this.quadSize *= 0.95F;
+            this.alpha = 1.0F - lifeProgress;
+            this.quadSize *= 0.96F;
+            
+            // Fade to darker red/orange
+            this.gCol *= 0.95F;
+            this.bCol *= 0.90F;
         }
         
         public static class Provider implements ParticleProvider<SimpleParticleType> {
