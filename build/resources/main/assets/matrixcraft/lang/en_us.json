@@ -1,0 +1,12 @@
+{
+  "item.matrixcraft.red_pill": "Red Pill",
+  "effect.matrixcraft.matrix_focus": "Matrix Focus",
+  "effect.matrixcraft.matrix_focus.description": "Enhanced reflexes and perception",
+  
+  "matrixcraft.focus.activated": "Welcome to the real world...",
+  "matrixcraft.focus.deactivated": "Returning to the Matrix...",
+  "matrixcraft.focus.cooldown": "You must wait before taking another pill...",
+  "matrixcraft.focus.already_active": "Already experiencing the Matrix...",
+  
+  "itemGroup.matrixcraft": "MatrixCraft"
+}

@@ -1,5 +1,6 @@
 package com.raeyncraft.matrixcraft;
 
+import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -18,9 +19,13 @@ public class MatrixCraftMod {
         LOGGER.info("MatrixCraft initializing...");
         LOGGER.info("========================================");
         
-        // Register particles - THIS IS CRITICAL!
+        // Register particles
         com.raeyncraft.matrixcraft.particle.MatrixParticles.register(modEventBus);
         LOGGER.info("Particles registered!");
+        
+        // Register bullet time system (items, effects)
+        BulletTimeRegistry.register(modEventBus);
+        LOGGER.info("Bullet Time system registered!");
         
         // Register config
         modContainer.registerConfig(ModConfig.Type.CLIENT, MatrixCraftConfig.SPEC);
