@@ -2,6 +2,10 @@ plugins {
     id 'java'
     id 'net.neoforged.gradle.userdev' version '7.0.145'
 }
+mixin {
+    add sourceSets.main, "matrixcraft.refmap.json"
+    config "matrixcraft.mixins.json"
+}
 
 version = '1.0.0'
 group = 'com.raeyncraft.matrixcraft'
@@ -39,3 +43,4 @@ runs {
         modSource project.sourceSets.main
     }
 }
+
