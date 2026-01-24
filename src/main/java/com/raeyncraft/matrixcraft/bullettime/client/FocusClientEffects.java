@@ -19,6 +19,8 @@ import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
 import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
 import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
+import com.raeyncraft.matrixcraft.bullettime.client.ClientFocusState;
+
 
 /**
  * Handles all client-side visual and audio effects for Focus mode.
@@ -58,10 +60,15 @@ public class FocusClientEffects {
         if (inFocus) {
             MobEffectInstance effect = mc.player.getEffect(BulletTimeRegistry.MATRIX_FOCUS_EFFECT);
             if (effect != null) {
-                FocusManager.clientSetFocusState(true, effect.getDuration(), FocusManager.FOCUS_DURATION_TICKS);
+                ClientFocusState.set(
+                    true,
+                    effect.getDuration(),
+                    FocusManager.FOCUS_DURATION_TICKS
+                );
             }
         } else {
-            FocusManager.clientSetFocusState(false, 0, 0);
+            ClientFocusState.set(false, 0, 0);
+
         }
         
         // Handle transition effects
@@ -85,7 +92,8 @@ public class FocusClientEffects {
         currentFovModifier = Mth.lerp(FOV_TRANSITION_SPEED, currentFovModifier, targetFov);
         
         // Update FocusManager client tick
-        FocusManager.clientTick();
+        ClientFocusState.clientTick();
+
     }
     
     /**
@@ -139,7 +147,7 @@ public class FocusClientEffects {
      */
     @SubscribeEvent
     public static void onPlaySound(PlaySoundEvent event) {
-        if (!FocusManager.isClientInFocus()) {
+        if (!ClientFocusState.isInFocus()) {
             return;
         }
         

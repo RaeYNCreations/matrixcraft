@@ -13,6 +13,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import com.raeyncraft.matrixcraft.bullettime.client.ClientFocusState;
 
 /**
  * Renders the Focus bar HUD element and Matrix visual overlay
@@ -67,7 +68,7 @@ public class FocusHudRenderer {
         renderGreenTint(graphics, screenWidth, screenHeight, transition);
         
         // Render focus bar
-        if (FocusManager.isClientInFocus()) {
+        if (ClientFocusState.isInFocus()) {
             renderFocusBar(graphics, screenWidth, screenHeight);
         }
         
@@ -110,7 +111,7 @@ public class FocusHudRenderer {
      * Render the focus bar showing remaining time
      */
     private static void renderFocusBar(GuiGraphics graphics, int screenWidth, int screenHeight) {
-        float progress = FocusManager.getClientFocusProgress();
+        float progress = ClientFocusState.getProgress();
         
         // Position: bottom center of screen, above hotbar
         int barX = (screenWidth - BAR_WIDTH) / 2;

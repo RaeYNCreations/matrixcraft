@@ -25,14 +25,6 @@ public class FocusManager {
     // Track active focus states (server-side)
     private static final Map<UUID, FocusState> activeFocusStates = new ConcurrentHashMap<>();
     
-    // Client-side state
-    @OnlyIn(Dist.CLIENT)
-    private static boolean clientInFocus = false;
-    @OnlyIn(Dist.CLIENT)
-    private static int clientFocusTicksRemaining = 0;
-    @OnlyIn(Dist.CLIENT)
-    private static int clientFocusMaxTicks = 0;
-    
     public static class FocusState {
         public final long startTime;
         public final int durationTicks;
@@ -108,9 +100,6 @@ public class FocusManager {
      * Check if a player is currently in Focus mode
      */
     public static boolean isInFocus(Player player) {
-        if (player.level().isClientSide) {
-            return clientInFocus;
-        }
         return activeFocusStates.containsKey(player.getUUID());
     }
     
@@ -149,42 +138,6 @@ public class FocusManager {
         
         // For now, the client will detect the mob effect and sync that way
         // A proper implementation would use a custom packet
-    }
-    
-    // ==================== CLIENT-SIDE METHODS ====================
-    
-    @OnlyIn(Dist.CLIENT)
-    public static void clientSetFocusState(boolean active, int ticksRemaining, int maxTicks) {
-        clientInFocus = active;
-        clientFocusTicksRemaining = ticksRemaining;
-        clientFocusMaxTicks = maxTicks;
-    }
-    
-    @OnlyIn(Dist.CLIENT)
-    public static void clientTick() {
-        if (clientInFocus && clientFocusTicksRemaining > 0) {
-            clientFocusTicksRemaining--;
-            
-            if (clientFocusTicksRemaining <= 0) {
-                clientInFocus = false;
-            }
-        }
-    }
-    
-    @OnlyIn(Dist.CLIENT)
-    public static boolean isClientInFocus() {
-        return clientInFocus;
-    }
-    
-    @OnlyIn(Dist.CLIENT)
-    public static float getClientFocusProgress() {
-        if (clientFocusMaxTicks <= 0) return 0f;
-        return (float) clientFocusTicksRemaining / (float) clientFocusMaxTicks;
-    }
-    
-    @OnlyIn(Dist.CLIENT)
-    public static int getClientFocusTicksRemaining() {
-        return clientFocusTicksRemaining;
     }
     
     /**

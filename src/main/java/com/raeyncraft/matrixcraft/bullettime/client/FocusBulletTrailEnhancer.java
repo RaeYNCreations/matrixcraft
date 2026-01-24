@@ -22,7 +22,7 @@ public class FocusBulletTrailEnhancer {
     public static float getEffectiveTrailWidth() {
         float baseWidth = MatrixCraftConfig.TRAIL_WIDTH.get().floatValue();
         
-        if (FocusManager.isClientInFocus()) {
+        if (ClientFocusState.isInFocus()) {
             return baseWidth * TRAIL_SIZE_MULTIPLIER;
         }
         
@@ -35,7 +35,7 @@ public class FocusBulletTrailEnhancer {
     public static int getEffectiveTrailDensity() {
         int baseDensity = MatrixCraftConfig.TRAIL_DENSITY.get();
         
-        if (FocusManager.isClientInFocus()) {
+        if (ClientFocusState.isInFocus()) {
             return (int)(baseDensity * TRAIL_DENSITY_MULTIPLIER);
         }
         
@@ -48,7 +48,7 @@ public class FocusBulletTrailEnhancer {
     public static int getEffectiveTrailLength() {
         int baseLength = MatrixCraftConfig.TRAIL_LENGTH.get();
         
-        if (FocusManager.isClientInFocus()) {
+        if (ClientFocusState.isInFocus()) {
             return (int)(baseLength * TRAIL_LENGTH_MULTIPLIER);
         }
         
@@ -60,7 +60,7 @@ public class FocusBulletTrailEnhancer {
      * Returns RGB multipliers (can exceed 1.0 for HDR-like effect)
      */
     public static float[] getTrailColorMultiplier() {
-        if (FocusManager.isClientInFocus()) {
+        if (ClientFocusState.isInFocus()) {
             // Enhanced green glow during Focus
             return new float[] { 0.8f, TRAIL_BRIGHTNESS_MULTIPLIER, 0.8f };
         }
@@ -72,7 +72,7 @@ public class FocusBulletTrailEnhancer {
      * Get alpha multiplier for trails during Focus
      */
     public static float getTrailAlphaMultiplier() {
-        if (FocusManager.isClientInFocus()) {
+        if (ClientFocusState.isInFocus()) {
             return 1.3f; // More visible trails
         }
         return 1.0f;
@@ -82,7 +82,7 @@ public class FocusBulletTrailEnhancer {
      * Check if we should show trajectory prediction lines (advanced feature)
      */
     public static boolean shouldShowTrajectoryPrediction() {
-        return FocusManager.isClientInFocus();
+        return ClientFocusState.isInFocus();
     }
     
     /**
@@ -92,7 +92,7 @@ public class FocusBulletTrailEnhancer {
     public static float getParticleTimeScale() {
         Minecraft mc = Minecraft.getInstance();
         
-        if (FocusManager.isClientInFocus()) {
+        if (ClientFocusState.isInFocus()) {
             // Check if single player for actual time dilation
             if (mc.getSingleplayerServer() != null) {
                 return 0.3f; // 30% speed in single player
