@@ -24,15 +24,6 @@ public class ClientEvents {
             e.printStackTrace();
         }
         
-        try {
-            event.registerSpriteSet(MatrixParticles.BULLET_IMPACT.get(), 
-                MatrixParticles.BulletImpactParticle.Provider::new);
-            MatrixCraftMod.LOGGER.info("✓ Registered BULLET_IMPACT provider");
-        } catch (Exception e) {
-            MatrixCraftMod.LOGGER.error("✗ Failed to register BULLET_IMPACT: " + e.getMessage());
-            e.printStackTrace();
-        }
-        
         MatrixCraftMod.LOGGER.info("========================================");
     }
 }

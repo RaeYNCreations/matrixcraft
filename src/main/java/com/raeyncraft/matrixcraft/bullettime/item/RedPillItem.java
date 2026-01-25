@@ -1,5 +1,6 @@
 package com.raeyncraft.matrixcraft.bullettime.item;
 
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.bullettime.FocusManager;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -18,11 +19,42 @@ import java.util.List;
 
 public class RedPillItem extends Item {
     
-    // Cooldown in ticks (60 seconds = 1200 ticks)
-    private static final int COOLDOWN_TICKS = 1200;
-    
     public RedPillItem(Properties properties) {
         super(properties);
+    }
+    
+    /**
+     * Get the configured cooldown in ticks
+     */
+    private int getCooldownTicks() {
+        try {
+            return MatrixCraftConfig.getFocusCooldownTicks();
+        } catch (Exception e) {
+            // Config not loaded yet, use default (60 seconds)
+            return 1200;
+        }
+    }
+    
+    /**
+     * Get the configured duration in seconds for tooltip
+     */
+    private int getDurationSeconds() {
+        try {
+            return MatrixCraftConfig.FOCUS_DURATION_SECONDS.get();
+        } catch (Exception e) {
+            return 10;
+        }
+    }
+    
+    /**
+     * Get the configured cooldown in seconds for tooltip
+     */
+    private int getCooldownSeconds() {
+        try {
+            return MatrixCraftConfig.FOCUS_COOLDOWN_SECONDS.get();
+        } catch (Exception e) {
+            return 60;
+        }
     }
     
     @Override
@@ -67,8 +99,11 @@ public class RedPillItem extends Item {
             FocusManager.activateFocus(serverPlayer);
         }
         
-        // Start cooldown
-        player.getCooldowns().addCooldown(this, COOLDOWN_TICKS);
+        // Start cooldown (use configured value)
+        int cooldownTicks = getCooldownTicks();
+        if (cooldownTicks > 0) {
+            player.getCooldowns().addCooldown(this, cooldownTicks);
+        }
         
         // Client-side message
         if (level.isClientSide) {
@@ -89,10 +124,22 @@ public class RedPillItem extends Item {
         tooltipComponents.add(Component.literal(""));
         tooltipComponents.add(Component.literal("Right-click to enter Focus Mode")
             .withStyle(ChatFormatting.GREEN));
-        tooltipComponents.add(Component.literal("Duration: 10 seconds")
+        
+        // Dynamic duration from config
+        int duration = getDurationSeconds();
+        tooltipComponents.add(Component.literal("Duration: " + duration + " seconds")
             .withStyle(ChatFormatting.DARK_GREEN));
-        tooltipComponents.add(Component.literal("Cooldown: 60 seconds")
-            .withStyle(ChatFormatting.DARK_GRAY));
+        
+        // Dynamic cooldown from config
+        int cooldown = getCooldownSeconds();
+        if (cooldown > 0) {
+            tooltipComponents.add(Component.literal("Cooldown: " + cooldown + " seconds")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        } else {
+            tooltipComponents.add(Component.literal("Cooldown: None")
+                .withStyle(ChatFormatting.DARK_GRAY));
+        }
+        
         tooltipComponents.add(Component.literal(""));
         tooltipComponents.add(Component.literal("Effects:")
             .withStyle(ChatFormatting.WHITE));

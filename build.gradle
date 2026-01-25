@@ -2,10 +2,6 @@ plugins {
     id 'java'
     id 'net.neoforged.gradle.userdev' version '7.0.145'
 }
-mixin {
-    add sourceSets.main, "matrixcraft.refmap.json"
-    config "matrixcraft.mixins.json"
-}
 
 version = '1.0.0'
 group = 'com.raeyncraft.matrixcraft'
@@ -22,6 +18,10 @@ repositories {
 
 dependencies {
     implementation "net.neoforged:neoforge:${neo_version}"
+    
+    // TacZ - local jar for compile-time API access
+    // Place the tacz jar in the libs/ folder
+    compileOnly fileTree(dir: 'libs', include: ['*.jar'])
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -43,4 +43,3 @@ runs {
         modSource project.sourceSets.main
     }
 }
-

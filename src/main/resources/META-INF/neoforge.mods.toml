@@ -1,34 +1,43 @@
-modLoader="javafml"
-loaderVersion="[4,)"
-license="MIT"
+modLoader = "javafml"
+loaderVersion = "[4,)"
+license = "All Rights Reserved"
+issueTrackerURL = ""
 
+[[mods]]
+modId = "matrixcraft"
+version = "1.0.0"
+displayName = "MatrixCraft"
+authors = "RaeYNCraft"
+description = '''
+Matrix-themed mod with bullet time, bullet trails, glass repair, and more.
+'''
+
+# Mixin configuration
 [[mixins]]
 config = "matrixcraft.mixins.json"
 
-[[mods]]
-modId="matrixcraft"
-version="1.0.0"
-displayName="MatrixCraft"
-description="Adds Matrix-style bullet trails and effects to TacZ guns"
-authors="RaeYNCraft"
-
+# NeoForge dependency
 [[dependencies.matrixcraft]]
-modId="neoforge"
-type="required"
-versionRange="[21.1,)"
-ordering="NONE"
-side="BOTH"
+modId = "neoforge"
+type = "required"
+versionRange = "[21.1,)"
+ordering = "NONE"
+side = "BOTH"
 
+# Minecraft dependency
 [[dependencies.matrixcraft]]
-modId="minecraft"
-type="required"
-versionRange="[1.21,)"
-ordering="NONE"
-side="BOTH"
+modId = "minecraft"
+type = "required"
+versionRange = "[1.21.1,1.22)"
+ordering = "NONE"
+side = "BOTH"
 
+# TacZ - OPTIONAL dependency for bullet trails
+# If TacZ is present, we get instant bullet trail detection via GunFireEvent
+# If not present, bullet trails are disabled (no crash)
 [[dependencies.matrixcraft]]
-modId="tacz"
-type="required"
-versionRange="[1.0,)"
-ordering="AFTER"
-side="BOTH"
+modId = "tacz"
+type = "optional"
+versionRange = "[1.1.0,)"
+ordering = "AFTER"
+side = "CLIENT"

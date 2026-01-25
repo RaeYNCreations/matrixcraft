@@ -1,12 +1,11 @@
 package com.raeyncraft.matrixcraft.bullettime.client;
 
-import com.mojang.blaze3d.systems.RenderSystem;
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.FocusManager;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -16,11 +15,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ComputeFovModifierEvent;
-import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
-import net.neoforged.neoforge.client.event.ViewportEvent;
 import net.neoforged.neoforge.client.event.sound.PlaySoundEvent;
-import com.raeyncraft.matrixcraft.bullettime.client.ClientFocusState;
-
 
 /**
  * Handles all client-side visual and audio effects for Focus mode.
@@ -32,19 +27,10 @@ public class FocusClientEffects {
     private static final float TARGET_FOV_MODIFIER = 0.75f; // Zoom in by 25%
     private static final float FOV_TRANSITION_SPEED = 0.1f;
     
-    // Sound settings
-    private static final float TARGET_SOUND_PITCH = 0.5f;
-    
     // State tracking
     private static float currentFovModifier = 1.0f;
     private static boolean wasInFocus = false;
     private static int focusTransitionTicks = 0;
-    
-    // Green tint color for Matrix effect
-    private static final float GREEN_TINT_R = 0.2f;
-    private static final float GREEN_TINT_G = 1.0f;
-    private static final float GREEN_TINT_B = 0.3f;
-    private static final float GREEN_TINT_ALPHA = 0.15f;
     
     @SubscribeEvent
     public static void onClientTick(ClientTickEvent.Post event) {
@@ -60,15 +46,12 @@ public class FocusClientEffects {
         if (inFocus) {
             MobEffectInstance effect = mc.player.getEffect(BulletTimeRegistry.MATRIX_FOCUS_EFFECT);
             if (effect != null) {
-                ClientFocusState.set(
-                    true,
-                    effect.getDuration(),
-                    FocusManager.FOCUS_DURATION_TICKS
-                );
+                // Use configured duration, not hardcoded
+                int maxDuration = MatrixCraftConfig.getFocusDurationTicks();
+                FocusManager.clientSetFocusState(true, effect.getDuration(), maxDuration);
             }
         } else {
-            ClientFocusState.set(false, 0, 0);
-
+            FocusManager.clientSetFocusState(false, 0, 0);
         }
         
         // Handle transition effects
@@ -92,8 +75,7 @@ public class FocusClientEffects {
         currentFovModifier = Mth.lerp(FOV_TRANSITION_SPEED, currentFovModifier, targetFov);
         
         // Update FocusManager client tick
-        ClientFocusState.clientTick();
-
+        FocusManager.clientTick();
     }
     
     /**
@@ -143,34 +125,14 @@ public class FocusClientEffects {
     }
     
     /**
-     * Modify sound pitch for slow-mo effect
-     */
-    @SubscribeEvent
-    public static void onPlaySound(PlaySoundEvent event) {
-        if (!ClientFocusState.isInFocus()) {
-            return;
-        }
-        
-        // Skip UI sounds and music
-        if (event.getSound() == null) {
-            return;
-        }
-        
-        SoundSource source = event.getSound().getSource();
-        if (source == SoundSource.MUSIC || source == SoundSource.MASTER) {
-            return;
-        }
-        
-        // Note: NeoForge's PlaySoundEvent doesn't allow direct pitch modification
-        // For full pitch control, you'd need a mixin or sound engine override
-        // This event is mainly for canceling sounds
-    }
-    
-    /**
      * Check if the player has the Matrix Focus effect
      */
     private static boolean hasMatrixFocusEffect(LocalPlayer player) {
-        return player.hasEffect(BulletTimeRegistry.MATRIX_FOCUS_EFFECT);
+        try {
+            return player.hasEffect(BulletTimeRegistry.MATRIX_FOCUS_EFFECT);
+        } catch (Exception e) {
+            return false;
+        }
     }
     
     /**
@@ -185,12 +147,5 @@ public class FocusClientEffects {
      */
     public static boolean isTransitioning() {
         return focusTransitionTicks > 0 && focusTransitionTicks < 20;
-    }
-    
-    /**
-     * Get green tint intensity for shaders/rendering
-     */
-    public static float getGreenTintIntensity() {
-        return getTransitionProgress() * GREEN_TINT_ALPHA;
     }
 }

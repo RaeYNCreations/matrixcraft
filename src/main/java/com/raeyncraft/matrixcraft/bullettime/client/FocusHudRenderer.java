@@ -1,6 +1,7 @@
 package com.raeyncraft.matrixcraft.bullettime.client;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.FocusManager;
 import net.minecraft.client.DeltaTracker;
@@ -13,10 +14,10 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
-import com.raeyncraft.matrixcraft.bullettime.client.ClientFocusState;
 
 /**
- * Renders the Focus bar HUD element and Matrix visual overlay
+ * Renders the Focus bar HUD element and Matrix visual overlay.
+ * Colors are configurable via /matrix bullettime commands.
  */
 @EventBusSubscriber(modid = MatrixCraftMod.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.MOD)
 public class FocusHudRenderer {
@@ -27,13 +28,9 @@ public class FocusHudRenderer {
     // Bar dimensions
     private static final int BAR_WIDTH = 100;
     private static final int BAR_HEIGHT = 5;
-    private static final int BAR_PADDING = 10;
     
-    // Colors
-    private static final int BAR_BG_COLOR = 0x80000000;      // Semi-transparent black
-    private static final int BAR_FILL_COLOR = 0xFF00FF00;    // Bright green
-    private static final int BAR_BORDER_COLOR = 0xFF004400;  // Dark green
-    private static final int VIGNETTE_COLOR = 0x00FF00;      // Green for vignette
+    // Background colors (not configurable)
+    private static final int BAR_BG_COLOR = 0x80000000;  // Semi-transparent black
     
     @SubscribeEvent
     public static void registerGuiLayers(RegisterGuiLayersEvent event) {
@@ -64,11 +61,11 @@ public class FocusHudRenderer {
         // Render vignette overlay
         renderVignette(graphics, screenWidth, screenHeight, transition);
         
-        // Render green tint overlay
-        renderGreenTint(graphics, screenWidth, screenHeight, transition);
+        // Render screen tint overlay
+        renderScreenTint(graphics, screenWidth, screenHeight, transition);
         
         // Render focus bar
-        if (ClientFocusState.isInFocus()) {
+        if (FocusManager.isClientInFocus()) {
             renderFocusBar(graphics, screenWidth, screenHeight);
         }
         
@@ -82,67 +79,71 @@ public class FocusHudRenderer {
     private static void renderVignette(GuiGraphics graphics, int width, int height, float intensity) {
         if (intensity <= 0) return;
         
-        int alpha = (int)(80 * intensity);
+        int alpha = MatrixCraftConfig.getVignetteAlpha(intensity);
         int vignetteColor = (alpha << 24);
         
+        int edgeSize = 30;
+        
         // Top
-        graphics.fill(0, 0, width, 30, vignetteColor);
+        graphics.fill(0, 0, width, edgeSize, vignetteColor);
         // Bottom
-        graphics.fill(0, height - 30, width, height, vignetteColor);
+        graphics.fill(0, height - edgeSize, width, height, vignetteColor);
         // Left
-        graphics.fill(0, 0, 30, height, vignetteColor);
+        graphics.fill(0, 0, edgeSize, height, vignetteColor);
         // Right
-        graphics.fill(width - 30, 0, width, height, vignetteColor);
+        graphics.fill(width - edgeSize, 0, width, height, vignetteColor);
     }
     
     /**
-     * Render subtle green tint over the screen
+     * Render configurable screen tint
      */
-    private static void renderGreenTint(GuiGraphics graphics, int width, int height, float intensity) {
+    private static void renderScreenTint(GuiGraphics graphics, int width, int height, float intensity) {
         if (intensity <= 0) return;
         
-        int alpha = (int)(25 * intensity); // Very subtle
-        int greenTint = (alpha << 24) | (0x00 << 16) | (0xFF << 8) | 0x00; // ARGB
-        
-        graphics.fill(0, 0, width, height, greenTint);
+        int tintColor = MatrixCraftConfig.getFocusTintColor(intensity);
+        graphics.fill(0, 0, width, height, tintColor);
     }
     
     /**
-     * Render the focus bar showing remaining time
+     * Render the focus bar showing remaining time - uses config colors
      */
     private static void renderFocusBar(GuiGraphics graphics, int screenWidth, int screenHeight) {
-        float progress = ClientFocusState.getProgress();
+        float progress = FocusManager.getClientFocusProgress();
         
-        // Position: bottom center of screen, above hotbar
+        // Position: center of screen, above the hotbar/health/xp area
+        // screenHeight - 90 puts it well above the standard HUD elements
         int barX = (screenWidth - BAR_WIDTH) / 2;
-        int barY = screenHeight - 50;
+        int barY = screenHeight - 90;
         
-        // Background
-        graphics.fill(barX - 1, barY - 1, barX + BAR_WIDTH + 1, barY + BAR_HEIGHT + 1, BAR_BORDER_COLOR);
+        // Get colors from config
+        int borderColor = MatrixCraftConfig.getFocusBarBorderColor();
+        int fillColor = MatrixCraftConfig.getFocusBarColor();
+        int highlightColor = MatrixCraftConfig.getFocusBarHighlightColor();
+        
+        // Background/Border
+        graphics.fill(barX - 1, barY - 1, barX + BAR_WIDTH + 1, barY + BAR_HEIGHT + 1, borderColor);
         graphics.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT, BAR_BG_COLOR);
         
         // Fill based on progress
         int fillWidth = (int)(BAR_WIDTH * progress);
         if (fillWidth > 0) {
-            // Gradient effect - brighter in center
-            graphics.fill(barX, barY, barX + fillWidth, barY + BAR_HEIGHT, BAR_FILL_COLOR);
+            graphics.fill(barX, barY, barX + fillWidth, barY + BAR_HEIGHT, fillColor);
             
             // Highlight on top edge
-            int highlightColor = 0xFF44FF44;
             graphics.fill(barX, barY, barX + fillWidth, barY + 1, highlightColor);
         }
         
-        // Pulsing glow effect when low
+        // Pulsing warning effect when low
         if (progress < 0.3f) {
             float pulse = (float)(Math.sin(System.currentTimeMillis() / 100.0) * 0.5 + 0.5);
             int pulseAlpha = (int)(100 * pulse);
-            int pulseColor = (pulseAlpha << 24) | 0xFF0000; // Red pulse
+            int pulseColor = (pulseAlpha << 24) | 0xFF0000; // Red pulse warning
             graphics.fill(barX - 2, barY - 2, barX + BAR_WIDTH + 2, barY + BAR_HEIGHT + 2, pulseColor);
         }
     }
     
     /**
-     * Render "FOCUS" text indicator
+     * Render "FOCUS" text indicator - uses config colors
      */
     private static void renderFocusText(GuiGraphics graphics, int screenWidth, int screenHeight, float intensity) {
         if (intensity < 0.5f) return;
@@ -152,16 +153,18 @@ public class FocusHudRenderer {
         
         int textWidth = mc.font.width(text);
         int x = (screenWidth - textWidth) / 2;
-        int y = screenHeight - 65;
+        int y = screenHeight - 105; // Above the focus bar
         
         // Calculate alpha based on intensity and time for subtle pulse
         float pulse = (float)(Math.sin(System.currentTimeMillis() / 500.0) * 0.2 + 0.8);
-        int alpha = (int)(255 * intensity * pulse);
-        int color = (alpha << 24) | 0x00FF00; // Green with alpha
+        float alpha = intensity * pulse;
+        
+        int textColor = MatrixCraftConfig.getFocusTextColor(alpha);
+        int shadowColor = MatrixCraftConfig.getFocusTextShadowColor();
         
         // Draw with shadow
-        graphics.drawString(mc.font, text, x + 1, y + 1, 0x004400, false);
-        graphics.drawString(mc.font, text, x, y, color, false);
+        graphics.drawString(mc.font, text, x + 1, y + 1, shadowColor, false);
+        graphics.drawString(mc.font, text, x, y, textColor, false);
     }
     
     /**

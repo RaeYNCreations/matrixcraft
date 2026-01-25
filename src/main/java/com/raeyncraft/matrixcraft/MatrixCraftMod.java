@@ -27,8 +27,11 @@ public class MatrixCraftMod {
         BulletTimeRegistry.register(modEventBus);
         LOGGER.info("Bullet Time system registered!");
         
-        // Register config
-        modContainer.registerConfig(ModConfig.Type.CLIENT, MatrixCraftConfig.SPEC);
+        // Register configs
+        // COMMON config - server-side settings (duration, cooldown, glass repair, cobwebs)
+        modContainer.registerConfig(ModConfig.Type.COMMON, MatrixCraftConfig.COMMON_SPEC);
+        // CLIENT config - visual settings (trails, colors, etc)
+        modContainer.registerConfig(ModConfig.Type.CLIENT, MatrixCraftConfig.CLIENT_SPEC);
         LOGGER.info("Config registered!");
         
         // Client setup
