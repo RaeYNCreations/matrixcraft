@@ -1,6 +1,7 @@
 package com.raeyncraft.matrixcraft.item;
 
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
+import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -66,7 +67,7 @@ public class SafeHavenObeliskItem extends Item {
         if (!level.getBlockState(placePos).canBeReplaced()) {
             if (level.isClientSide) {
                 player.displayClientMessage(
-                    Component.literal("Cannot place here - block is not replaceable.")
+                    Component.literal("Cannot place here - block is not placeable.")
                         .withStyle(ChatFormatting.RED), true);
             }
             return InteractionResult.FAIL;
@@ -74,7 +75,7 @@ public class SafeHavenObeliskItem extends Item {
         
         if (!level.isClientSide && level instanceof ServerLevel serverLevel) {
             // Place a lodestone as the base
-            level.setBlock(placePos, Blocks.LODESTONE.defaultBlockState(), 3);
+            level.setBlock(placePos, ModBlocks.SAFE_HAVEN_OBELISK.get().defaultBlockState(), 3);
             
             // Register this position with the MobSuppressionSystem
             MobSuppressionSystem.addSuppressor(serverLevel, placePos, PROTECTION_RADIUS);

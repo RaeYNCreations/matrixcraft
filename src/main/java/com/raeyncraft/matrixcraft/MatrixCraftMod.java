@@ -1,5 +1,6 @@
 package com.raeyncraft.matrixcraft;
 
+import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
@@ -27,6 +28,9 @@ public class MatrixCraftMod {
         BulletTimeRegistry.register(modEventBus);
         LOGGER.info("Bullet Time system registered!");
         
+        // Register Custom Blocks
+        ModBlocks.BLOCKS.register(modEventBus);
+
         // Register configs
         // COMMON config - server-side settings (duration, cooldown, glass repair, cobwebs)
         modContainer.registerConfig(ModConfig.Type.COMMON, MatrixCraftConfig.COMMON_SPEC);
