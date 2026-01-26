@@ -69,7 +69,7 @@ public class MatrixFocusEffect extends MobEffect {
             movementAttribute.removeModifier(MOVEMENT_MODIFIER_ID);
             movementAttribute.addTransientModifier(new AttributeModifier(
                 MOVEMENT_MODIFIER_ID,
-                -0.30, // -30% speed
+                -0.20, // -20% speed
                 AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
             ));
         }
@@ -80,7 +80,7 @@ public class MatrixFocusEffect extends MobEffect {
             jumpAttribute.removeModifier(JUMP_MODIFIER_ID);
             jumpAttribute.addTransientModifier(new AttributeModifier(
                 JUMP_MODIFIER_ID,
-                -0.40, // -40% jump strength
+                -0.10, // -10% jump strength
                 AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
             ));
         }
@@ -91,7 +91,7 @@ public class MatrixFocusEffect extends MobEffect {
             gravityAttribute.removeModifier(GRAVITY_MODIFIER_ID);
             gravityAttribute.addTransientModifier(new AttributeModifier(
                 GRAVITY_MODIFIER_ID,
-                -0.50, // -50% gravity (half gravity = slow-mo falling)
+                -0.60, // -50% gravity (half gravity = slow-mo falling)
                 AttributeModifier.Operation.ADD_MULTIPLIED_TOTAL
             ));
         }

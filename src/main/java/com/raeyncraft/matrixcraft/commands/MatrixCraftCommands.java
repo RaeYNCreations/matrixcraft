@@ -524,6 +524,8 @@ public class MatrixCraftCommands {
                     boolean glow = MatrixCraftConfig.TRAIL_GLOW.get();
                     double maxDist = MatrixCraftConfig.MAX_RENDER_DISTANCE.get();
                     int maxPerTick = MatrixCraftConfig.MAX_TRAILS_PER_TICK.get();
+                    boolean dynLight = MatrixCraftConfig.TRAIL_DYNAMIC_LIGHTING.get();
+                    int lightLevel = MatrixCraftConfig.TRAIL_LIGHT_LEVEL.get();
                     
                     context.getSource().sendSuccess(() -> 
                         Component.literal("§6=== Bullet Trail Settings ===\n" +
@@ -535,7 +537,47 @@ public class MatrixCraftCommands {
                             "§7Alpha: §e" + String.format("%.2f", alpha) + "\n" +
                             "§7Glow: " + (glow ? "§atrue" : "§cfalse") + "\n" +
                             "§7Max Distance: §e" + String.format("%.0f", maxDist) + " blocks\n" +
-                            "§7Max Trails/Tick: §e" + maxPerTick), false);
+                            "§7Max Trails/Tick: §e" + maxPerTick + "\n" +
+                            "§7Dynamic Lighting: " + (dynLight ? "§atrue" : "§cfalse") + "\n" +
+                            "§7Light Level: §e" + lightLevel), false);
+                    return 1;
+                })
+            )
+            
+            .then(Commands.literal("lighting")
+                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                    .executes(context -> {
+                        boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                        MatrixCraftConfig.TRAIL_DYNAMIC_LIGHTING.set(enabled);
+                        MatrixCraftConfig.saveClientConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Trails] §7Dynamic lighting: " + (enabled ? "§aENABLED" : "§cDISABLED")), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    boolean current = MatrixCraftConfig.TRAIL_DYNAMIC_LIGHTING.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Bullet Trails] §7Dynamic lighting: " + (current ? "§atrue" : "§cfalse")), false);
+                    return 1;
+                })
+            )
+            
+            .then(Commands.literal("lightlevel")
+                .then(Commands.argument("level", IntegerArgumentType.integer(1, 15))
+                    .executes(context -> {
+                        int level = IntegerArgumentType.getInteger(context, "level");
+                        MatrixCraftConfig.TRAIL_LIGHT_LEVEL.set(level);
+                        MatrixCraftConfig.saveClientConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Trails] §7Light level: §e" + level), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    int current = MatrixCraftConfig.TRAIL_LIGHT_LEVEL.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Bullet Trails] §7Light level: §e" + current), false);
                     return 1;
                 })
             )
@@ -552,6 +594,8 @@ public class MatrixCraftCommands {
                         "§e/matrix bullettrails glow <true/false>\n" +
                         "§e/matrix bullettrails maxdistance <16-256>\n" +
                         "§e/matrix bullettrails maxpertick <10-500>\n" +
+                        "§e/matrix bullettrails lighting <true/false>\n" +
+                        "§e/matrix bullettrails lightlevel <1-15>\n" +
                         "§e/matrix bullettrails status"), false);
                 return 1;
             });
@@ -587,6 +631,105 @@ public class MatrixCraftCommands {
                     boolean enabled = MatrixSettings.areCobwebsEnabled();
                     context.getSource().sendSuccess(() -> 
                         Component.literal("Cobwebs are currently ")
+                            .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
+                                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
+                    return 1;
+                })
+            )
+            
+            // Manual lava toggle (like cobwebs - instant on/off)
+            .then(Commands.literal("lava")
+                .then(Commands.literal("on")
+                    .executes(context -> {
+                        MatrixSettings.setLavaEnabled(true);
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("Lava damage ")
+                                .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
+                                .append(" - You will take damage from lava/fire"), true);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("off")
+                    .executes(context -> {
+                        MatrixSettings.setLavaEnabled(false);
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("Lava damage ")
+                                .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
+                                .append(" - You are immune to lava/fire damage"), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    boolean enabled = MatrixSettings.isLavaEnabled();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("Lava damage is currently ")
+                            .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
+                                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
+                    return 1;
+                })
+            )
+            
+            // Focus mode lava bypass (config setting for bullet time)
+            .then(Commands.literal("lavabypass")
+                .then(Commands.literal("on")
+                    .executes(context -> {
+                        MatrixCraftConfig.FOCUS_LAVA_IMMUNITY.set(true);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Time] §7Lava bypass: ")
+                                .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
+                                .append(Component.literal(" - Lava immunity during Focus mode").withStyle(ChatFormatting.GRAY)), true);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("off")
+                    .executes(context -> {
+                        MatrixCraftConfig.FOCUS_LAVA_IMMUNITY.set(false);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Time] §7Lava bypass: ")
+                                .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
+                                .append(Component.literal(" - Normal lava damage during Focus").withStyle(ChatFormatting.GRAY)), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    boolean enabled = MatrixCraftConfig.FOCUS_LAVA_IMMUNITY.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Bullet Time] §7Lava bypass is currently ")
+                            .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
+                                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
+                    return 1;
+                })
+            )
+            
+            .then(Commands.literal("cobwebbypass")
+                .then(Commands.literal("on")
+                    .executes(context -> {
+                        MatrixCraftConfig.FOCUS_COBWEB_BYPASS.set(true);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Time] §7Cobweb bypass: ")
+                                .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
+                                .append(Component.literal(" - Cobwebs auto-disabled during Focus").withStyle(ChatFormatting.GRAY)), true);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("off")
+                    .executes(context -> {
+                        MatrixCraftConfig.FOCUS_COBWEB_BYPASS.set(false);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Time] §7Cobweb bypass: ")
+                                .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
+                                .append(Component.literal(" - Cobwebs work normally during Focus").withStyle(ChatFormatting.GRAY)), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    boolean enabled = MatrixCraftConfig.FOCUS_COBWEB_BYPASS.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Bullet Time] §7Cobweb bypass is currently ")
                             .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
                                 .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
                     return 1;
@@ -684,6 +827,9 @@ public class MatrixCraftCommands {
                 context.getSource().sendSuccess(() -> 
                     Component.literal("§6=== Utilities Commands ===\n" +
                         "§e/matrix utilities cobwebs [on|off] §7- Toggle cobweb slowdown\n" +
+                        "§e/matrix utilities lava [on|off] §7- Toggle lava/fire damage\n" +
+                        "§e/matrix utilities lavabypass [on|off] §7- Lava immunity during Focus\n" +
+                        "§e/matrix utilities cobwebbypass [on|off] §7- Cobweb bypass during Focus\n" +
                         "§e/matrix utilities glassrepair §7- Glass repair system"), false);
                 return 1;
             });

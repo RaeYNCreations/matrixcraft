@@ -83,6 +83,14 @@ public class MatrixCraftConfig {
     public static ModConfigSpec.IntValue FOCUS_DURATION_SECONDS;
     public static ModConfigSpec.IntValue FOCUS_COOLDOWN_SECONDS;
     
+    // Bullet Time Effects
+    public static ModConfigSpec.BooleanValue FOCUS_LAVA_IMMUNITY;
+    public static ModConfigSpec.BooleanValue FOCUS_COBWEB_BYPASS;
+    
+    // Dynamic Lighting
+    public static ModConfigSpec.BooleanValue TRAIL_DYNAMIC_LIGHTING;
+    public static ModConfigSpec.IntValue TRAIL_LIGHT_LEVEL;
+    
     public static class Common {
         public Common(ModConfigSpec.Builder builder) {
             builder.comment("MatrixCraft Common Configuration").push("common");
@@ -112,6 +120,12 @@ public class MatrixCraftConfig {
             FOCUS_COOLDOWN_SECONDS = builder
                 .comment("Cooldown between uses in seconds")
                 .defineInRange("cooldownSeconds", 60, 0, 600);
+            FOCUS_LAVA_IMMUNITY = builder
+                .comment("Grant lava/fire immunity during Focus mode")
+                .define("lavaImmunity", true);
+            FOCUS_COBWEB_BYPASS = builder
+                .comment("Automatically bypass cobwebs during Focus mode")
+                .define("cobwebBypass", true);
             builder.pop();
             
             builder.pop();
@@ -158,6 +172,12 @@ public class MatrixCraftConfig {
             MAX_TRAILS_PER_TICK = builder
                 .comment("Maximum trails to render per tick")
                 .defineInRange("maxPerTick", 100, 10, 500);
+            TRAIL_DYNAMIC_LIGHTING = builder
+                .comment("Enable dynamic lighting for bullet trails (torch bullets)")
+                .define("dynamicLighting", true);
+            TRAIL_LIGHT_LEVEL = builder
+                .comment("Light level for bullet trails (1-15)")
+                .defineInRange("lightLevel", 12, 1, 15);
             
             builder.pop();
             

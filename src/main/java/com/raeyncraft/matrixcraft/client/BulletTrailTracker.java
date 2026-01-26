@@ -25,6 +25,8 @@ import java.util.Set;
  * TacZ fires GunFireEvent on the client side when a gun fires.
  * This gives us instant detection with zero delay.
  * No mixins required!
+ * 
+ * Now includes dynamic lighting integration with LambDynamicLights (if available)
  */
 @EventBusSubscriber(value = Dist.CLIENT)
 public class BulletTrailTracker {
@@ -39,6 +41,9 @@ public class BulletTrailTracker {
     
     // Cleanup counter
     private static int tickCounter = 0;
+    
+    // Dynamic lighting - add lights every N particles
+    private static final int LIGHT_SPACING = 10; // Add a light every 10 particles
     
     // ==================== TACZ EVENT HANDLER ====================
     
@@ -80,6 +85,9 @@ public class BulletTrailTracker {
         if (mc.screen != null) return;
         
         tickCounter++;
+        
+        // Update dynamic lighting system
+        BulletTrailLighting.tick();
         
         // Scan for bullet entities (for other players' bullets + continuous trails)
         scanBulletEntities(mc);
@@ -147,6 +155,9 @@ public class BulletTrailTracker {
         double trailLength = 100.0;
         int particleCount = 150;
         
+        // Check if glow/lighting is enabled
+        boolean addLights = isGlowEnabled();
+        
         for (int i = 0; i < particleCount; i++) {
             double t = (double) i / particleCount;
             Vec3 pos = muzzle.add(lookDir.scale(t * trailLength));
@@ -161,6 +172,11 @@ public class BulletTrailTracker {
                 pos.x + ox, pos.y + oy, pos.z + oz,
                 0, 0, 0
             );
+            
+            // Add dynamic light source every N particles
+            if (addLights && i % LIGHT_SPACING == 0) {
+                BulletTrailLighting.addLightSource(pos.x, pos.y, pos.z);
+            }
         }
     }
     
@@ -172,6 +188,8 @@ public class BulletTrailTracker {
         
         double trailLength = 80.0;
         int particleCount = 120;
+        
+        boolean addLights = isGlowEnabled();
         
         for (int i = 0; i < particleCount; i++) {
             double t = (double) i / particleCount;
@@ -187,6 +205,11 @@ public class BulletTrailTracker {
                 pos.x + ox, pos.y + oy, pos.z + oz,
                 0, 0, 0
             );
+            
+            // Add dynamic light source every N particles
+            if (addLights && i % LIGHT_SPACING == 0) {
+                BulletTrailLighting.addLightSource(pos.x, pos.y, pos.z);
+            }
         }
     }
     
@@ -199,6 +222,8 @@ public class BulletTrailTracker {
         
         int count = Math.max(3, (int)(distance * 3));
         count = Math.min(count, 20);
+        
+        boolean addLights = isGlowEnabled();
         
         for (int i = 0; i < count; i++) {
             double t = (double) i / count;
@@ -214,6 +239,11 @@ public class BulletTrailTracker {
                 pos.x + ox, pos.y + oy, pos.z + oz,
                 0, 0, 0
             );
+            
+            // Add dynamic light at segment endpoints
+            if (addLights && (i == 0 || i == count - 1)) {
+                BulletTrailLighting.addLightSource(pos.x, pos.y, pos.z);
+            }
         }
     }
     
@@ -233,5 +263,13 @@ public class BulletTrailTracker {
     
     private static boolean isTaczBullet(Entity entity) {
         return entity.getClass().getName().equals("com.tacz.guns.entity.EntityKineticBullet");
+    }
+    
+    private static boolean isGlowEnabled() {
+        try {
+            return MatrixCraftConfig.TRAIL_GLOW.get();
+        } catch (Exception e) {
+            return true;
+        }
     }
 }
