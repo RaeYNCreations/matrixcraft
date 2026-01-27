@@ -90,6 +90,12 @@ public class MatrixCraftConfig {
     // Dynamic Lighting
     public static ModConfigSpec.BooleanValue TRAIL_DYNAMIC_LIGHTING;
     public static ModConfigSpec.IntValue TRAIL_LIGHT_LEVEL;
+    // Bullet trail lighting config (added)
+    public static ModConfigSpec.IntValue TRAIL_LIGHT_SPACING;
+    public static ModConfigSpec.IntValue TRAIL_LIGHT_DURATION_TICKS;
+    public static ModConfigSpec.BooleanValue TRAIL_CHAIN_ENABLED;
+    public static ModConfigSpec.IntValue TRAIL_CHAIN_COUNT;
+    public static ModConfigSpec.DoubleValue TRAIL_CHAIN_SPACING;
     
     public static class Common {
         public Common(ModConfigSpec.Builder builder) {
@@ -178,6 +184,21 @@ public class MatrixCraftConfig {
             TRAIL_LIGHT_LEVEL = builder
                 .comment("Light level for bullet trails (1-15)")
                 .defineInRange("lightLevel", 12, 1, 15);
+            TRAIL_LIGHT_SPACING = builder
+                .comment("Distance in particles between static lights along trails (smaller = denser)")
+                .defineInRange("trailLightSpacing", 3, 1, 50);
+            TRAIL_LIGHT_DURATION_TICKS = builder
+                .comment("Duration in ticks that static trail lights remain (20 ticks = 1 second)")
+                .defineInRange("trailLightDurationTicks", 40, 1, 1200);
+            TRAIL_CHAIN_ENABLED = builder
+                .comment("Enable or disable chained entity-based dynamic lights following bullets.")
+                .define("trailChainEnabled", true);
+            TRAIL_CHAIN_COUNT = builder
+                .comment("Number of chained dynamic-light proxies that follow each bullet (if chain enabled).")
+                .defineInRange("trailChainCount", 3, 1, 8);
+            TRAIL_CHAIN_SPACING = builder
+                .comment("Spacing (in blocks) between chained dynamic-light proxies.")
+                .defineInRange("trailChainSpacing", 0.7, 0.0, 5.0);
             
             builder.pop();
             

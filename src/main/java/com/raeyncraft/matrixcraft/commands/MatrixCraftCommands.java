@@ -418,6 +418,12 @@ public class MatrixCraftCommands {
                                 MatrixCraftConfig.TRAIL_COLOR_G.set(g);
                                 MatrixCraftConfig.TRAIL_COLOR_B.set(b);
                                 MatrixCraftConfig.saveClientConfig();
+                                // Force dynamic lights to refresh colors (throttled inside manager)
+                                try {
+                                    com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager.ensureInit();
+                                    com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager.forceUpdateAll();
+                                    MatrixCraftMod.LOGGER.info("[MatrixCraftCommands] Requested dynamic-lights updateAll after color change.");
+                                } catch (Throwable ignored) {}
                                 context.getSource().sendSuccess(() -> 
                                     Component.literal("§6[Bullet Trails] §7Color: §cR:" + r + " §aG:" + g + " §9B:" + b), true);
                                 return 1;
@@ -581,6 +587,71 @@ public class MatrixCraftCommands {
                     return 1;
                 })
             )
+
+            .then(Commands.literal("light_spacing")
+                .then(Commands.argument("value", IntegerArgumentType.integer(1, 50))
+                    .executes(context -> {
+                        int spacing = IntegerArgumentType.getInteger(context, "value");
+                        MatrixCraftConfig.TRAIL_LIGHT_SPACING.set(spacing);
+                        MatrixCraftConfig.saveClientConfig();
+                        context.getSource().sendSuccess(() ->
+                            Component.literal("§6[Bullet Trails] §7Light spacing set to §e" + spacing), true);
+                        return 1;
+                    })
+                )
+            )
+
+            .then(Commands.literal("light_duration")
+                .then(Commands.argument("ticks", IntegerArgumentType.integer(1, 1200))
+                    .executes(context -> {
+                        int ticks = IntegerArgumentType.getInteger(context, "ticks");
+                        MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.set(ticks);
+                        MatrixCraftConfig.saveClientConfig();
+                        context.getSource().sendSuccess(() ->
+                            Component.literal("§6[Bullet Trails] §7Light duration set to §e" + ticks + " ticks"), true);
+                        return 1;
+                    })
+                )
+            )
+
+            .then(Commands.literal("light_chain")
+                .then(Commands.argument("enabled", BoolArgumentType.bool())
+                    .executes(context -> {
+                        boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                        MatrixCraftConfig.TRAIL_CHAIN_ENABLED.set(enabled);
+                        MatrixCraftConfig.saveClientConfig();
+                        context.getSource().sendSuccess(() ->
+                            Component.literal("§6[Bullet Trails] §7Chained lights enabled: §e" + enabled), true);
+                        return 1;
+                    })
+                )
+            )
+
+            .then(Commands.literal("chain_count")
+                .then(Commands.argument("count", IntegerArgumentType.integer(1, 8))
+                    .executes(context -> {
+                        int count = IntegerArgumentType.getInteger(context, "count");
+                        MatrixCraftConfig.TRAIL_CHAIN_COUNT.set(count);
+                        MatrixCraftConfig.saveClientConfig();
+                        context.getSource().sendSuccess(() ->
+                            Component.literal("§6[Bullet Trails] §7Chain count set to §e" + count), true);
+                        return 1;
+                    })
+                )
+            )
+
+            .then(Commands.literal("chain_spacing")
+                .then(Commands.argument("spacing", DoubleArgumentType.doubleArg(0.0, 5.0))
+                    .executes(context -> {
+                        double spacing = DoubleArgumentType.getDouble(context, "spacing");
+                        MatrixCraftConfig.TRAIL_CHAIN_SPACING.set(spacing);
+                        MatrixCraftConfig.saveClientConfig();
+                        context.getSource().sendSuccess(() ->
+                            Component.literal("§6[Bullet Trails] §7Chain spacing set to §e" + String.format("%.2f", spacing)), true);
+                        return 1;
+                    })
+                )
+            )
             
             .executes(context -> {
                 context.getSource().sendSuccess(() -> 
@@ -596,6 +667,11 @@ public class MatrixCraftCommands {
                         "§e/matrix bullettrails maxpertick <10-500>\n" +
                         "§e/matrix bullettrails lighting <true/false>\n" +
                         "§e/matrix bullettrails lightlevel <1-15>\n" +
+                        "§e/matrix bullettrails light_spacing <1-50>\n" +
+                        "§e/matrix bullettrails light_duration <1-1200>\n" +
+                        "§e/matrix bullettrails light_chain <true/false>\n" +
+                        "§e/matrix bullettrails chain_count <1-8>\n" +
+                        "§e/matrix bullettrails chain_spacing <0.0-5.0>\n" +
                         "§e/matrix bullettrails status"), false);
                 return 1;
             });

@@ -5,6 +5,8 @@ import com.raeyncraft.matrixcraft.client.BulletTrailLighting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.Level;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -12,17 +14,18 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
+import java.lang.ref.WeakReference;
 import java.lang.reflect.*;
 import java.util.*;
-
-import sun.misc.Unsafe;
-import sun.reflect.ReflectionFactory;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Dynamic Light Manager (proxy-based DynamicLightSource)
+ * Dynamic Light Manager - updated.
  *
- * Uses a java.lang.reflect.Proxy to implement org.thinkingstudio.ryoamiclights.DynamicLightSource
- * at runtime when Ryoamic's concrete implementations are not available.
+ * - supports entity-backed single proxies and chains of proxies trailing an entity
+ * - provides clearAllDynamicLights()
+ * - TTL-based sweep and pinging
+ * - forceUpdateAll() (throttled) to force Ryoamic/Lamb to refresh
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = MatrixCraftMod.MODID)
@@ -35,40 +38,65 @@ public class DynamicLightManager {
     private static Method methodAddLightSource = null;
     private static Method methodRemoveLightSource = null;
     private static Method methodUpdateTracking = null;
+    private static Method methodClearLightSources = null;
+    private static Method methodUpdateAll = null;
 
     private static Class<?> dynamicLightSourceClass = null;
 
-    private static final Map<BlockPos, Object> dlsCache = new HashMap<>();
+    // BlockPos -> proxy/instance map (existing behavior)
+    private static final Map<BlockPos, Object> dlsCache = new ConcurrentHashMap<>();
+
+    // Single-proxy: Entity id -> proxy instance
+    private static final Map<Integer, Object> entityDls = new ConcurrentHashMap<>();
+
+    // Chained proxies: Entity id -> list of proxies
+    private static final Map<Integer, List<Object>> entityDlsChains = new ConcurrentHashMap<>();
+
+    // Entity id -> weak reference to entity
+    private static final Map<Integer, WeakReference<Entity>> entityRefs = new ConcurrentHashMap<>();
+
+    // Entity id -> last-seen timestamp (ms)
+    private static final Map<Integer, Long> lastSeenMs = new ConcurrentHashMap<>();
+
+    // TTL (ms) for unseen entities before forced untrack
+    private static final long ENTITY_TTL_MS = 3000L;
+
+    // Force-update throttle (ms)
+    private static long lastForceUpdateMs = 0L;
+    private static final long FORCE_UPDATE_MIN_INTERVAL_MS = 200L;
 
     public static void init() {
         if (initialized) return;
         initialized = true;
 
+        // Discover dynamic-lights implementation (Ryoamic / Lamb)
         try {
             Class<?> ryoClass = Class.forName("org.thinkingstudio.ryoamiclights.RyoamicLights");
-            Method get = ryoClass.getMethod("get");
-            dynamicLightsInstance = get.invoke(null);
-            dynamicLightsAvailable = true;
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights detected and singleton obtained.");
-            discoverRyoamicApi();
-            return;
-        } catch (ClassNotFoundException cnfe) {
-        } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Error obtaining RyoamicLights singleton: " + t.getMessage());
-        }
+            try {
+                Method get = ryoClass.getMethod("get");
+                dynamicLightsInstance = get.invoke(null);
+                dynamicLightsAvailable = true;
+                MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights detected and singleton obtained.");
+                discoverRyoamicApi();
+                return;
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Ryoamic reflection failed: " + ex.getMessage());
+            }
+        } catch (ClassNotFoundException ignored) {}
 
         try {
             Class<?> lambClass = Class.forName("dev.lambdaurora.lambdynlights.LambDynLights");
-            Method get = lambClass.getMethod("get");
-            dynamicLightsInstance = get.invoke(null);
-            dynamicLightsAvailable = true;
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights detected and singleton obtained.");
-            discoverRyoamicApi();
-            return;
-        } catch (ClassNotFoundException cnfe) {
-        } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Error obtaining LambDynLights singleton: " + t.getMessage());
-        }
+            try {
+                Method get = lambClass.getMethod("get");
+                dynamicLightsInstance = get.invoke(null);
+                dynamicLightsAvailable = true;
+                MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights detected and singleton obtained.");
+                discoverRyoamicApi();
+                return;
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
+                MatrixCraftMod.LOGGER.debug("[DynamicLightManager] LambDynLights reflection failed: " + ex.getMessage());
+            }
+        } catch (ClassNotFoundException ignored) {}
 
         dynamicLightsAvailable = false;
         MatrixCraftMod.LOGGER.info("[DynamicLightManager] No dynamic-lights mod found; using particle glow only.");
@@ -98,6 +126,10 @@ public class DynamicLightManager {
                 methodRemoveLightSource = m;
             } else if ((n.equals("updatetracking") || n.equals("updatelight") || n.equals("update")) && m.getParameterCount() == 1) {
                 methodUpdateTracking = m;
+            } else if ((n.equals("clearlightsources") || n.equals("clearlights")) && m.getParameterCount() == 0) {
+                methodClearLightSources = m;
+            } else if ((n.equals("updateall") || n.equals("update_all") || n.equals("updatealltracked")) && m.getParameterCount() == 1) {
+                methodUpdateAll = m;
             }
         }
 
@@ -105,51 +137,11 @@ public class DynamicLightManager {
             Class<?> p = methodAddLightSource.getParameterTypes()[0];
             dynamicLightSourceClass = p;
             MatrixCraftMod.LOGGER.info("[DynamicLightManager] Identified DynamicLightSource class: " + p.getName());
-            dumpDynamicLightSourceShape(p);
-        } else {
-            try {
-                dynamicLightSourceClass = Class.forName("org.thinkingstudio.ryoamiclights.DynamicLightSource");
-                dumpDynamicLightSourceShape(dynamicLightSourceClass);
-            } catch (ClassNotFoundException ignored) {
-            }
         }
 
         MatrixCraftMod.LOGGER.info("[DynamicLightManager] Methods -> add:" + (methodAddLightSource != null) +
-                " remove:" + (methodRemoveLightSource != null) + " update:" + (methodUpdateTracking != null));
-    }
-
-    private static void dumpDynamicLightSourceShape(Class<?> dlsClass) {
-        if (dlsClass == null) return;
-        MatrixCraftMod.LOGGER.info("[DynamicLightManager] DynamicLightSource class: " + dlsClass.getName());
-        try {
-            for (Constructor<?> c : dlsClass.getDeclaredConstructors()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append("ctor ").append(c.getName()).append("(");
-                Class<?>[] pts = c.getParameterTypes();
-                for (int i = 0; i < pts.length; i++) {
-                    sb.append(pts[i].getCanonicalName());
-                    if (i < pts.length - 1) sb.append(", ");
-                }
-                sb.append(")");
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] DLS Constructor: " + sb.toString());
-            }
-            for (Field f : dlsClass.getDeclaredFields()) {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] DLS Field: " + f.getType().getCanonicalName() + " " + f.getName());
-            }
-            for (Method m : dlsClass.getDeclaredMethods()) {
-                StringBuilder sb = new StringBuilder();
-                sb.append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
-                Class<?>[] pts = m.getParameterTypes();
-                for (int i = 0; i < pts.length; i++) {
-                    sb.append(pts[i].getCanonicalName());
-                    if (i < pts.length - 1) sb.append(", ");
-                }
-                sb.append(")");
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] DLS Method: " + sb.toString());
-            }
-        } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Failed to dump DynamicLightSource shape: " + t.getMessage());
-        }
+                " remove:" + (methodRemoveLightSource != null) + " update:" + (methodUpdateTracking != null) +
+                " clear:" + (methodClearLightSources != null) + " updateAll:" + (methodUpdateAll != null));
     }
 
     public static boolean isDynamicLightsModAvailable() {
@@ -167,17 +159,33 @@ public class DynamicLightManager {
         if (isDynamicLightsModAvailable()) {
             syncDynamicLights(mc.level);
         }
+
+        // Sweep tracked entity references and remove lights whose entities are gone or unseen for TTL
+        try {
+            long now = System.currentTimeMillis();
+            for (Iterator<Map.Entry<Integer, WeakReference<Entity>>> it = entityRefs.entrySet().iterator(); it.hasNext(); ) {
+                Map.Entry<Integer, WeakReference<Entity>> entry = it.next();
+                int id = entry.getKey();
+                WeakReference<Entity> ref = entry.getValue();
+                Entity e = ref == null ? null : ref.get();
+                boolean unseenTooLong = false;
+                Long last = lastSeenMs.get(id);
+                if (last == null || now - last > ENTITY_TTL_MS) unseenTooLong = true;
+
+                if (e == null || e.isRemoved() || !e.isAlive() || unseenTooLong) {
+                    untrackEntityLightById(id);
+                    it.remove();
+                    lastSeenMs.remove(id);
+                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] Swept and untracked entity DLS for id=" + id + " (removed=" + (e==null||e.isRemoved()) + " unseenTooLong=" + unseenTooLong + ")");
+                }
+            }
+        } catch (Throwable ignored) {}
     }
 
     private static void syncDynamicLights(Level level) {
         Map<BlockPos, BulletTrailLighting.LightSource> sources = BulletTrailLighting.getActiveLights();
 
-        MatrixCraftMod.LOGGER.info("[DynamicLightManager] Active lights count: " + (sources == null ? 0 : sources.size()));
-        if (sources != null && !sources.isEmpty()) {
-            for (Map.Entry<BlockPos, BulletTrailLighting.LightSource> e : sources.entrySet()) {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] ActiveLight: pos=" + e.getKey() + " brightness=" + e.getValue().getCurrentBrightness());
-            }
-        }
+        MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Active lights count: " + (sources == null ? 0 : sources.size()));
 
         Set<BlockPos> toRemove = new HashSet<>();
         for (BlockPos pos : dlsCache.keySet()) {
@@ -186,7 +194,6 @@ public class DynamicLightManager {
         for (BlockPos pos : toRemove) {
             Object dls = dlsCache.remove(pos);
             if (dls != null) {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] Removing DLS for pos " + pos);
                 invokeRemoveLightSource(dls);
             }
         }
@@ -198,41 +205,30 @@ public class DynamicLightManager {
             BulletTrailLighting.LightSource light = e.getValue();
 
             Object dls = dlsCache.get(pos);
-            if (dls == null || !containsInstance(dls)) {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] Attempting to construct DLS for pos " + pos + " brightness=" + light.getCurrentBrightness());
+            if (dls == null) {
                 dls = createDynamicLightSource(level, pos, light);
                 if (dls != null) {
                     dlsCache.put(pos, dls);
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] addLightSource invoked for pos " + pos);
                     invokeAddLightSource(dls);
-                } else {
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] Could not construct DynamicLightSource for pos " + pos);
                 }
             } else {
                 if (methodUpdateTracking != null) {
                     try {
                         methodUpdateTracking.invoke(dynamicLightsInstance, dls);
-                        MatrixCraftMod.LOGGER.info("[DynamicLightManager] updateTracking invoked for pos " + pos);
                     } catch (IllegalAccessException | InvocationTargetException ex) {
                         MatrixCraftMod.LOGGER.info("[DynamicLightManager] updateTracking invocation failed: " + ex.getMessage());
                     }
                 } else {
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] Re-invoking addLightSource (fallback) for pos " + pos);
                     invokeAddLightSource(dls);
                 }
             }
         }
     }
 
-    private static boolean containsInstance(Object dls) {
-        return true;
-    }
-
     private static void invokeAddLightSource(Object dls) {
         if (dynamicLightsInstance == null || methodAddLightSource == null) return;
         try {
             methodAddLightSource.invoke(dynamicLightsInstance, dls);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] addLightSource invocation succeeded.");
         } catch (IllegalAccessException | InvocationTargetException ex) {
             MatrixCraftMod.LOGGER.info("[DynamicLightManager] addLightSource invocation failed: " + ex.getMessage());
         }
@@ -243,346 +239,282 @@ public class DynamicLightManager {
         try {
             if (methodRemoveLightSource != null) {
                 methodRemoveLightSource.invoke(dynamicLightsInstance, dls);
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] removeLightSource invocation succeeded.");
-            } else {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] removeLightSource not available; no fallback implemented.");
             }
         } catch (IllegalAccessException | InvocationTargetException ex) {
             MatrixCraftMod.LOGGER.info("[DynamicLightManager] removeLightSource invocation failed: " + ex.getMessage());
         }
     }
 
-    private static Method findMethodByName(Class<?> cls, String name, int paramCount) {
-        for (Method m : cls.getMethods()) {
-            if (m.getName().equalsIgnoreCase(name) && m.getParameterCount() == paramCount) return m;
-        }
-        return null;
-    }
-
-    /**
-     * Create a DynamicLightSource instance.
-     * First attempt: create a java.lang.reflect.Proxy implementing the DynamicLightSource interface.
-     * If proxy creation fails, fall back to constructor attempts and allocation fallbacks (kept for safety).
-     */
     private static Object createDynamicLightSource(Level level, BlockPos pos, BulletTrailLighting.LightSource light) {
-        if (dynamicLightSourceClass == null) {
-            try {
-                dynamicLightSourceClass = Class.forName("org.thinkingstudio.ryoamiclights.DynamicLightSource");
-            } catch (ClassNotFoundException e) {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] DynamicLightSource class not available: " + e.getMessage());
-                return null;
-            }
-        }
+        if (dynamicLightSourceClass == null) return null;
 
-        // Common values
         final double dx = pos.getX() + 0.5;
         final double dy = pos.getY() + 0.5;
         final double dz = pos.getZ() + 0.5;
-        final int luminance = light.getCurrentBrightness();
-        final Level world = level;
 
-        // 1) Try Proxy implementation (preferred)
         try {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Creating DynamicLightSource proxy for pos " + pos + " lum=" + luminance);
             InvocationHandler handler = new InvocationHandler() {
-                private boolean enabled = luminance > 0;
-
                 @Override
                 public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
                     String name = method.getName();
-                    // Object methods
-                    if ("equals".equals(name) && args != null && args.length == 1) {
-                        return proxy == args[0];
-                    }
-                    if ("hashCode".equals(name) && (args == null || args.length == 0)) {
-                        return System.identityHashCode(proxy);
-                    }
-                    if ("toString".equals(name) && (args == null || args.length == 0)) {
-                        return "DynamicLightProxy[pos=" + pos + ",lum=" + luminance + "]";
-                    }
-
-                    // Ryoamic interface methods (support both prefixed and unprefixed names)
-                    if (name.equals("ryoamicLights$getDynamicLightX") || name.equals("getDynamicLightX")) {
-                        return dx;
-                    }
-                    if (name.equals("ryoamicLights$getDynamicLightY") || name.equals("getDynamicLightY")) {
-                        return dy;
-                    }
-                    if (name.equals("ryoamicLights$getDynamicLightZ") || name.equals("getDynamicLightZ")) {
-                        return dz;
-                    }
-                    if (name.equals("ryoamicLights$getDynamicLightWorld") || name.equals("getDynamicLightWorld")) {
-                        return world;
-                    }
-                    if (name.equals("ryoamicLights$getLuminance") || name.equals("getLuminance")) {
-                        return luminance;
-                    }
-                    if (name.equals("ryoamicLights$isDynamicLightEnabled") || name.equals("isDynamicLightEnabled")) {
-                        return enabled;
-                    }
-                    if (name.equals("ryoamicLights$setDynamicLightEnabled") || name.equals("setDynamicLightEnabled")) {
-                        boolean e = (boolean) args[0];
-                        enabled = e;
-                        // keep Ryoamic's tracked sources consistent if the proxy toggles enabled
-                        try {
-                            if (dynamicLightsInstance != null) {
-                                if (e && methodAddLightSource != null) {
-                                    methodAddLightSource.invoke(dynamicLightsInstance, proxy);
-                                } else if (!e && methodRemoveLightSource != null) {
-                                    methodRemoveLightSource.invoke(dynamicLightsInstance, proxy);
-                                }
-                            }
-                        } catch (Throwable ignored) {}
-                        return null;
-                    }
-                    if (name.equals("ryoamicLights$resetDynamicLight") || name.equals("resetDynamicLight")) {
-                        // noop
-                        return null;
-                    }
-                    if (name.equals("ryoamicLights$dynamicLightTick") || name.equals("dynamicLightTick")) {
-                        // noop: Ryoamic expects implementers to update luminance/state over time.
-                        return null;
-                    }
-                    // updateDynamicLight(WorldRenderer) -> boolean
-                    if (name.equals("ryoamiclights$updateDynamicLight") || name.equals("updateDynamicLight")) {
-                        // Ryoamic uses the boolean result for update count; returning true is safe.
-                        return true;
-                    }
-                    // scheduleTrackedChunksRebuild(WorldRenderer)
-                    if (name.equals("ryoamiclights$scheduleTrackedChunksRebuild") || name.equals("scheduleTrackedChunksRebuild")) {
-                        // No-op here; Ryoamic will handle chunk rebuild when needed. Return void.
-                        return null;
-                    }
-
-                    // If method is default or unknown, return a sensible default rather than attempting MethodHandles.
-                    Class<?> ret = method.getReturnType();
-                    if (ret == boolean.class) return false;
-                    if (ret == int.class) return 0;
-                    if (ret == long.class) return 0L;
-                    if (ret == double.class) return 0.0;
-                    return null;
+                    if ("equals".equals(name) && args != null && args.length == 1) return proxy == args[0];
+                    if ("hashCode".equals(name)) return System.identityHashCode(proxy);
+                    if ("toString".equals(name)) return "DynamicLightProxy[pos=" + pos + "]";
+                    if (name.equals("ryoamicLights$getDynamicLightX") || name.equals("getDynamicLightX")) return dx;
+                    if (name.equals("ryoamicLights$getDynamicLightY") || name.equals("getDynamicLightY")) return dy;
+                    if (name.equals("ryoamicLights$getDynamicLightZ") || name.equals("getDynamicLightZ")) return dz;
+                    if (name.equals("ryoamicLights$getDynamicLightWorld") || name.equals("getDynamicLightWorld")) return level;
+                    if (name.equals("ryoamicLights$getLuminance") || name.equals("getLuminance")) return light.getCurrentBrightness();
+                    if (name.equals("ryoamicLights$isDynamicLightEnabled") || name.equals("isDynamicLightEnabled")) return true;
+                    if (name.equals("ryoamiclights$updateDynamicLight") || name.equals("updateDynamicLight")) return true;
+                    return getDefaultReturn(method.getReturnType());
                 }
             };
-
             Object proxy = Proxy.newProxyInstance(dynamicLightSourceClass.getClassLoader(),
                     new Class[]{dynamicLightSourceClass}, handler);
-
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Constructed DLS proxy for pos " + pos);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] DLS Proxy Summary: x=" + dx + " y=" + dy + " z=" + dz + " lum=" + luminance + " world=" + world);
             return proxy;
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Proxy creation failed: " + t.getMessage());
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Proxy creation failed (pos-based): " + t.getMessage());
+            return null;
+        }
+    }
+
+    // -----------------------
+    // ENTITY-TRACKING + CHAINED PROXIES
+    // -----------------------
+
+    /**
+     * Ping an entity id to mark it as recently seen.
+     */
+    public static void pingEntity(int id) {
+        lastSeenMs.put(id, System.currentTimeMillis());
+    }
+
+    /**
+     * Track an entity with a single proxy (existing behavior)
+     */
+    public static void trackEntityLight(Entity entity, int luminance, float r, float g, float b) {
+        if (entity == null) return;
+        if (!isDynamicLightsModAvailable()) return;
+        ensureInit();
+        int id = entity.getId();
+
+        try {
+            if (entityDls.containsKey(id)) {
+                // refresh ref and ping
+                entityRefs.put(id, new WeakReference<>(entity));
+                lastSeenMs.put(id, System.currentTimeMillis());
+                Object existing = entityDls.get(id);
+                if (existing != null && methodUpdateTracking != null) {
+                    try { methodUpdateTracking.invoke(dynamicLightsInstance, existing); } catch (Throwable ignored) {}
+                }
+                return;
+            }
+
+            if (dynamicLightSourceClass == null) return;
+            entityRefs.put(id, new WeakReference<>(entity));
+            lastSeenMs.put(id, System.currentTimeMillis());
+
+            InvocationHandler handler = createEntityHandler(id, -1, 0.0, r, g, b);
+            Object proxy = Proxy.newProxyInstance(dynamicLightSourceClass.getClassLoader(),
+                    new Class[]{dynamicLightSourceClass}, handler);
+            entityDls.put(id, proxy);
+            invokeAddLightSource(proxy);
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Created and registered entity-backed DLS for entity id=" + id);
+        } catch (Throwable t) {
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] trackEntityLight failed for id=" + id + ": " + t.getMessage());
+        }
+    }
+
+    /**
+     * Track an entity with a chain of N proxies offset backwards along the bullet velocity.
+     * count >=1, spacing in blocks (double).
+     */
+    public static void trackEntityLightChain(Entity entity, int count, double spacing, int luminance, float r, float g, float b) {
+        if (entity == null) return;
+        if (!isDynamicLightsModAvailable()) return;
+        ensureInit();
+        int id = entity.getId();
+
+        // don't double-register chain if exists
+        if (entityDlsChains.containsKey(id)) {
+            entityRefs.put(id, new WeakReference<>(entity));
+            lastSeenMs.put(id, System.currentTimeMillis());
+            return;
         }
 
-        // --- previous constructor/alloc attempts (kept as fallback) ---
-        Constructor<?>[] ctors = dynamicLightSourceClass.getDeclaredConstructors();
-        Arrays.sort(ctors, new Comparator<Constructor<?>>() {
+        List<Object> proxies = new ArrayList<>();
+        try {
+            entityRefs.put(id, new WeakReference<>(entity));
+            lastSeenMs.put(id, System.currentTimeMillis());
+
+            for (int i = 0; i < count; i++) {
+                InvocationHandler handler = createEntityHandler(id, i, spacing, r, g, b);
+                Object proxy = Proxy.newProxyInstance(dynamicLightSourceClass.getClassLoader(),
+                        new Class[]{dynamicLightSourceClass}, handler);
+                proxies.add(proxy);
+                invokeAddLightSource(proxy);
+            }
+            entityDlsChains.put(id, proxies);
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Created and registered entity-backed DLS chain for id=" + id + " count=" + count);
+        } catch (Throwable t) {
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] trackEntityLightChain failed for id=" + id + ": " + t.getMessage());
+            for (Object p : proxies) {
+                try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
+            }
+        }
+    }
+
+    private static InvocationHandler createEntityHandler(final int id, final int chainIndex, final double spacing, final float r, final float g, final float b) {
+        return new InvocationHandler() {
+            private boolean enabled = true;
             @Override
-            public int compare(Constructor<?> a, Constructor<?> b) {
-                return Integer.compare(b.getParameterCount(), a.getParameterCount());
-            }
-        });
+            public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                String name = method.getName();
 
-        int xInt = pos.getX();
-        int yInt = pos.getY();
-        int zInt = pos.getZ();
+                if ("equals".equals(name) && args != null && args.length == 1) return proxy == args[0];
+                if ("hashCode".equals(name)) return System.identityHashCode(proxy);
+                if ("toString".equals(name)) return "EntityDLS[id=" + id + ",idx=" + chainIndex + "]";
 
-        float rFloat = light.red;
-        float gFloat = light.green;
-        float bFloat = light.blue;
+                WeakReference<Entity> wr = entityRefs.get(id);
+                Entity ent = wr == null ? null : wr.get();
 
-        for (Constructor<?> ctor : ctors) {
-            try {
-                ctor.setAccessible(true);
-                Class<?>[] pts = ctor.getParameterTypes();
-                Object[] args = buildArgumentsForConstructor(pts, level, pos, xInt, yInt, zInt, dx, dy, dz, luminance, rFloat, gFloat, bFloat);
-                if (args == null) continue;
-                Object instance = ctor.newInstance(args);
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] Constructed DLS with ctor: " + ctor);
-                tryPopulateFields(instance, level, pos, dx, dy, dz, luminance, rFloat, gFloat, bFloat);
-                logDlsState(instance);
-                return instance;
-            } catch (InvocationTargetException ite) {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] ctor invocation threw for ctor " + ctor + ": " + ite.getTargetException());
-            } catch (Throwable t) {
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] ctor try failed: " + t.getMessage());
-            }
-        }
+                if (name.equals("ryoamicLights$getDynamicLightX") || name.equals("getDynamicLightX")) {
+                    Vec3 p = computeProxyPosition(ent, chainIndex, spacing);
+                    return p == null ? 0.0 : p.x;
+                }
+                if (name.equals("ryoamicLights$getDynamicLightY") || name.equals("getDynamicLightY")) {
+                    Vec3 p = computeProxyPosition(ent, chainIndex, spacing);
+                    return p == null ? 0.0 : p.y;
+                }
+                if (name.equals("ryoamicLights$getDynamicLightZ") || name.equals("getDynamicLightZ")) {
+                    Vec3 p = computeProxyPosition(ent, chainIndex, spacing);
+                    return p == null ? 0.0 : p.z;
+                }
+                if (name.equals("ryoamicLights$getDynamicLightWorld") || name.equals("getDynamicLightWorld")) {
+                    return ent == null ? null : ent.level();
+                }
 
-        // ReflectionFactory allocation
-        try {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Attempting allocation via ReflectionFactory (serialization) for " + dynamicLightSourceClass.getName());
-            ReflectionFactory reflectionFactory = ReflectionFactory.getReflectionFactory();
-            Constructor<?> objCtor = Object.class.getDeclaredConstructor();
-            Constructor<?> serCtor = reflectionFactory.newConstructorForSerialization(dynamicLightSourceClass, objCtor);
-            serCtor.setAccessible(true);
-            Object inst = serCtor.newInstance();
-            tryPopulateFields(inst, level, pos, dx, dy, dz, luminance, rFloat, gFloat, bFloat);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Constructed DLS via serialization allocation.");
-            logDlsState(inst);
-            return inst;
-        } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] ReflectionFactory allocation failed: " + t.getMessage());
-        }
-
-        // Unsafe allocation
-        try {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Attempting allocation via Unsafe.allocateInstance for " + dynamicLightSourceClass.getName());
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
-            Object inst = unsafe.allocateInstance(dynamicLightSourceClass);
-            tryPopulateFields(inst, level, pos, dx, dy, dz, luminance, rFloat, gFloat, bFloat);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Constructed DLS via Unsafe allocation.");
-            logDlsState(inst);
-            return inst;
-        } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Unsafe allocation failed: " + t.getMessage());
-        }
-
-        MatrixCraftMod.LOGGER.info("[DynamicLightManager] No suitable DLS constructor succeeded and allocation fallbacks failed.");
-        return null;
-    }
-
-    private static Object[] buildArgumentsForConstructor(Class<?>[] pts,
-                                                        Level level, BlockPos pos,
-                                                        int xi, int yi, int zi,
-                                                        double dx, double dy, double dz,
-                                                        int luminance,
-                                                        float rFloat, float gFloat, float bFloat) {
-        Object[] args = new Object[pts.length];
-        int doubleCoordIndex = 0;
-        int colorIndex = 0;
-
-        for (int i = 0; i < pts.length; i++) {
-            Class<?> p = pts[i];
-            if (p.isAssignableFrom(Level.class)) {
-                args[i] = level;
-            } else if (p.isAssignableFrom(BlockPos.class)) {
-                args[i] = pos;
-            } else if (p == double.class || p == Double.class) {
-                if (doubleCoordIndex == 0) { args[i] = dx; doubleCoordIndex++; }
-                else if (doubleCoordIndex == 1) { args[i] = dy; doubleCoordIndex++; }
-                else if (doubleCoordIndex == 2) { args[i] = dz; doubleCoordIndex++; }
-                else { args[i] = (double) luminance; }
-            } else if (p == int.class || p == Integer.class) {
-                if (pts.length == 4 && i == 0 && pts[0] == int.class && pts[1] == int.class && pts[2] == int.class && pts[3] == int.class) {
-                    return new Object[] { xi, yi, zi, luminance };
-                }
-                args[i] = luminance;
-            } else if (p == float.class || p == Float.class) {
-                if (colorIndex == 0) { args[i] = rFloat; colorIndex++; }
-                else if (colorIndex == 1) { args[i] = gFloat; colorIndex++; }
-                else if (colorIndex == 2) { args[i] = bFloat; colorIndex++; }
-                else { args[i] = (float)(luminance / 15f); }
-            } else {
-                String name = p.getSimpleName().toLowerCase();
-                if (name.contains("pos") || name.contains("blockpos")) args[i] = pos;
-                else if (name.contains("level") || name.contains("world")) args[i] = level;
-                else return null;
-            }
-        }
-        return args;
-    }
-
-    private static void tryPopulateFields(Object inst,
-                                          Level level, BlockPos pos,
-                                          double dx, double dy, double dz,
-                                          int luminance,
-                                          float rFloat, float gFloat, float bFloat) {
-        if (inst == null) return;
-        Class<?> cls = inst.getClass();
-        Field[] fields = cls.getDeclaredFields();
-        for (Field f : fields) {
-            try {
-                f.setAccessible(true);
-                String name = f.getName().toLowerCase();
-                Class<?> t = f.getType();
-                if ((name.contains("x") || name.contains("posx") || name.contains("dynamiclightx")) && (t == double.class || t == Double.class)) {
-                    f.set(inst, dx); continue;
-                }
-                if ((name.contains("y") || name.contains("posy") || name.contains("dynamiclighty")) && (t == double.class || t == Double.class)) {
-                    f.set(inst, dy); continue;
-                }
-                if ((name.contains("z") || name.contains("posz") || name.contains("dynamiclightz")) && (t == double.class || t == Double.class)) {
-                    f.set(inst, dz); continue;
-                }
-                if ((name.contains("x") || name.contains("posx")) && (t == int.class || t == Integer.class)) {
-                    f.set(inst, pos.getX()); continue;
-                }
-                if ((name.contains("y") || name.contains("posy")) && (t == int.class || t == Integer.class)) {
-                    f.set(inst, pos.getY()); continue;
-                }
-                if ((name.contains("z") || name.contains("posz")) && (t == int.class || t == Integer.class)) {
-                    f.set(inst, pos.getZ()); continue;
-                }
-                if ((name.contains("luminance") || name.contains("light") || name.contains("lumen") || name.contains("level")) && (t == int.class || t == Integer.class)) {
-                    f.set(inst, luminance); continue;
-                }
-                if ((name.contains("world") || name.contains("level") || name.contains("dimension")) && Level.class.isAssignableFrom(t)) {
-                    f.set(inst, level); continue;
-                }
-                if ((name.contains("r") || name.contains("red")) && (t == float.class || t == double.class)) {
-                    f.set(inst, (t == double.class) ? (double) rFloat : rFloat); continue;
-                }
-                if ((name.contains("g") || name.contains("green")) && (t == float.class || t == double.class)) {
-                    f.set(inst, (t == double.class) ? (double) gFloat : gFloat); continue;
-                }
-                if ((name.contains("b") || name.contains("blue")) && (t == float.class || t == double.class)) {
-                    f.set(inst, (t == double.class) ? (double) bFloat : bFloat); continue;
-                }
-            } catch (Throwable ignored) {
-            }
-        }
-    }
-
-    private static void logDlsState(Object dls) {
-        if (dls == null) return;
-        try {
-            Class<?> cls = dls.getClass();
-            String[] methodNames = {
-                    "ryoamicLights$getDynamicLightX",
-                    "ryoamicLights$getDynamicLightY",
-                    "ryoamicLights$getDynamicLightZ",
-                    "ryoamicLights$getLuminance",
-                    "ryoamicLights$isDynamicLightEnabled"
-            };
-            for (String name : methodNames) {
-                try {
-                    Method m = cls.getDeclaredMethod(name);
-                    m.setAccessible(true);
-                    Object val = m.invoke(dls);
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] DLS State: " + name + " = " + String.valueOf(val));
-                } catch (NoSuchMethodException nsme) {
-                    String alt = name.replace("ryoamicLights$", "");
+                if (name.equals("ryoamicLights$getLuminance") || name.equals("getLuminance")) {
                     try {
-                        Method m2 = cls.getDeclaredMethod(alt);
-                        m2.setAccessible(true);
-                        Object val = m2.invoke(dls);
-                        MatrixCraftMod.LOGGER.info("[DynamicLightManager] DLS State: " + alt + " = " + String.valueOf(val));
-                    } catch (NoSuchMethodException ignored) {
-                    } catch (Throwable ignored) {
-                    }
-                } catch (Throwable t) {
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] DLS state read failed for " + name + ": " + t.getMessage());
+                        if (ent != null) {
+                            BlockPos p = BlockPos.containing(ent.getX(), ent.getY(), ent.getZ());
+                            BulletTrailLighting.LightSource near = BulletTrailLighting.getNearestLight(p, 3.0);
+                            if (near != null) return near.getCurrentBrightness();
+                        }
+                    } catch (Throwable ignored) {}
+                    return BulletTrailLighting.getConfiguredLightLevel();
                 }
+
+                if (name.equals("ryoamicLights$isDynamicLightEnabled") || name.equals("isDynamicLightEnabled")) return enabled;
+                if (name.equals("ryoamicLights$setDynamicLightEnabled") || name.equals("setDynamicLightEnabled")) {
+                    boolean e = (boolean) args[0];
+                    enabled = e;
+                    try {
+                        if (dynamicLightsInstance != null) {
+                            if (e && methodAddLightSource != null) methodAddLightSource.invoke(dynamicLightsInstance, proxy);
+                            else if (!e && methodRemoveLightSource != null) methodRemoveLightSource.invoke(dynamicLightsInstance, proxy);
+                        }
+                    } catch (Throwable ignored) {}
+                    return null;
+                }
+                if (name.equals("ryoamiclights$updateDynamicLight") || name.equals("updateDynamicLight")) {
+                    try {
+                        if (ent == null || ent.isRemoved() || !ent.isAlive()) return false;
+                    } catch (Throwable ignored) {}
+                    return true;
+                }
+                return getDefaultReturn(method.getReturnType());
+            }
+        };
+    }
+
+    private static Vec3 computeProxyPosition(Entity ent, int chainIndex, double spacing) {
+        if (ent == null) return null;
+        Vec3 base = ent.position();
+        if (chainIndex < 0) return base;
+        Vec3 vel = ent.getDeltaMovement();
+        double vx = vel.x, vy = vel.y, vz = vel.z;
+        double len = Math.sqrt(vx*vx + vy*vy + vz*vz);
+        if (len <= 1e-6) return base;
+        Vec3 dir = new Vec3(vx/len, vy/len, vz/len);
+        double offset = chainIndex * spacing;
+        return base.subtract(dir.scale(offset));
+    }
+
+    /**
+     * Unregister a tracked entity light by id (removes single proxy and any chain proxies).
+     */
+    public static void untrackEntityLightById(int id) {
+        Object single = entityDls.remove(id);
+        if (single != null) {
+            try { invokeRemoveLightSource(single); } catch (Throwable ignored) {}
+        }
+        List<Object> chain = entityDlsChains.remove(id);
+        if (chain != null) {
+            for (Object p : chain) {
+                try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
+            }
+        }
+        entityRefs.remove(id);
+        lastSeenMs.remove(id);
+        MatrixCraftMod.LOGGER.info("[DynamicLightManager] Untracked entity-backed DLS for entity id=" + id);
+    }
+
+    /**
+     * Clear all dynamic lights from the dynamic-lights implementation and internal caches.
+     */
+    public static void clearAllDynamicLights() {
+        try {
+            if (methodClearLightSources != null && dynamicLightsInstance != null) {
+                try {
+                    methodClearLightSources.invoke(dynamicLightsInstance);
+                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] Invoked clearLightSources on dynamic-lights mod.");
+                } catch (IllegalAccessException | InvocationTargetException ex) {
+                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] clearLightSources invocation failed: " + ex.getMessage());
+                }
+            } else {
+                for (Object p : dlsCache.values()) invokeRemoveLightSource(p);
+                dlsCache.clear();
+                for (Object p : entityDls.values()) invokeRemoveLightSource(p);
+                entityDls.clear();
+                for (List<Object> list : entityDlsChains.values()) for (Object p : list) invokeRemoveLightSource(p);
+                entityDlsChains.clear();
+                entityRefs.clear();
+                lastSeenMs.clear();
+                MatrixCraftMod.LOGGER.info("[DynamicLightManager] Cleared all cached dynamic-lights (fallback).");
             }
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] logDlsState failed: " + t.getMessage());
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] clearAllDynamicLights failed: " + t.getMessage());
         }
     }
 
-    public static void requestChunkRebuild(LevelRenderer renderer, BlockPos pos) {
-        if (dynamicLightsAvailable && dynamicLightsInstance != null) {
-            Method m = findMethodByName(dynamicLightsInstance.getClass(), "scheduleChunkRebuild", 2);
-            if (m != null) {
-                try {
-                    m.invoke(dynamicLightsInstance, renderer, pos);
-                } catch (IllegalAccessException | InvocationTargetException ex) {
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] scheduleChunkRebuild failed: " + ex.getMessage());
-                }
+    /**
+     * Force the dynamic-lights implementation to update all tracked sources (throttled).
+     */
+    public static void forceUpdateAll() {
+        if (!isDynamicLightsModAvailable()) return;
+        ensureInit();
+        long now = System.currentTimeMillis();
+        if (now - lastForceUpdateMs < FORCE_UPDATE_MIN_INTERVAL_MS) return;
+        lastForceUpdateMs = now;
+
+        if (methodUpdateAll != null && dynamicLightsInstance != null) {
+            try {
+                methodUpdateAll.invoke(dynamicLightsInstance, Minecraft.getInstance().levelRenderer);
+                MatrixCraftMod.LOGGER.info("[DynamicLightManager] forceUpdateAll invoked on dynamic-lights mod.");
+            } catch (IllegalAccessException | InvocationTargetException ex) {
+                MatrixCraftMod.LOGGER.info("[DynamicLightManager] forceUpdateAll invocation failed: " + ex.getMessage());
             }
         }
+    }
+
+    private static Object getDefaultReturn(Class<?> ret) {
+        if (ret == boolean.class) return false;
+        if (ret == int.class) return 0;
+        if (ret == long.class) return 0L;
+        if (ret == double.class) return 0.0;
+        return null;
     }
 
     public static void ensureInit() {

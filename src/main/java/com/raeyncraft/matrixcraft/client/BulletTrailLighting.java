@@ -34,7 +34,6 @@ public class BulletTrailLighting {
     private static boolean checkedForRyoamicLights = false;
     
     // Light settings
-    private static final int LIGHT_DURATION_TICKS = 20; // How long lights last (1 second)
     private static final int MAX_LIGHTS = 300; // Prevent too many light sources
     
     /**
@@ -143,25 +142,27 @@ public class BulletTrailLighting {
         if (!isDynamicLightingEnabled()) {
             return;
         }
-        
+    
         if (activeLights.size() >= MAX_LIGHTS) {
             // Remove oldest lights if at capacity
             pruneOldestLights(50);
         }
-        
+    
         BlockPos pos = BlockPos.containing(x, y, z);
-        
+    
         // Get color from config
         float[] color = getTrailColor();
         int brightness = getConfiguredLightLevel();
-        
+    
         // Only log occasionally to avoid spam
         if (activeLights.size() % 50 == 0 && activeLights.size() > 0) {
-            MatrixCraftMod.LOGGER.info("[BulletTrailLighting] Active lights: " + activeLights.size() + 
+            MatrixCraftMod.LOGGER.info("[BulletTrailLighting] Active lights: " + activeLights.size() +
                 ", brightness: " + brightness + ", color: R=" + color[0] + " G=" + color[1] + " B=" + color[2]);
         }
-        
-        activeLights.put(pos, new LightSource(pos, brightness, LIGHT_DURATION_TICKS, 
+    
+        int durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
+    
+        activeLights.put(pos, new LightSource(pos, brightness, durationTicks,
             color[0], color[1], color[2]));
     }
     
@@ -172,15 +173,17 @@ public class BulletTrailLighting {
         if (!isDynamicLightingEnabled()) {
             return;
         }
-        
+    
         if (activeLights.size() >= MAX_LIGHTS) {
             pruneOldestLights(50);
         }
-        
+    
         BlockPos pos = BlockPos.containing(x, y, z);
         int brightness = getConfiguredLightLevel();
-        
-        activeLights.put(pos, new LightSource(pos, brightness, LIGHT_DURATION_TICKS, r, g, b));
+    
+        int durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
+    
+        activeLights.put(pos, new LightSource(pos, brightness, durationTicks, r, g, b));
     }
     
     /**
@@ -220,6 +223,11 @@ public class BulletTrailLighting {
             if (light.ticksRemaining <= 0) {
                 iterator.remove();
             }
+            // Update trail-light texture for shader ACL
+            try {
+                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
+                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
+            } catch (Throwable ignored) {}
         }
     }
     
@@ -276,6 +284,9 @@ public class BulletTrailLighting {
      */
     public static void clearAll() {
         activeLights.clear();
+        try {
+            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.clearTexture();
+        } catch (Throwable ignored) {}
     }
     
     /**
