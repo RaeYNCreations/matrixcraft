@@ -21,7 +21,7 @@ for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
 ```
 - **Purpose**: Initialize both texture rows to zero
 
-#### 3. Out-of-Range Handling (Lines 128-130)
+#### 3. Out-of-Range Handling (Lines 128-131)
 ```java
 if (Math.abs(dx) > range || Math.abs(dy) > range || Math.abs(dz) > range) {
     nativeImage.setPixelRGBA(i, 0, 0); // Clear position row
@@ -31,7 +31,7 @@ if (Math.abs(dx) > range || Math.abs(dy) > range || Math.abs(dz) > range) {
 ```
 - **Purpose**: Clear both rows when light is out of camera range
 
-#### 4. Color Data Encoding (Lines 151-156)
+#### 4. Color Data Encoding (Lines 152-157)
 ```java
 // Row 1: encode RGB color from light source
 int colorR = (int) (ls.red * 255.0f) & 0xFF;
@@ -43,7 +43,7 @@ nativeImage.setPixelRGBA(i, 1, colorPixel);
 - **Purpose**: Write RGB color from `LightSource.red/green/blue` to texture row 1
 - **Data Source**: `BulletTrailLighting.LightSource` fields (lines 46-56 in BulletTrailLighting.java)
 
-#### 5. Clear Both Rows - No Active Light (Lines 160-161)
+#### 5. Clear Both Rows - No Active Light (Lines 161-162)
 ```java
 } else {
     nativeImage.setPixelRGBA(i, 0, 0); // Clear position row
@@ -52,7 +52,7 @@ nativeImage.setPixelRGBA(i, 1, colorPixel);
 ```
 - **Purpose**: Clear both rows when no light is active at this index
 
-#### 6. Update clearTexture() Method (Lines 181-184)
+#### 6. Update clearTexture() Method (Lines 182-185)
 ```java
 for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
     nativeImage.setPixelRGBA(x, 0, 0); // Clear position row

@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Packs active trail lights into a small 2D texture (two rows per light).
+ * Packs active trail lights into a small 2D texture (two rows total).
  *
  * Row 0: Position (RGB) + Intensity (A)
  * Row 1: Color (RGB) + Unused (A)
