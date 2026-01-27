@@ -16,7 +16,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Packs active trail lights into a small 1D texture (one texel per light).
+ * Packs active trail lights into a small 2D texture (two rows per light).
+ *
+ * Row 0: Position (RGB) + Intensity (A)
+ * Row 1: Color (RGB) + Unused (A)
  *
  * Shader-side include will sample sampler2D matrixcraft_trail_lights;
  *
@@ -76,9 +79,10 @@ public class DynamicLightTextureManager {
             return;
         }
 
-        nativeImage = new NativeImage(MAX_TRAIL_LIGHTS, 1, false);
+        nativeImage = new NativeImage(MAX_TRAIL_LIGHTS, 2, false); // 2 rows: position + color
         for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
-            nativeImage.setPixelRGBA(x, 0, 0);
+            nativeImage.setPixelRGBA(x, 0, 0); // Row 0: position + intensity
+            nativeImage.setPixelRGBA(x, 1, 0); // Row 1: color
         }
         dynamicTexture = new DynamicTexture(nativeImage);
         TextureManager tm = Minecraft.getInstance().getTextureManager();
@@ -122,7 +126,8 @@ public class DynamicLightTextureManager {
 
                 float range = POSITION_RANGE;
                 if (Math.abs(dx) > range || Math.abs(dy) > range || Math.abs(dz) > range) {
-                    nativeImage.setPixelRGBA(i, 0, 0);
+                    nativeImage.setPixelRGBA(i, 0, 0); // Clear position row
+                    nativeImage.setPixelRGBA(i, 1, 0); // Clear color row
                     continue;
                 }
 
@@ -143,9 +148,18 @@ public class DynamicLightTextureManager {
 
                 int pixel = (A << 24) | (R << 16) | (G << 8) | B;
                 nativeImage.setPixelRGBA(i, 0, pixel);
+                
+                // Row 1: encode RGB color from light source
+                int colorR = (int) (ls.red * 255.0f) & 0xFF;
+                int colorG = (int) (ls.green * 255.0f) & 0xFF;
+                int colorB = (int) (ls.blue * 255.0f) & 0xFF;
+                int colorPixel = (255 << 24) | (colorR << 16) | (colorG << 8) | colorB;
+                nativeImage.setPixelRGBA(i, 1, colorPixel);
+                
                 written++;
             } else {
-                nativeImage.setPixelRGBA(i, 0, 0);
+                nativeImage.setPixelRGBA(i, 0, 0); // Clear position row
+                nativeImage.setPixelRGBA(i, 1, 0); // Clear color row
             }
         }
 
@@ -165,7 +179,10 @@ public class DynamicLightTextureManager {
 
     public static void clearTexture() {
         if (!initialized) return;
-        for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) nativeImage.setPixelRGBA(x, 0, 0);
+        for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
+            nativeImage.setPixelRGBA(x, 0, 0); // Clear position row
+            nativeImage.setPixelRGBA(x, 1, 0); // Clear color row
+        }
         dynamicTexture.upload();
     }
 
