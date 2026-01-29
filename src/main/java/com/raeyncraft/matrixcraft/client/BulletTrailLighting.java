@@ -209,26 +209,26 @@ public class BulletTrailLighting {
      * Called every client tick to update light sources
      */
     public static void tick() {
-        if (activeLights.isEmpty()) {
-            return;
+        // Process and remove expired lights
+        if (!activeLights.isEmpty()) {
+            Iterator<Map.Entry<BlockPos, LightSource>> iterator = activeLights.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<BlockPos, LightSource> entry = iterator.next();
+                LightSource light = entry.getValue();
+                
+                light.ticksRemaining--;
+                
+                if (light.ticksRemaining <= 0) {
+                    iterator.remove();
+                }
+            }
         }
         
-        Iterator<Map.Entry<BlockPos, LightSource>> iterator = activeLights.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<BlockPos, LightSource> entry = iterator.next();
-            LightSource light = entry.getValue();
-            
-            light.ticksRemaining--;
-            
-            if (light.ticksRemaining <= 0) {
-                iterator.remove();
-            }
-            // Update trail-light texture for shader ACL
-            try {
-                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
-                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
-            } catch (Throwable ignored) {}
-        }
+        // ALWAYS update texture (even when empty) to clear stale data
+        try {
+            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
+            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
+        } catch (Throwable ignored) {}
     }
     
     /**
