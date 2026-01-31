@@ -4,6 +4,7 @@ import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
+import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
@@ -103,6 +104,9 @@ public class FocusManager {
         
         // Clean up attribute modifiers
         MatrixFocusEffect.onEffectRemoved(player);
+
+        // STOP WALL RUNNING
+        MatrixWallRunManager.stopWallRun(player);
     }
     
     /**

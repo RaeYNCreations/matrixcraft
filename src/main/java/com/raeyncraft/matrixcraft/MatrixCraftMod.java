@@ -2,6 +2,8 @@ package com.raeyncraft.matrixcraft;
 
 import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
+import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunEventHandler;
+import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunManager;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -28,6 +30,9 @@ public class MatrixCraftMod {
         BulletTimeRegistry.register(modEventBus);
         LOGGER.info("Bullet Time system registered!");
         
+        // Force load wall run classes
+        MatrixWallRunEventHandler.class.getName();
+
         // Register Custom Blocks
         ModBlocks.BLOCKS.register(modEventBus);
 
