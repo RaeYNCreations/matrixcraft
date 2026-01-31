@@ -62,13 +62,6 @@ public class MatrixCraftConfig {
     public static ModConfigSpec.DoubleValue MAX_RENDER_DISTANCE;
     public static ModConfigSpec.IntValue MAX_TRAILS_PER_TICK;
     
-    // Impact Lighting Settings
-    public static ModConfigSpec.BooleanValue IMPACT_LIGHTING_ENABLED;
-    public static ModConfigSpec.IntValue IMPACT_LIGHT_LEVEL;
-    public static ModConfigSpec.IntValue IMPACT_LIGHT_DURATION;
-    public static ModConfigSpec.IntValue IMPACT_PARTICLE_COUNT;
-    public static ModConfigSpec.DoubleValue IMPACT_PARTICLE_SPREAD;
-
     // Glass Repair
     public static ModConfigSpec.BooleanValue GLASS_REPAIR_ENABLED;
     public static ModConfigSpec.IntValue GLASS_REPAIR_DELAY;
@@ -206,22 +199,7 @@ public class MatrixCraftConfig {
             TRAIL_CHAIN_SPACING = builder
                 .comment("Spacing (in blocks) between chained dynamic-light proxies.")
                 .defineInRange("trailChainSpacing", 0.7, 0.0, 5.0);
-            IMPACT_LIGHTING_ENABLED = builder
-                .comment("Enable dynamic lighting at bullet impact points")
-                .define("impactLightingEnabled", true);
-            IMPACT_LIGHT_LEVEL = builder
-                .comment("Light level for bullet impacts (1-15)")
-                .defineInRange("impactLightLevel", 14, 1, 15);
-            IMPACT_LIGHT_DURATION = builder
-                .comment("How long impact lights last in ticks (20 ticks = 1 second)")
-                .defineInRange("impactLightDuration", 40, 10, 100);
-            IMPACT_PARTICLE_COUNT = builder
-                .comment("Number of particles spawned at impact")
-                .defineInRange("impactParticleCount", 15, 5, 50);
-            IMPACT_PARTICLE_SPREAD = builder
-                .comment("Spread radius for impact particles")
-                .defineInRange("impactParticleSpread", 0.3, 0.1, 1.0);
-                
+            
             builder.pop();
             
             // ==================== BULLET TIME / FOCUS ====================

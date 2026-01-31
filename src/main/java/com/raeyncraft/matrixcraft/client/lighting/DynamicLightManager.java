@@ -431,17 +431,8 @@ public class DynamicLightManager {
 
     private static Vec3 computeProxyPosition(Entity ent, int chainIndex, double spacing) {
         if (ent == null) return null;
-        
-        // Use interpolated render position instead of tick position
-        Minecraft mc = Minecraft.getInstance();
-        float partialTick = getPartialTickTime(mc);
-        
-        Vec3 prevPos = new Vec3(ent.xOld, ent.yOld, ent.zOld);
-        Vec3 currentPos = ent.position();
-        Vec3 base = prevPos.lerp(currentPos, partialTick);
-        
+        Vec3 base = ent.position();
         if (chainIndex < 0) return base;
-        
         Vec3 vel = ent.getDeltaMovement();
         double vx = vel.x, vy = vel.y, vz = vel.z;
         double len = Math.sqrt(vx*vx + vy*vy + vz*vz);
@@ -449,27 +440,6 @@ public class DynamicLightManager {
         Vec3 dir = new Vec3(vx/len, vy/len, vz/len);
         double offset = chainIndex * spacing;
         return base.subtract(dir.scale(offset));
-    }
-    
-    // Add this helper method at the bottom of the class
-    private static float getPartialTickTime(Minecraft mc) {
-        try {
-            // Try common method names
-            Method m = mc.getClass().getMethod("getPartialTick");
-            return (float) m.invoke(mc);
-        } catch (Exception e1) {
-            try {
-                Method m = mc.getClass().getMethod("getDeltaFrameTime");
-                return (float) m.invoke(mc);
-            } catch (Exception e2) {
-                try {
-                    Method m = mc.getClass().getMethod("getFrameTime");
-                    return (float) m.invoke(mc);
-                } catch (Exception e3) {
-                    return 1.0f; // Fallback
-                }
-            }
-        }
     }
 
     /**

@@ -26,8 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 @OnlyIn(Dist.CLIENT)
 public class BulletTrailLighting {
     
-    private static int tickCounter = 0; // Add this field at the top of the class
-    
     // Track active light sources: position -> light data
     private static final Map<BlockPos, LightSource> activeLights = new ConcurrentHashMap<>();
     
@@ -208,63 +206,31 @@ public class BulletTrailLighting {
     }
     
     /**
-     * Add an impact light with custom duration
-     */
-    public static void addImpactLight(double x, double y, double z, int brightness, int duration, float r, float g, float b) {
-        if (!isDynamicLightingEnabled()) {
-            MatrixCraftMod.LOGGER.info("[BulletTrailLighting] Impact light NOT added - dynamic lighting disabled");
-            return;
-        }
-        
-        BlockPos pos = BlockPos.containing(x, y, z);
-        
-        if (activeLights.size() >= MAX_LIGHTS) {
-            MatrixCraftMod.LOGGER.warn("[BulletTrailLighting] Impact light NOT added - max lights reached");
-            return;
-        }
-        
-        LightSource light = new LightSource(pos, brightness, duration, r, g, b);
-        activeLights.put(pos, light);
-        
-        MatrixCraftMod.LOGGER.info("[BulletTrailLighting] Added impact light at " + pos + " with brightness " + brightness + " for " + duration + " ticks");
-        
-        try {
-            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
-        } catch (Throwable ignored) {}
-    }
-
-    /**
      * Called every client tick to update light sources
      */
     public static void tick() {
-        // Process and remove expired lights
-        if (!activeLights.isEmpty()) {
-            Iterator<Map.Entry<BlockPos, LightSource>> iterator = activeLights.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<BlockPos, LightSource> entry = iterator.next();
-                LightSource light = entry.getValue();
-                
-                light.ticksRemaining--;
-                
-                if (light.ticksRemaining <= 0) {
-                    iterator.remove();
-                }
-            }
+        if (activeLights.isEmpty()) {
+            return;
         }
         
-        // ALWAYS update texture (even when empty) to clear stale data
-        try {
-            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
-            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
-        } catch (Throwable ignored) {}
-        
-        // Only log every 100 ticks to reduce spam
-        tickCounter++;
-        if (tickCounter % 100 == 0) {
-            MatrixCraftMod.LOGGER.info("[BulletTrailLighting] Active lights: " + activeLights.size() + ", brightness: " + getConfiguredLightLevel() + ", color: R=" + getTrailColor()[0] + " G=" + getTrailColor()[1] + " B=" + getTrailColor()[2]);
+        Iterator<Map.Entry<BlockPos, LightSource>> iterator = activeLights.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<BlockPos, LightSource> entry = iterator.next();
+            LightSource light = entry.getValue();
+            
+            light.ticksRemaining--;
+            
+            if (light.ticksRemaining <= 0) {
+                iterator.remove();
+            }
+            // Update trail-light texture for shader ACL
+            try {
+                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
+                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
+            } catch (Throwable ignored) {}
         }
     }
-        
+    
     /**
      * Get the light level at a position (for dynamic lights integration)
      */

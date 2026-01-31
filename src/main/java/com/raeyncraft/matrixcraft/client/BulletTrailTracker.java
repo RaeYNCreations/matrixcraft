@@ -75,9 +75,9 @@ public class BulletTrailTracker {
             if (!processedBullets.contains(entityId)) {
                 processedBullets.add(entityId);
 
-                if (velocity.lengthSqr() > 1.0) {
+                long now = System.currentTimeMillis();
+                if (now - lastTrailTime > 100 && velocity.lengthSqr() > 1.0) {
                     spawnTrailFromBullet(currentPos, velocity, (ClientLevel) mc.level);
-                    MatrixCraftMod.LOGGER.debug("[BulletTrail] Spawned trail for bullet " + entityId);
                 }
 
                 bulletLastPos.put(entityId, currentPos);

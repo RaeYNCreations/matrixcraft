@@ -16,10 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Packs active trail lights into a small 2D texture (two rows total).
- *
- * Row 0: Position (RGB) + Intensity (A)
- * Row 1: Color (RGB) + Unused (A)
+ * Packs active trail lights into a small 1D texture (one texel per light).
  *
  * Shader-side include will sample sampler2D matrixcraft_trail_lights;
  *
@@ -79,10 +76,9 @@ public class DynamicLightTextureManager {
             return;
         }
 
-        nativeImage = new NativeImage(MAX_TRAIL_LIGHTS, 2, false); // 2 rows: position + color
+        nativeImage = new NativeImage(MAX_TRAIL_LIGHTS, 1, false);
         for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
-            nativeImage.setPixelRGBA(x, 0, 0); // Row 0: position + intensity
-            nativeImage.setPixelRGBA(x, 1, 0); // Row 1: color
+            nativeImage.setPixelRGBA(x, 0, 0);
         }
         dynamicTexture = new DynamicTexture(nativeImage);
         TextureManager tm = Minecraft.getInstance().getTextureManager();
@@ -96,74 +92,69 @@ public class DynamicLightTextureManager {
     public static void updateTexture() {
         if (!initialized) ensureInit();
         if (!initialized) return;
-    
+
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null) return;
-    
+
         Vec3 cam = mc.player == null ? Vec3.ZERO : mc.player.position();
-    
+        double camX = cam.x;
+        double camY = cam.y;
+        double camZ = cam.z;
+
         Map<net.minecraft.core.BlockPos, BulletTrailLighting.LightSource> active = BulletTrailLighting.getActiveLights();
-    
+
         List<BulletTrailLighting.LightSource> list = new ArrayList<>();
         if (active != null && !active.isEmpty()) {
             list.addAll(active.values());
         }
-    
-        // DEBUG: Log first few texture slots to verify clearing
-        if (list.isEmpty()) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightTextureManager] No lights - checking if texture is clear...");
-            for (int i = 0; i < 5; i++) {
-                int pixel0 = nativeImage.getPixelRGBA(i, 0);
-                int pixel1 = nativeImage.getPixelRGBA(i, 1);
-                MatrixCraftMod.LOGGER.info("  Slot " + i + ": row0=" + pixel0 + " row1=" + pixel1);
-            }
-        }
-    
+
         int written = 0;
         for (int i = 0; i < MAX_TRAIL_LIGHTS; i++) {
             if (i < list.size()) {
-                BulletTrailLighting.LightSource light = list.get(i);
-                
-                // Encode position relative to camera
-                double dx = light.position.getX() + 0.5 - cam.x;
-                double dy = light.position.getY() + 0.5 - cam.y;
-                double dz = light.position.getZ() + 0.5 - cam.z;
-                
-                // Normalize to -1..1 range, then to 0..1 for texture
-                float px = clamp01((float)(dx / POSITION_RANGE) * 0.5f + 0.5f);
-                float py = clamp01((float)(dy / POSITION_RANGE) * 0.5f + 0.5f);
-                float pz = clamp01((float)(dz / POSITION_RANGE) * 0.5f + 0.5f);
-                
-                // Calculate intensity from remaining time
-                float intensity = clamp01((float)light.ticksRemaining / (float)light.maxTicks);
-                
-                // Row 0: Position (RGB) + Intensity (A)
-                int r0 = (int)(px * 255);
-                int g0 = (int)(py * 255);
-                int b0 = (int)(pz * 255);
-                int a0 = (int)(intensity * 255);
-                int rgba0 = (a0 << 24) | (b0 << 16) | (g0 << 8) | r0;
-                nativeImage.setPixelRGBA(i, 0, rgba0);
-                
-                // Row 1: Color (RGB)
-                int r1 = (int)(clamp01(light.red) * 255);
-                int g1 = (int)(clamp01(light.green) * 255);
-                int b1 = (int)(clamp01(light.blue) * 255);
-                int rgba1 = (255 << 24) | (b1 << 16) | (g1 << 8) | r1;
-                nativeImage.setPixelRGBA(i, 1, rgba1);
-                
+                BulletTrailLighting.LightSource ls = list.get(i);
+                double lx = ls.position.getX() + 0.5;
+                double ly = ls.position.getY() + 0.5;
+                double lz = ls.position.getZ() + 0.5;
+
+                double dx = lx - camX;
+                double dy = ly - camY;
+                double dz = lz - camZ;
+
+                float range = POSITION_RANGE;
+                if (Math.abs(dx) > range || Math.abs(dy) > range || Math.abs(dz) > range) {
+                    nativeImage.setPixelRGBA(i, 0, 0);
+                    continue;
+                }
+
+                float nx = (float) ((dx / range + 1.0) * 0.5);
+                float ny = (float) ((dy / range + 1.0) * 0.5);
+                float nz = (float) ((dz / range + 1.0) * 0.5);
+
+                nx = clamp01(nx);
+                ny = clamp01(ny);
+                nz = clamp01(nz);
+
+                float intensity = Math.max(0f, Math.min(1f, (float) ls.getCurrentBrightness() / 15.0f));
+
+                int R = (int) (nx * 255.0f) & 0xFF;
+                int G = (int) (ny * 255.0f) & 0xFF;
+                int B = (int) (nz * 255.0f) & 0xFF;
+                int A = (int) (intensity * 255.0f) & 0xFF;
+
+                int pixel = (A << 24) | (R << 16) | (G << 8) | B;
+                nativeImage.setPixelRGBA(i, 0, pixel);
                 written++;
             } else {
                 nativeImage.setPixelRGBA(i, 0, 0);
-                nativeImage.setPixelRGBA(i, 1, 0);
             }
         }
-    
+
         dynamicTexture.upload();
         RenderSystem.setShaderTexture(TEXTURE_UNIT, TEX_LOC);
-    
-        MatrixCraftMod.LOGGER.info("[DynamicLightTextureManager] Texture update: " + written + " lights written, " + 
-            (active == null ? 0 : active.size()) + " active lights total");
+
+        if (written > 0) {
+            MatrixCraftMod.LOGGER.debug("[DynamicLightTextureManager] wrote " + written + " trail light texels");
+        }
     }
 
     private static float clamp01(float v) {
@@ -174,10 +165,7 @@ public class DynamicLightTextureManager {
 
     public static void clearTexture() {
         if (!initialized) return;
-        for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
-            nativeImage.setPixelRGBA(x, 0, 0); // Clear position row
-            nativeImage.setPixelRGBA(x, 1, 0); // Clear color row
-        }
+        for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) nativeImage.setPixelRGBA(x, 0, 0);
         dynamicTexture.upload();
     }
 

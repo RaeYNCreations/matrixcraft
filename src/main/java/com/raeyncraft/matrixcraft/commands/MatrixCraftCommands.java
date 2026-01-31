@@ -652,58 +652,6 @@ public class MatrixCraftCommands {
                     })
                 )
             )
-
-            .then(Commands.literal("impact_lighting")
-                .then(Commands.argument("enabled", BoolArgumentType.bool())
-                    .executes(context -> {
-                        boolean enabled = BoolArgumentType.getBool(context, "enabled");
-                        MatrixCraftConfig.IMPACT_LIGHTING_ENABLED.set(enabled);
-                        MatrixCraftConfig.saveClientConfig();
-                        context.getSource().sendSuccess(() ->
-                            Component.literal("§6[Bullet Trails] §7Impact lighting: " + (enabled ? "§aEnabled" : "§cDisabled")), true);
-                        return 1;
-                    })
-                )
-            )
-
-            .then(Commands.literal("impact_lightlevel")
-                .then(Commands.argument("level", IntegerArgumentType.integer(1, 15))
-                    .executes(context -> {
-                        int level = IntegerArgumentType.getInteger(context, "level");
-                        MatrixCraftConfig.IMPACT_LIGHT_LEVEL.set(level);
-                        MatrixCraftConfig.saveClientConfig();
-                        context.getSource().sendSuccess(() ->
-                            Component.literal("§6[Bullet Trails] §7Impact light level: §e" + level), true);
-                        return 1;
-                    })
-                )
-            )
-
-            .then(Commands.literal("impact_duration")
-                .then(Commands.argument("ticks", IntegerArgumentType.integer(10, 100))
-                    .executes(context -> {
-                        int ticks = IntegerArgumentType.getInteger(context, "ticks");
-                        MatrixCraftConfig.IMPACT_LIGHT_DURATION.set(ticks);
-                        MatrixCraftConfig.saveClientConfig();
-                        context.getSource().sendSuccess(() ->
-                            Component.literal("§6[Bullet Trails] §7Impact duration: §e" + ticks + " ticks"), true);
-                        return 1;
-                    })
-                )
-            )
-
-            .then(Commands.literal("impact_particles")
-                .then(Commands.argument("count", IntegerArgumentType.integer(5, 50))
-                    .executes(context -> {
-                        int count = IntegerArgumentType.getInteger(context, "count");
-                        MatrixCraftConfig.IMPACT_PARTICLE_COUNT.set(count);
-                        MatrixCraftConfig.saveClientConfig();
-                        context.getSource().sendSuccess(() ->
-                            Component.literal("§6[Bullet Trails] §7Impact particles: §e" + count), true);
-                        return 1;
-                    })
-                )
-            )
             
             .executes(context -> {
                 context.getSource().sendSuccess(() -> 
