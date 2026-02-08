@@ -667,8 +667,8 @@ public class MatrixCraftCommands {
                         "§e/matrix bullettrails maxpertick <10-500>\n" +
                         "§e/matrix bullettrails lighting <true/false>\n" +
                         "§e/matrix bullettrails lightlevel <1-15>\n" +
-                        "§e/matrix bullettrails light_spacing <1-50>\n" +
-                        "§e/matrix bullettrails light_duration <1-1200>\n" +
+                        "§e/matrix bullettrails light_spacing <1-10>\n" +
+                        "§e/matrix bullettrails light_duration <1-200>\n" +
                         "§e/matrix bullettrails light_chain <true/false>\n" +
                         "§e/matrix bullettrails chain_count <1-8>\n" +
                         "§e/matrix bullettrails chain_spacing <0.0-5.0>\n" +
@@ -745,6 +745,38 @@ public class MatrixCraftCommands {
                 })
             )
             
+            // Manual water toggle (like cobwebs and lava - instant on/off)
+            .then(Commands.literal("water")
+                .then(Commands.literal("on")
+                    .executes(context -> {
+                        MatrixSettings.setWaterEnabled(true);
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("Water slowdown ")
+                                .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
+                                .append(" - Water will slow you down normally"), true);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("off")
+                    .executes(context -> {
+                        MatrixSettings.setWaterEnabled(false);
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("Water slowdown ")
+                                .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
+                                .append(" - You can move through water freely"), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    boolean enabled = MatrixSettings.isWaterEnabled();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("Water slowdown is currently ")
+                            .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
+                                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
+                    return 1;
+                })
+            )
+            
             // Focus mode lava bypass (config setting for bullet time)
             .then(Commands.literal("lavabypass")
                 .then(Commands.literal("on")
@@ -806,6 +838,39 @@ public class MatrixCraftCommands {
                     boolean enabled = MatrixCraftConfig.FOCUS_COBWEB_BYPASS.get();
                     context.getSource().sendSuccess(() -> 
                         Component.literal("§6[Bullet Time] §7Cobweb bypass is currently ")
+                            .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
+                                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
+                    return 1;
+                })
+            )
+            
+            .then(Commands.literal("waterbypass")
+                .then(Commands.literal("on")
+                    .executes(context -> {
+                        MatrixCraftConfig.FOCUS_WATER_BYPASS.set(true);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Time] §7Water bypass: ")
+                                .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
+                                .append(Component.literal(" - Water bypassed during Focus mode").withStyle(ChatFormatting.GRAY)), true);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("off")
+                    .executes(context -> {
+                        MatrixCraftConfig.FOCUS_WATER_BYPASS.set(false);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Bullet Time] §7Water bypass: ")
+                                .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
+                                .append(Component.literal(" - Normal water during Focus").withStyle(ChatFormatting.GRAY)), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    boolean enabled = MatrixCraftConfig.FOCUS_WATER_BYPASS.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Bullet Time] §7Water bypass is currently ")
                             .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
                                 .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
                     return 1;
@@ -904,9 +969,14 @@ public class MatrixCraftCommands {
                     Component.literal("§6=== Utilities Commands ===\n" +
                         "§e/matrix utilities cobwebs [on|off] §7- Toggle cobweb slowdown\n" +
                         "§e/matrix utilities lava [on|off] §7- Toggle lava/fire damage\n" +
+                        "§e/matrix utilities water [on|off] §7- Toggle water slowdown\n" +
                         "§e/matrix utilities lavabypass [on|off] §7- Lava immunity during Focus\n" +
                         "§e/matrix utilities cobwebbypass [on|off] §7- Cobweb bypass during Focus\n" +
-                        "§e/matrix utilities glassrepair §7- Glass repair system"), false);
+                        "§e/matrix utilities waterbypass [on|off] §7- Water bypass during Focus\n" +
+                        "§e/matrix utilities glassrepair [on|off|status] §7- Toggle glass repair\n" +
+                        "§e/matrix utilities glassrepair delay <1-3600> §7- Set repair delay\n" +
+                        "§e/matrix utilities glassrepair repairnow §7- Repair all glass now\n" +
+                        "§e/matrix utilities glassrepair clear §7- Clear pending repairs"), false);
                 return 1;
             });
     }

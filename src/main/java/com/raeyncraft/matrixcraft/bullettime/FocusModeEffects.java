@@ -21,6 +21,7 @@ import java.util.UUID;
  * Handles Focus mode effects that integrate with other game systems:
  * - Lava/fire immunity during Focus (configurable)
  * - Automatic cobweb bypass during Focus (configurable)
+ * - Automatic water bypass during Focus (configurable)
  * - Manual lava immunity toggle (separate from Focus)
  * 
  * These effects can be toggled via commands and are saved to config.
@@ -30,6 +31,9 @@ public class FocusModeEffects {
     
     // Track players who had cobwebs disabled before Focus (to restore their state)
     private static final Set<UUID> cobwebsWereEnabled = new HashSet<>();
+    
+    // Track players who had water disabled before Focus (to restore their state)
+    private static final Set<UUID> waterWasEnabled = new HashSet<>();
     
     /**
      * Handle lava/fire damage immunity
@@ -96,6 +100,23 @@ public class FocusModeEffects {
                 MatrixSettings.setCobwebsEnabled(true);
             }
         }
+        
+        // Handle water bypass during Focus mode
+        if (isFocusWaterBypassEnabled()) {
+            if (inFocus) {
+                // Entering Focus - disable water if it was enabled
+                if (MatrixSettings.isWaterEnabled()) {
+                    waterWasEnabled.add(playerId);
+                    MatrixSettings.setWaterEnabled(false);
+                }
+            } else {
+                // Not in Focus - restore water if we disabled it
+                if (waterWasEnabled.contains(playerId)) {
+                    waterWasEnabled.remove(playerId);
+                    MatrixSettings.setWaterEnabled(true);
+                }
+            }
+        }
     }
     
     /**
@@ -141,6 +162,29 @@ public class FocusModeEffects {
             MatrixCraftConfig.saveCommonConfig();
         } catch (Exception e) {
             MatrixCraftMod.LOGGER.error("Failed to set cobweb bypass: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * Check if Focus mode water bypass is enabled in config
+     */
+    public static boolean isFocusWaterBypassEnabled() {
+        try {
+            return MatrixCraftConfig.FOCUS_WATER_BYPASS.get();
+        } catch (Exception e) {
+            return true; // Default enabled
+        }
+    }
+    
+    /**
+     * Set Focus mode water bypass enabled state
+     */
+    public static void setFocusWaterBypass(boolean enabled) {
+        try {
+            MatrixCraftConfig.FOCUS_WATER_BYPASS.set(enabled);
+            MatrixCraftConfig.saveCommonConfig();
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.error("Failed to set water bypass: " + e.getMessage());
         }
     }
 }
