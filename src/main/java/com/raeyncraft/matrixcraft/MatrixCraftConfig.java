@@ -134,7 +134,7 @@ public class MatrixCraftConfig {
                 .comment("Automatically bypass cobwebs during Focus mode")
                 .define("cobwebBypass", true);
             FOCUS_WATER_BYPASS = builder
-                .comment("Automatically bypass water during Focus mode (water = air)")
+                .comment("Automatically bypass water slowdown during Focus mode")
                 .define("waterBypass", true);
             builder.pop();
             
