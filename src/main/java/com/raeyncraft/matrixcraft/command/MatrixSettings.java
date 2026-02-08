@@ -12,6 +12,9 @@ public class MatrixSettings {
     // Lava settings (manual toggle, separate from Focus mode bypass)
     private static boolean lavaEnabled = true; // Default: lava damages normally
     
+    // Water settings (manual toggle, separate from Focus mode bypass)
+    private static boolean waterEnabled = true; // Default: water slows normally
+    
     /**
      * Check if cobwebs should slow the player
      */
@@ -54,5 +57,27 @@ public class MatrixSettings {
     public static boolean toggleLava() {
         lavaEnabled = !lavaEnabled;
         return lavaEnabled;
+    }
+    
+    /**
+     * Check if water should slow the player (manual toggle)
+     */
+    public static boolean isWaterEnabled() {
+        return waterEnabled;
+    }
+    
+    /**
+     * Set whether water should slow the player
+     */
+    public static void setWaterEnabled(boolean enabled) {
+        waterEnabled = enabled;
+    }
+    
+    /**
+     * Toggle water on/off
+     */
+    public static boolean toggleWater() {
+        waterEnabled = !waterEnabled;
+        return waterEnabled;
     }
 }
