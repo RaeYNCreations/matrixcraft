@@ -90,12 +90,27 @@ public class MatrixCraftConfig {
     // Dynamic Lighting
     public static ModConfigSpec.BooleanValue TRAIL_DYNAMIC_LIGHTING;
     public static ModConfigSpec.IntValue TRAIL_LIGHT_LEVEL;
+
     // Bullet trail lighting config (added)
     public static ModConfigSpec.IntValue TRAIL_LIGHT_SPACING;
     public static ModConfigSpec.IntValue TRAIL_LIGHT_DURATION_TICKS;
     public static ModConfigSpec.BooleanValue TRAIL_CHAIN_ENABLED;
     public static ModConfigSpec.IntValue TRAIL_CHAIN_COUNT;
     public static ModConfigSpec.DoubleValue TRAIL_CHAIN_SPACING;
+
+    // Horizontal Wall Run
+    public static ModConfigSpec.IntValue WALLRUN_HORIZONTAL_MAX_DISTANCE;
+    public static ModConfigSpec.IntValue WALLRUN_HORIZONTAL_ANGLE_MIN;
+    public static ModConfigSpec.IntValue WALLRUN_HORIZONTAL_ANGLE_MAX;
+    
+    // Vertical Wall Run
+    public static ModConfigSpec.DoubleValue WALLRUN_VERTICAL_MAX_DISTANCE;
+    public static ModConfigSpec.IntValue WALLRUN_VERTICAL_ANGLE_MIN;
+    public static ModConfigSpec.IntValue WALLRUN_VERTICAL_ANGLE_MAX;
+
+    // Wall Run Enable/Disable
+    public static ModConfigSpec.BooleanValue WALLRUN_HORIZONTAL_ENABLED;
+    public static ModConfigSpec.BooleanValue WALLRUN_VERTICAL_ENABLED;
     
     public static class Common {
         public Common(ModConfigSpec.Builder builder) {
@@ -235,6 +250,43 @@ public class MatrixCraftConfig {
             FOCUS_VIGNETTE_INTENSITY = builder
                 .comment("Vignette (edge darkening) intensity (0.0-1.0)")
                 .defineInRange("vignetteIntensity", 0.4, 0.0, 1.0);
+            builder.pop();
+
+            // Wall Run Settings
+            builder.push("wallrun");
+            
+            WALLRUN_HORIZONTAL_MAX_DISTANCE = builder
+                .comment("Maximum distance (in blocks) for horizontal wall running")
+                .defineInRange("horizontal_max_distance", 12, 1, 50);
+            
+            WALLRUN_HORIZONTAL_ANGLE_MIN = builder
+                .comment("Minimum angle from parallel for horizontal wall run (degrees)")
+                .defineInRange("horizontal_angle_min", 30, 0, 89);
+            
+            WALLRUN_HORIZONTAL_ANGLE_MAX = builder
+                .comment("Maximum angle from parallel for horizontal wall run (degrees)")
+                .defineInRange("horizontal_angle_max", 60, 1, 90);
+            
+            WALLRUN_VERTICAL_MAX_DISTANCE = builder
+                .comment("Maximum distance (in blocks) for vertical wall running")
+                .defineInRange("vertical_max_distance", 4.5, 1.0, 20.0);
+            
+            WALLRUN_VERTICAL_ANGLE_MIN = builder
+                .comment("Minimum angle for vertical wall run (degrees from running into wall)")
+                .defineInRange("vertical_angle_min", 0, 0, 44);
+            
+            WALLRUN_VERTICAL_ANGLE_MAX = builder
+                .comment("Maximum angle for vertical wall run (degrees from running into wall)")
+                .defineInRange("vertical_angle_max", 25, 1, 45);
+            
+            WALLRUN_HORIZONTAL_ENABLED = builder
+                .comment("Enable horizontal wall running")
+                .define("horizontal_enabled", true);
+            
+            WALLRUN_VERTICAL_ENABLED = builder
+                .comment("Enable vertical wall running")
+                .define("vertical_enabled", true);
+
             builder.pop();
             
             builder.pop();

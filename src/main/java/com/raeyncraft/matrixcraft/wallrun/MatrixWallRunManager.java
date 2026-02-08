@@ -1,40 +1,65 @@
 package com.raeyncraft.matrixcraft.wallrun;
 
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.FocusManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Manages Matrix-style wall running mechanics during Focus mode.
- */
 public class MatrixWallRunManager {
     
-    private static final Map<UUID, WallRunState> activeWallRuns = new HashMap<>();
+    private static final Map<UUID, WallRunState> activeWallRuns = new ConcurrentHashMap<>();
+    private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
     
-    // Configuration
-    private static final double HORIZONTAL_MIN_ANGLE = 30.0;
-    private static final double HORIZONTAL_MAX_ANGLE = 60.0;
-    private static final double VERTICAL_MIN_ANGLE = 80.0;
-    private static final double VERTICAL_MAX_ANGLE = 100.0;
+    private static final double MIN_SPEED = 0.1;
+    private static final int MAX_HORIZONTAL_TICKS = 120;
+    private static final int MAX_VERTICAL_TICKS = 100;
+    private static final long COOLDOWN_MS = 500;
     
-    private static final double MAX_HORIZONTAL_DISTANCE = 6.0;
-    private static final double MAX_VERTICAL_DISTANCE = 6.0;
-    private static final double WALL_DETECTION_RANGE = 1.5;
-    private static final double MIN_SPEED_THRESHOLD = 0.15;
+    // Config getters - Enable/Disable
+    public static boolean isHorizontalEnabled() {
+        return MatrixCraftConfig.WALLRUN_HORIZONTAL_ENABLED.get();
+    }
     
-    // Movement speeds
-    private static final double HORIZONTAL_SPEED = 0.45;
-    private static final double VERTICAL_SPEED = 0.42;
-    private static final double HORIZONTAL_LIFT = 0.15;
+    public static boolean isVerticalEnabled() {
+        return MatrixCraftConfig.WALLRUN_VERTICAL_ENABLED.get();
+    }
+    
+    // Config getters - Distance
+    public static double getHorizontalMaxDistance() {
+        return MatrixCraftConfig.WALLRUN_HORIZONTAL_MAX_DISTANCE.get();
+    }
+    
+    public static double getVerticalMaxDistance() {
+        return MatrixCraftConfig.WALLRUN_VERTICAL_MAX_DISTANCE.get();
+    }
+    
+    // Config getters - Angles
+    public static double getHorizontalAngleMin() {
+        return MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MIN.get();
+    }
+    
+    public static double getHorizontalAngleMax() {
+        return MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MAX.get();
+    }
+    
+    public static double getVerticalAngleMin() {
+        return MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MIN.get();
+    }
+    
+    public static double getVerticalAngleMax() {
+        return MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MAX.get();
+    }
     
     public static class WallRunState {
         public final WallRunType type;
@@ -42,25 +67,40 @@ public class MatrixWallRunManager {
         public final Vec3 wallNormal;
         public final Vec3 startPos;
         public final Vec3 runDirection;
-        public final boolean wallIsRightSide;
-        public double distanceTraveled;
+        public final boolean wallIsOnRight;
+        public final float playerYaw;
+        public final double maxDistance;
         public int ticksActive;
         
         public WallRunState(WallRunType type, Direction wallDirection, Vec3 wallNormal, 
-                           Vec3 startPos, Vec3 runDirection, boolean wallIsRightSide) {
+                           Vec3 startPos, Vec3 runDirection, boolean wallIsOnRight, float playerYaw) {
             this.type = type;
             this.wallDirection = wallDirection;
             this.wallNormal = wallNormal;
             this.startPos = startPos;
             this.runDirection = runDirection;
-            this.wallIsRightSide = wallIsRightSide;
-            this.distanceTraveled = 0;
+            this.wallIsOnRight = wallIsOnRight;
+            this.playerYaw = playerYaw;
             this.ticksActive = 0;
+            this.maxDistance = type == WallRunType.HORIZONTAL ? getHorizontalMaxDistance() : getVerticalMaxDistance();
         }
         
-        public boolean isComplete() {
-            return (type == WallRunType.HORIZONTAL && distanceTraveled >= MAX_HORIZONTAL_DISTANCE) ||
-                   (type == WallRunType.VERTICAL && distanceTraveled >= MAX_VERTICAL_DISTANCE);
+        public double getDistanceTraveled(Vec3 currentPos) {
+            if (type == WallRunType.HORIZONTAL) {
+                double dx = currentPos.x - startPos.x;
+                double dz = currentPos.z - startPos.z;
+                return Math.sqrt(dx * dx + dz * dz);
+            } else {
+                return currentPos.y - startPos.y;
+            }
+        }
+        
+        public int getMaxTicks() {
+            return type == WallRunType.HORIZONTAL ? MAX_HORIZONTAL_TICKS : MAX_VERTICAL_TICKS;
+        }
+        
+        public double getMaxDistance() {
+            return maxDistance;
         }
     }
     
@@ -77,130 +117,154 @@ public class MatrixWallRunManager {
         return activeWallRuns.get(player.getUUID());
     }
     
-    /**
-     * Attempt to start a wall run - called every tick for airborne players
-     */
+    private static boolean isOnCooldown(Player player) {
+        Long cooldownEnd = cooldowns.get(player.getUUID());
+        if (cooldownEnd == null) return false;
+        if (System.currentTimeMillis() >= cooldownEnd) {
+            cooldowns.remove(player.getUUID());
+            return false;
+        }
+        return true;
+    }
+    
+    private static void setCooldown(Player player) {
+        cooldowns.put(player.getUUID(), System.currentTimeMillis() + COOLDOWN_MS);
+    }
+    
     public static boolean tryStartWallRun(Player player) {
-        // Only works in Focus mode
+        // Check if both types are disabled
+        if (!isHorizontalEnabled() && !isVerticalEnabled()) {
+            return false;
+        }
+        
         if (!FocusManager.isInFocus(player)) {
             return false;
         }
         
-        // Don't start if already wall running
         if (isWallRunning(player)) {
             return false;
         }
         
-        // Must be airborne (not on ground)
+        if (isOnCooldown(player)) {
+            return false;
+        }
+        
         if (player.onGround()) {
             return false;
         }
         
-        // Must not be in water
-        if (player.isInWaterOrBubble()) {
-            return false;
-        }
-        
-        // Check if player has enough horizontal speed
         Vec3 velocity = player.getDeltaMovement();
         double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
         
-        MatrixCraftMod.LOGGER.info("Wall run check - Speed: {}, Velocity: {}", horizontalSpeed, velocity);
-        
-        if (horizontalSpeed < MIN_SPEED_THRESHOLD) {
-            MatrixCraftMod.LOGGER.info("Wall speed too low: {} < {}", horizontalSpeed, MIN_SPEED_THRESHOLD);
+        if (horizontalSpeed < MIN_SPEED) {
             return false;
         }
         
-        // Detect nearby wall
-        WallDetectionResult wall = detectWall(player);
-        if (wall == null) {
-            MatrixCraftMod.LOGGER.info("No wall detected");
+        Level level = player.level();
+        BlockPos playerPos = player.blockPosition();
+        Vec3 motionDir = new Vec3(velocity.x, 0, velocity.z).normalize();
+        
+        Direction foundWall = null;
+        double closestDist = Double.MAX_VALUE;
+        
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            if (isWallAt(level, playerPos, dir)) {
+                Vec3 dirVec = new Vec3(dir.getStepX(), 0, dir.getStepZ());
+                double dist = 1.0 - Math.abs(motionDir.dot(dirVec));
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    foundWall = dir;
+                }
+            }
+        }
+        
+        if (foundWall == null) {
             return false;
         }
         
-        MatrixCraftMod.LOGGER.info("Wall detected: {} at {}", wall.direction, wall.blockPos);
+        Vec3 wallNormal = new Vec3(
+            -foundWall.getStepX(),
+            0,
+            -foundWall.getStepZ()
+        );
         
-        // Calculate approach angle
-        Vec3 movementDir = new Vec3(velocity.x, 0, velocity.z).normalize();
-        double approachAngle = calculateApproachAngle(movementDir, wall.normal);
+        double dot = motionDir.dot(wallNormal);
+        double angleToNormal = Math.toDegrees(Math.acos(Math.clamp(dot, -1.0, 1.0)));
         
-        MatrixCraftMod.LOGGER.info("Wall approach angle: {}", approachAngle);
+        double angleFromParallel = Math.abs(90.0 - angleToNormal);
+        double angleFromInto = 180.0 - angleToNormal;
         
-        // Determine wall run type based on angle
-        WallRunType type = null;
-        
-        if (approachAngle >= HORIZONTAL_MIN_ANGLE && approachAngle <= HORIZONTAL_MAX_ANGLE) {
-            type = WallRunType.HORIZONTAL;
-            MatrixCraftMod.LOGGER.info("HORIZONTAL wall run triggered!");
-        } else if (approachAngle >= VERTICAL_MIN_ANGLE && approachAngle <= VERTICAL_MAX_ANGLE) {
-            type = WallRunType.VERTICAL;
-            MatrixCraftMod.LOGGER.info("VERTICAL wall run triggered!");
-        } else {
-            MatrixCraftMod.LOGGER.info("Wall angle not in range - H:{}-{}, V:{}-{}", 
-                HORIZONTAL_MIN_ANGLE, HORIZONTAL_MAX_ANGLE, VERTICAL_MIN_ANGLE, VERTICAL_MAX_ANGLE);
-        }
-        
-        if (type == null) {
-            return false;
-        }
-        
-        // Calculate run direction and wall side
+        WallRunType type;
         Vec3 runDirection;
-        boolean wallIsRightSide = false;
+        boolean wallIsOnRight;
         
-        if (type == WallRunType.HORIZONTAL) {
-            runDirection = wall.normal.cross(new Vec3(0, 1, 0)).normalize();
+        // Check horizontal first (only if enabled)
+        if (isHorizontalEnabled() && angleFromParallel >= getHorizontalAngleMin() && angleFromParallel <= getHorizontalAngleMax()) {
+            type = WallRunType.HORIZONTAL;
             
-            if (runDirection.dot(movementDir) < 0) {
+            runDirection = new Vec3(-wallNormal.z, 0, wallNormal.x).normalize();
+            
+            if (runDirection.dot(motionDir) < 0) {
                 runDirection = runDirection.scale(-1);
             }
             
-            Vec3 cross = movementDir.cross(wall.normal);
-            wallIsRightSide = cross.y > 0;
+            Vec3 ourRight = new Vec3(runDirection.z, 0, -runDirection.x);
+            wallIsOnRight = ourRight.dot(wallNormal) < 0;
             
-        } else { // VERTICAL
+            MatrixCraftMod.LOGGER.info("HORIZONTAL wall run - wall on {}, max dist: {}", 
+                wallIsOnRight ? "RIGHT" : "LEFT", getHorizontalMaxDistance());
+            
+        // Check vertical (only if enabled)
+        } else if (isVerticalEnabled() && angleFromInto >= getVerticalAngleMin() && angleFromInto <= getVerticalAngleMax()) {
+            type = WallRunType.VERTICAL;
             runDirection = new Vec3(0, 1, 0);
+            wallIsOnRight = false;
+            
+            MatrixCraftMod.LOGGER.info("VERTICAL wall run started, max dist: {}", getVerticalMaxDistance());
+            
+        } else {
+            return false;
         }
         
-        // Create and store wall run state
         WallRunState state = new WallRunState(
             type,
-            wall.direction,
-            wall.normal,
+            foundWall,
+            wallNormal,
             player.position(),
             runDirection,
-            wallIsRightSide
+            wallIsOnRight,
+            player.getYRot()
         );
         
         activeWallRuns.put(player.getUUID(), state);
         
-        // Apply initial boost to start the wall run
-        applyInitialBoost(player, state);
+        if (type == WallRunType.HORIZONTAL) {
+            Vec3 newVel = runDirection.scale(0.42);
+            player.setDeltaMovement(newVel.x, 0, newVel.z);
+            
+            Vec3 offset = wallNormal.scale(0.05);
+            player.setPos(player.getX() + offset.x, player.getY(), player.getZ() + offset.z);
+        } else {
+            Vec3 intoWall = wallNormal.scale(-0.08);
+            player.setDeltaMovement(intoWall.x, 0.32, intoWall.z);
+        }
         
-        MatrixCraftMod.LOGGER.info("Wall run STARTED! Type: {}", type);
+        player.fallDistance = 0;
+        syncVelocity(player);
         
         return true;
     }
     
-    /**
-     * Apply initial velocity boost when starting wall run
-     */
-    private static void applyInitialBoost(Player player, WallRunState state) {
-        Vec3 currentVelocity = player.getDeltaMovement();
+    private static boolean isWallAt(Level level, BlockPos playerPos, Direction dir) {
+        BlockPos check1 = playerPos.relative(dir);
+        BlockPos check2 = check1.above();
         
-        if (state.type == WallRunType.HORIZONTAL) {
-            Vec3 horizontalVel = state.runDirection.scale(HORIZONTAL_SPEED);
-            player.setDeltaMovement(horizontalVel.x, 0.2, horizontalVel.z);
-        } else {
-            Vec3 verticalVel = new Vec3(currentVelocity.x * 0.5, VERTICAL_SPEED, currentVelocity.z * 0.5);
-            player.setDeltaMovement(verticalVel);
-        }
+        BlockState state1 = level.getBlockState(check1);
+        BlockState state2 = level.getBlockState(check2);
+        
+        return state1.isSolid() || state2.isSolid();
     }
     
-    /**
-     * Update wall run for a player (called each tick)
-     */
     public static void updateWallRun(Player player) {
         WallRunState state = activeWallRuns.get(player.getUUID());
         if (state == null) {
@@ -208,146 +272,107 @@ public class MatrixWallRunManager {
         }
         
         state.ticksActive++;
+        double distance = state.getDistanceTraveled(player.position());
+        double maxDist = state.getMaxDistance();
         
-        if (state.isComplete()) {
-            if (state.type == WallRunType.VERTICAL) {
-                performAutomaticWallJump(player, state);
-            }
-            stopWallRun(player);
+        if (distance >= maxDist) {
+            MatrixCraftMod.LOGGER.info("Wall run ended - max distance {} >= {}", distance, maxDist);
+            endWallRun(player, state, true);
             return;
         }
         
-        WallDetectionResult wall = detectWall(player);
-        if (wall == null) {
-            MatrixCraftMod.LOGGER.info("Wall run ended - no wall");
-            stopWallRun(player);
+        if (state.ticksActive >= state.getMaxTicks()) {
+            MatrixCraftMod.LOGGER.info("Wall run ended - max ticks");
+            endWallRun(player, state, true);
             return;
         }
         
-        if (!wall.direction.equals(state.wallDirection)) {
-            MatrixCraftMod.LOGGER.info("Wall run ended - direction changed");
-            stopWallRun(player);
+        if (player.onGround()) {
+            MatrixCraftMod.LOGGER.info("Wall run ended - hit ground");
+            endWallRun(player, state, false);
             return;
         }
         
-        Vec3 movement;
-        double speed;
+        Level level = player.level();
+        BlockPos playerPos = player.blockPosition();
+        
+        if (!isWallAt(level, playerPos, state.wallDirection)) {
+            MatrixCraftMod.LOGGER.info("Wall run ended - lost wall");
+            endWallRun(player, state, true);
+            return;
+        }
         
         if (state.type == WallRunType.HORIZONTAL) {
-            speed = HORIZONTAL_SPEED;
-            movement = state.runDirection.scale(speed).add(0, HORIZONTAL_LIFT, 0);
+            float speed = 0.40f - (state.ticksActive * 0.001f);
+            speed = Math.max(speed, 0.30f);
             
-            double liftReduction = Math.max(0, 1.0 - (state.ticksActive / 30.0));
-            movement = new Vec3(movement.x, movement.y * liftReduction, movement.z);
+            Vec3 newVel = state.runDirection.scale(speed);
+            player.setDeltaMovement(newVel.x, 0, newVel.z);
             
         } else {
-            speed = VERTICAL_SPEED;
-            double speedReduction = Math.max(0.2, 1.0 - (state.ticksActive / 20.0));
-            movement = state.runDirection.scale(speed * speedReduction);
+            double progress = distance / maxDist;
+            
+            float upSpeed = (float) (0.32 * (1.0 - progress * 0.8));
+            upSpeed = Math.max(upSpeed, 0.06f);
+            
+            Vec3 intoWall = state.wallNormal.scale(-0.06);
+            player.setDeltaMovement(intoWall.x, upSpeed, intoWall.z);
+            
+            if (state.ticksActive % 10 == 0) {
+                MatrixCraftMod.LOGGER.info("Vertical: dist={}/{}, progress={}, speed={}", 
+                    String.format("%.2f", distance), 
+                    String.format("%.2f", maxDist),
+                    String.format("%.2f", progress),
+                    String.format("%.2f", upSpeed));
+            }
         }
         
-        player.setDeltaMovement(movement);
         player.fallDistance = 0;
-        
-        state.distanceTraveled += speed;
+        syncVelocity(player);
     }
     
-    private static void performAutomaticWallJump(Player player, WallRunState state) {
-        Vec3 jumpDirection = state.wallNormal.scale(-0.6).add(0, 0.8, 0).normalize();
-        Vec3 jumpVelocity = jumpDirection.scale(0.65);
+    private static void endWallRun(Player player, WallRunState state, boolean doJump) {
+        if (doJump) {
+            Vec3 jumpVel;
+            if (state.type == WallRunType.HORIZONTAL) {
+                jumpVel = state.wallNormal.scale(0.45)
+                    .add(state.runDirection.scale(0.2))
+                    .add(0, 0.42, 0);
+            } else {
+                jumpVel = state.wallNormal.scale(0.55).add(0, 0.4, 0);
+            }
+            player.setDeltaMovement(jumpVel);
+            syncVelocity(player);
+            MatrixCraftMod.LOGGER.info("Wall jump!");
+        }
         
-        player.setDeltaMovement(jumpVelocity);
-        player.fallDistance = 0;
-        
-        MatrixCraftMod.LOGGER.info("Auto wall jump executed!");
+        setCooldown(player);
+        activeWallRuns.remove(player.getUUID());
+        MatrixCraftMod.LOGGER.info("Wall run stopped after {} ticks", state.ticksActive);
     }
     
     public static void stopWallRun(Player player) {
         WallRunState state = activeWallRuns.remove(player.getUUID());
-        
         if (state != null) {
-            MatrixCraftMod.LOGGER.info("Wall run stopped. Distance: {}", state.distanceTraveled);
-            
-            if (state.type == WallRunType.HORIZONTAL) {
-                Vec3 exitVelocity = state.runDirection.scale(0.25);
-                Vec3 currentVel = player.getDeltaMovement();
-                player.setDeltaMovement(
-                    currentVel.x + exitVelocity.x, 
-                    currentVel.y, 
-                    currentVel.z + exitVelocity.z
-                );
-            }
+            setCooldown(player);
+        }
+    }
+    
+    private static void syncVelocity(Player player) {
+        if (player instanceof ServerPlayer sp) {
+            sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
         }
     }
     
     public static void stopAllWallRuns() {
         activeWallRuns.clear();
+        cooldowns.clear();
     }
     
-    /**
-     * Detect a wall near the player
-     */
-    private static WallDetectionResult detectWall(Player player) {
-        Level level = player.level();
-        Vec3 playerPos = player.position();
-        Vec3 velocity = player.getDeltaMovement();
-        
-        Vec3 horizontalVel = new Vec3(velocity.x, 0, velocity.z);
-        if (horizontalVel.lengthSqr() > 0) {
-            horizontalVel = horizontalVel.normalize();
-        }
-        
-        Direction[] directions = {Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST};
-        
-        for (Direction dir : directions) {
-            Vec3 dirVec = new Vec3(dir.getStepX(), 0, dir.getStepZ());
-            
-            // Check at player's position and slightly ahead
-            for (double dist = 0.5; dist <= WALL_DETECTION_RANGE; dist += 0.5) {
-                Vec3 checkPos = playerPos.add(
-                    dir.getStepX() * dist,
-                    0,
-                    dir.getStepZ() * dist
-                );
-                
-                BlockPos blockPos = BlockPos.containing(checkPos.x, playerPos.y, checkPos.z);
-                
-                // Check from feet to above head
-                for (int yOffset = 0; yOffset <= 2; yOffset++) {
-                    BlockPos checkBlock = blockPos.above(yOffset);
-                    
-                    if (!level.isLoaded(checkBlock)) {
-                        continue;
-                    }
-                    
-                    BlockState state = level.getBlockState(checkBlock);
-                    
-                    if (!state.isAir() && state.isSolid()) {
-                        Vec3 normal = new Vec3(-dir.getStepX(), 0, -dir.getStepZ()).normalize();
-                        return new WallDetectionResult(dir, normal, checkBlock);
-                    }
-                }
-            }
-        }
-        
-        return null;
-    }
-    
-    private static double calculateApproachAngle(Vec3 movementDir, Vec3 wallNormal) {
-        double dot = movementDir.dot(wallNormal);
-        double angle = Math.toDegrees(Math.acos(Math.abs(dot)));
-        return angle;
-    }
-    
-    private static class WallDetectionResult {
-        public final Direction direction;
-        public final Vec3 normal;
-        public final BlockPos blockPos;
-        
-        public WallDetectionResult(Direction direction, Vec3 normal, BlockPos blockPos) {
-            this.direction = direction;
-            this.normal = normal;
-            this.blockPos = blockPos;
+    public static void clientTick(Player player) {
+        WallRunState state = activeWallRuns.get(player.getUUID());
+        if (state != null) {
+            state.ticksActive++;
         }
     }
 }

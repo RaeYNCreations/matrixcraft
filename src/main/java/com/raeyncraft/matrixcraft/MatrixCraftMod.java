@@ -3,12 +3,12 @@ package com.raeyncraft.matrixcraft;
 import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunEventHandler;
-import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunManager;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.common.NeoForge; // ADD THIS
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,16 +30,15 @@ public class MatrixCraftMod {
         BulletTimeRegistry.register(modEventBus);
         LOGGER.info("Bullet Time system registered!");
         
-        // Force load wall run classes
-        MatrixWallRunEventHandler.class.getName();
+        // MANUALLY REGISTER WALL RUN EVENT HANDLER
+        NeoForge.EVENT_BUS.register(MatrixWallRunEventHandler.class);
+        LOGGER.info("Wall run event handler registered!");
 
         // Register Custom Blocks
         ModBlocks.BLOCKS.register(modEventBus);
 
         // Register configs
-        // COMMON config - server-side settings (duration, cooldown, glass repair, cobwebs)
         modContainer.registerConfig(ModConfig.Type.COMMON, MatrixCraftConfig.COMMON_SPEC);
-        // CLIENT config - visual settings (trails, colors, etc)
         modContainer.registerConfig(ModConfig.Type.CLIENT, MatrixCraftConfig.CLIENT_SPEC);
         LOGGER.info("Config registered!");
         

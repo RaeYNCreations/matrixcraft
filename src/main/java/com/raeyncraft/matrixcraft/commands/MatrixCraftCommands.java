@@ -282,47 +282,270 @@ public class MatrixCraftCommands {
                     })
                 )
             )
-            
-            // /matrix bullettime status
-            .then(Commands.literal("status")
+
+            // /matrix bullettime wallrun
+            .then(Commands.literal("wallrun")
+                // Horizontal enable/disable and settings
+                .then(Commands.literal("horizontal")
+                .then(Commands.literal("enable")
+                    .then(Commands.argument("enabled", BoolArgumentType.bool())
+                        .executes(context -> {
+                            boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                            MatrixCraftConfig.WALLRUN_HORIZONTAL_ENABLED.set(enabled);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Horizontal: " + (enabled ? "§aENABLED" : "§cDISABLED")), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        boolean current = MatrixCraftConfig.WALLRUN_HORIZONTAL_ENABLED.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Horizontal: " + (current ? "§aENABLED" : "§cDISABLED")), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("distance")
+                    .then(Commands.argument("blocks", IntegerArgumentType.integer(1, 50))
+                        .executes(context -> {
+                            int blocks = IntegerArgumentType.getInteger(context, "blocks");
+                            MatrixCraftConfig.WALLRUN_HORIZONTAL_MAX_DISTANCE.set(blocks);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Horizontal max distance: §e" + blocks + " blocks"), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        int current = MatrixCraftConfig.WALLRUN_HORIZONTAL_MAX_DISTANCE.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Horizontal max distance: §e" + current + " blocks"), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("anglemin")
+                    .then(Commands.argument("degrees", IntegerArgumentType.integer(0, 89))
+                        .executes(context -> {
+                            int degrees = IntegerArgumentType.getInteger(context, "degrees");
+                            MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MIN.set(degrees);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Horizontal angle min: §e" + degrees + "°"), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        int current = MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MIN.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Horizontal angle min: §e" + current + "°"), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("anglemax")
+                    .then(Commands.argument("degrees", IntegerArgumentType.integer(1, 90))
+                        .executes(context -> {
+                            int degrees = IntegerArgumentType.getInteger(context, "degrees");
+                            MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MAX.set(degrees);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Horizontal angle max: §e" + degrees + "°"), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        int current = MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MAX.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Horizontal angle max: §e" + current + "°"), false);
+                        return 1;
+                    })
+                )
                 .executes(context -> {
-                    int barR = MatrixCraftConfig.FOCUS_BAR_COLOR_R.get();
-                    int barG = MatrixCraftConfig.FOCUS_BAR_COLOR_G.get();
-                    int barB = MatrixCraftConfig.FOCUS_BAR_COLOR_B.get();
-                    int tintR = MatrixCraftConfig.FOCUS_TINT_COLOR_R.get();
-                    int tintG = MatrixCraftConfig.FOCUS_TINT_COLOR_G.get();
-                    int tintB = MatrixCraftConfig.FOCUS_TINT_COLOR_B.get();
-                    double tintInt = MatrixCraftConfig.FOCUS_TINT_INTENSITY.get();
-                    double vigInt = MatrixCraftConfig.FOCUS_VIGNETTE_INTENSITY.get();
-                    int duration = MatrixCraftConfig.FOCUS_DURATION_SECONDS.get();
-                    int cooldown = MatrixCraftConfig.FOCUS_COOLDOWN_SECONDS.get();
-                    
+                    boolean enabled = MatrixCraftConfig.WALLRUN_HORIZONTAL_ENABLED.get();
+                    int dist = MatrixCraftConfig.WALLRUN_HORIZONTAL_MAX_DISTANCE.get();
+                    int angleMin = MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MIN.get();
+                    int angleMax = MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MAX.get();
                     context.getSource().sendSuccess(() -> 
-                        Component.literal("§6=== Bullet Time Settings ===\n" +
-                            "§7Duration: §e" + duration + " seconds\n" +
-                            "§7Cooldown: §e" + cooldown + " seconds\n" +
-                            "§7Focus Bar Color: §cR:" + barR + " §aG:" + barG + " §9B:" + barB + "\n" +
-                            "§7Screen Tint Color: §cR:" + tintR + " §aG:" + tintG + " §9B:" + tintB + "\n" +
-                            "§7Tint Intensity: §e" + String.format("%.2f", tintInt) + "\n" +
-                            "§7Vignette Intensity: §e" + String.format("%.2f", vigInt)), false);
+                        Component.literal("§6=== Horizontal Wall Run ===\n" +
+                            "§7Status: " + (enabled ? "§aENABLED" : "§cDISABLED") + "\n" +
+                            "§7Max Distance: §e" + dist + " blocks\n" +
+                            "§7Angle Min: §e" + angleMin + "°\n" +
+                            "§7Angle Max: §e" + angleMax + "°"), false);
                     return 1;
                 })
             )
             
-            // /matrix bullettime (help)
+            // Vertical enable/disable and settings
+            .then(Commands.literal("vertical")
+                .then(Commands.literal("enable")
+                    .then(Commands.argument("enabled", BoolArgumentType.bool())
+                        .executes(context -> {
+                            boolean enabled = BoolArgumentType.getBool(context, "enabled");
+                            MatrixCraftConfig.WALLRUN_VERTICAL_ENABLED.set(enabled);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Vertical: " + (enabled ? "§aENABLED" : "§cDISABLED")), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        boolean current = MatrixCraftConfig.WALLRUN_VERTICAL_ENABLED.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Vertical: " + (current ? "§aENABLED" : "§cDISABLED")), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("distance")
+                    .then(Commands.argument("blocks", DoubleArgumentType.doubleArg(1.0, 20.0))
+                        .executes(context -> {
+                            double blocks = DoubleArgumentType.getDouble(context, "blocks");
+                            MatrixCraftConfig.WALLRUN_VERTICAL_MAX_DISTANCE.set(blocks);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Vertical max distance: §e" + String.format("%.1f", blocks) + " blocks"), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        double current = MatrixCraftConfig.WALLRUN_VERTICAL_MAX_DISTANCE.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Vertical max distance: §e" + String.format("%.1f", current) + " blocks"), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("anglemin")
+                    .then(Commands.argument("degrees", IntegerArgumentType.integer(0, 44))
+                        .executes(context -> {
+                            int degrees = IntegerArgumentType.getInteger(context, "degrees");
+                            MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MIN.set(degrees);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Vertical angle min: §e" + degrees + "°"), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        int current = MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MIN.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Vertical angle min: §e" + current + "°"), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("anglemax")
+                    .then(Commands.argument("degrees", IntegerArgumentType.integer(1, 45))
+                        .executes(context -> {
+                            int degrees = IntegerArgumentType.getInteger(context, "degrees");
+                            MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MAX.set(degrees);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Wall Run] §7Vertical angle max: §e" + degrees + "°"), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        int current = MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MAX.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Wall Run] §7Vertical angle max: §e" + current + "°"), false);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    boolean enabled = MatrixCraftConfig.WALLRUN_VERTICAL_ENABLED.get();
+                    double dist = MatrixCraftConfig.WALLRUN_VERTICAL_MAX_DISTANCE.get();
+                    int angleMin = MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MIN.get();
+                    int angleMax = MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MAX.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6=== Vertical Wall Run ===\n" +
+                            "§7Status: " + (enabled ? "§aENABLED" : "§cDISABLED") + "\n" +
+                            "§7Max Distance: §e" + String.format("%.1f", dist) + " blocks\n" +
+                            "§7Angle Min: §e" + angleMin + "°\n" +
+                            "§7Angle Max: §e" + angleMax + "°"), false);
+                    return 1;
+                })
+            )
+            
+            // Status - update to include enabled status
+            .then(Commands.literal("status")
+                .executes(context -> {
+                    boolean hEnabled = MatrixCraftConfig.WALLRUN_HORIZONTAL_ENABLED.get();
+                    int hDist = MatrixCraftConfig.WALLRUN_HORIZONTAL_MAX_DISTANCE.get();
+                    int hAngleMin = MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MIN.get();
+                    int hAngleMax = MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MAX.get();
+                    boolean vEnabled = MatrixCraftConfig.WALLRUN_VERTICAL_ENABLED.get();
+                    double vDist = MatrixCraftConfig.WALLRUN_VERTICAL_MAX_DISTANCE.get();
+                    int vAngleMin = MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MIN.get();
+                    int vAngleMax = MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MAX.get();
+                    
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6=== Wall Run Settings ===\n" +
+                            "§e--- Horizontal ---\n" +
+                            "§7Status: " + (hEnabled ? "§aENABLED" : "§cDISABLED") + "\n" +
+                            "§7Max Distance: §e" + hDist + " blocks\n" +
+                            "§7Angle Range: §e" + hAngleMin + "° - " + hAngleMax + "°\n" +
+                            "§e--- Vertical ---\n" +
+                            "§7Status: " + (vEnabled ? "§aENABLED" : "§cDISABLED") + "\n" +
+                            "§7Max Distance: §e" + String.format("%.1f", vDist) + " blocks\n" +
+                            "§7Angle Range: §e" + vAngleMin + "° - " + vAngleMax + "°"), false);
+                    return 1;
+                })
+            )
+            
+            // Help
             .executes(context -> {
                 context.getSource().sendSuccess(() -> 
-                    Component.literal("§6=== Bullet Time Commands ===\n" +
-                        "§e/matrix bullettime duration <1-120>\n" +
-                        "§e/matrix bullettime cooldown <0-600>\n" +
-                        "§e/matrix bullettime focusbar color <r> <g> <b>\n" +
-                        "§e/matrix bullettime screentint color <r> <g> <b>\n" +
-                        "§e/matrix bullettime screentint intensity <0.0-1.0>\n" +
-                        "§e/matrix bullettime vignette <0.0-1.0>\n" +
-                        "§e/matrix bullettime preset <matrix|redpill|bluepill|gold|purple>\n" +
-                        "§e/matrix bullettime status"), false);
+                    Component.literal("§6=== Wall Run Commands ===\n" +
+                        "§e/matrix bullettime wallrun horizontal enable <true/false>\n" +
+                        "§e/matrix bullettime wallrun horizontal distance <1-50>\n" +
+                        "§e/matrix bullettime wallrun horizontal anglemin <0-89>\n" +
+                        "§e/matrix bullettime wallrun horizontal anglemax <1-90>\n" +
+                        "§e/matrix bullettime wallrun vertical enable <true/false>\n" +
+                        "§e/matrix bullettime wallrun vertical distance <1.0-20.0>\n" +
+                        "§e/matrix bullettime wallrun vertical anglemin <0-44>\n" +
+                        "§e/matrix bullettime wallrun vertical anglemax <1-45>\n" +
+                        "§e/matrix bullettime wallrun status"), false);
                 return 1;
-            });
+            })
+        )
+            
+        // /matrix bullettime status
+        .then(Commands.literal("status")
+            .executes(context -> {
+                int barR = MatrixCraftConfig.FOCUS_BAR_COLOR_R.get();
+                int barG = MatrixCraftConfig.FOCUS_BAR_COLOR_G.get();
+                int barB = MatrixCraftConfig.FOCUS_BAR_COLOR_B.get();
+                int tintR = MatrixCraftConfig.FOCUS_TINT_COLOR_R.get();
+                int tintG = MatrixCraftConfig.FOCUS_TINT_COLOR_G.get();
+                int tintB = MatrixCraftConfig.FOCUS_TINT_COLOR_B.get();
+                double tintInt = MatrixCraftConfig.FOCUS_TINT_INTENSITY.get();
+                double vigInt = MatrixCraftConfig.FOCUS_VIGNETTE_INTENSITY.get();
+                int duration = MatrixCraftConfig.FOCUS_DURATION_SECONDS.get();
+                int cooldown = MatrixCraftConfig.FOCUS_COOLDOWN_SECONDS.get();
+                
+                context.getSource().sendSuccess(() -> 
+                    Component.literal("§6=== Bullet Time Settings ===\n" +
+                        "§7Duration: §e" + duration + " seconds\n" +
+                        "§7Cooldown: §e" + cooldown + " seconds\n" +
+                        "§7Focus Bar Color: §cR:" + barR + " §aG:" + barG + " §9B:" + barB + "\n" +
+                        "§7Screen Tint Color: §cR:" + tintR + " §aG:" + tintG + " §9B:" + tintB + "\n" +
+                        "§7Tint Intensity: §e" + String.format("%.2f", tintInt) + "\n" +
+                        "§7Vignette Intensity: §e" + String.format("%.2f", vigInt)), false);
+                return 1;
+            })
+        )
+        
+        // /matrix bullettime (help)
+        .executes(context -> {
+            context.getSource().sendSuccess(() -> 
+                Component.literal("§6=== Bullet Time Commands ===\n" +
+                    "§e/matrix bullettime duration <1-120>\n" +
+                    "§e/matrix bullettime cooldown <0-600>\n" +
+                    "§e/matrix bullettime focusbar color <r> <g> <b>\n" +
+                    "§e/matrix bullettime screentint color <r> <g> <b>\n" +
+                    "§e/matrix bullettime screentint intensity <0.0-1.0>\n" +
+                    "§e/matrix bullettime vignette <0.0-1.0>\n" +
+                    "§e/matrix bullettime preset <matrix|redpill|bluepill|gold|purple>\n" +
+                    "§e/matrix bullettime status"), false);
+            return 1;
+        });
     }
     
     // ==================== BULLET TRAILS COMMANDS ====================
