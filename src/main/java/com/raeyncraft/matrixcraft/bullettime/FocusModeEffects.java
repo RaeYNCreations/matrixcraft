@@ -33,7 +33,7 @@ public class FocusModeEffects {
     private static final Set<UUID> cobwebsWereEnabled = new HashSet<>();
     
     // Track players who had water disabled before Focus (to restore their state)
-    private static final Set<UUID> waterWasEnabled = new HashSet<>();
+    private static final Set<UUID> waterWereEnabled = new HashSet<>();
     
     /**
      * Handle lava/fire damage immunity
@@ -106,13 +106,13 @@ public class FocusModeEffects {
             if (inFocus) {
                 // Entering Focus - disable water if it was enabled
                 if (MatrixSettings.isWaterEnabled()) {
-                    waterWasEnabled.add(playerId);
+                    waterWereEnabled.add(playerId);
                     MatrixSettings.setWaterEnabled(false);
                 }
             } else {
                 // Not in Focus - restore water if we disabled it
-                if (waterWasEnabled.contains(playerId)) {
-                    waterWasEnabled.remove(playerId);
+                if (waterWereEnabled.contains(playerId)) {
+                    waterWereEnabled.remove(playerId);
                     MatrixSettings.setWaterEnabled(true);
                 }
             }
