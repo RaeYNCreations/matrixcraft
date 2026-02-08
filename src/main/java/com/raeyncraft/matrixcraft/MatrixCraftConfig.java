@@ -86,6 +86,7 @@ public class MatrixCraftConfig {
     // Bullet Time Effects
     public static ModConfigSpec.BooleanValue FOCUS_LAVA_IMMUNITY;
     public static ModConfigSpec.BooleanValue FOCUS_COBWEB_BYPASS;
+    public static ModConfigSpec.BooleanValue FOCUS_WATER_BYPASS;
     
     // Dynamic Lighting
     public static ModConfigSpec.BooleanValue TRAIL_DYNAMIC_LIGHTING;
@@ -132,6 +133,9 @@ public class MatrixCraftConfig {
             FOCUS_COBWEB_BYPASS = builder
                 .comment("Automatically bypass cobwebs during Focus mode")
                 .define("cobwebBypass", true);
+            FOCUS_WATER_BYPASS = builder
+                .comment("Automatically bypass water during Focus mode (water = air)")
+                .define("waterBypass", true);
             builder.pop();
             
             builder.pop();
