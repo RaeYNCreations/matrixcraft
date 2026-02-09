@@ -9,9 +9,11 @@ import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -81,41 +83,48 @@ public class FocusModeEffects {
         Player player = event.getEntity();
         if (player.level().isClientSide) return;
         
+        // Check if cobweb bypass is enabled
+        if (!isFocusCobwebBypassEnabled()) return;
+        
         UUID playerId = player.getUUID();
         boolean inFocus = FocusManager.isInFocus(player);
         
-        // Handle cobweb bypass
-        if (isFocusCobwebBypassEnabled()) {
-            if (inFocus) {
-                // Entering Focus - disable cobwebs if they were enabled
-                if (MatrixSettings.areCobwebsEnabled()) {
-                    cobwebsWereEnabled.add(playerId);
-                    MatrixSettings.setCobwebsEnabled(false);
-                }
-            } else {
-                // Not in Focus - restore cobwebs if we disabled them
-                if (cobwebsWereEnabled.contains(playerId)) {
-                    cobwebsWereEnabled.remove(playerId);
-                    MatrixSettings.setCobwebsEnabled(true);
-                }
+        if (inFocus) {
+            // Entering Focus - disable cobwebs if they were enabled
+            if (MatrixSettings.areCobwebsEnabled()) {
+                cobwebsWereEnabled.add(playerId);
+                MatrixSettings.setCobwebsEnabled(false);
+            }
+        } else {
+            // Not in Focus - restore cobwebs if we disabled them
+            if (cobwebsWereEnabled.contains(playerId)) {
+                cobwebsWereEnabled.remove(playerId);
+                MatrixSettings.setCobwebsEnabled(true);
             }
         }
         
         // Handle water bypass
-        if (isFocusWaterBypassEnabled()) {
-            if (inFocus) {
-                // Entering Focus - disable water if it was enabled
-                if (MatrixSettings.isWaterEnabled()) {
-                    waterWereEnabled.add(playerId);
-                    MatrixSettings.setWaterEnabled(false);
-                }
-            } else {
-                // Not in Focus - restore water if we disabled it
-                if (waterWereEnabled.contains(playerId)) {
-                    waterWereEnabled.remove(playerId);
-                    MatrixSettings.setWaterEnabled(true);
+        boolean waterBypassActive = !MatrixSettings.isWaterEnabled() || (inFocus && isFocusWaterBypassEnabled());
+        if (waterBypassActive) {
+            // Force player out of swimming animation
+            if (player.isInWater()) {
+                player.setSwimming(false);
+                player.setOnGround(true); // Trick the game into thinking we're on ground
+                
+                // Apply high water movement speed
+                AttributeInstance waterSpeed = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.WATER_MOVEMENT_EFFICIENCY);
+                if (waterSpeed != null && waterSpeed.getValue() < 1.0) {
+                    waterSpeed.setBaseValue(1.3);
                 }
             }
+        }
+        
+        // Handle lava bypass - fire effects
+        boolean lavaBypassActive = !MatrixSettings.isLavaEnabled() || (inFocus && isFocusLavaBypassEnabled());
+        if (lavaBypassActive && player.isInLava()) {
+            // Remove fire effects
+            player.clearFire();
+            player.setRemainingFireTicks(0);
         }
     }
     

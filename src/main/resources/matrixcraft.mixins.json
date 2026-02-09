@@ -5,9 +5,10 @@
   "minVersion": "0.8",
   "mixins": [
     "CobwebBlockMixin",
-    "WaterBlockMixin"
+    "LivingEntityFluidMixin"
   ],
   "client": [
+    "client.FireOverlayMixin"
   ],
   "injectors": {
     "defaultRequire": 1

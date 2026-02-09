@@ -4,9 +4,11 @@
   "compatibilityLevel": "JAVA_21",
   "minVersion": "0.8",
   "mixins": [
-    "CobwebBlockMixin"
+    "CobwebBlockMixin",
+    "LivingEntityFluidMixin"
   ],
   "client": [
+    "client.FireOverlayMixin"
   ],
   "injectors": {
     "defaultRequire": 1
