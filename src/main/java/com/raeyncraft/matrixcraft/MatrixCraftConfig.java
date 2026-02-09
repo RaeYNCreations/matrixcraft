@@ -112,6 +112,10 @@ public class MatrixCraftConfig {
     // Wall Run Enable/Disable
     public static ModConfigSpec.BooleanValue WALLRUN_HORIZONTAL_ENABLED;
     public static ModConfigSpec.BooleanValue WALLRUN_VERTICAL_ENABLED;
+
+    // Safe Haven Obelisk
+    public static ModConfigSpec.IntValue SAFE_HAVEN_RADIUS;
+    public static ModConfigSpec.BooleanValue SAFE_HAVEN_DESPAWN_ENABLED;
     
     public static class Common {
         public Common(ModConfigSpec.Builder builder) {
@@ -151,6 +155,16 @@ public class MatrixCraftConfig {
             FOCUS_WATER_BYPASS = builder
                 .comment("Automatically bypass water slowdown during Focus mode")
                 .define("waterBypass", true);
+            builder.pop();
+            
+            // Safe Haven Obelisk
+            builder.comment("Safe Haven Obelisk Settings").push("safehaven");
+            SAFE_HAVEN_RADIUS = builder
+                .comment("Protection radius for Safe Haven Obelisk in blocks")
+                .defineInRange("radius", 32, 8, 128);
+            SAFE_HAVEN_DESPAWN_ENABLED = builder
+                .comment("Whether hostile mobs that enter the safe haven zone should be despawned")
+                .define("despawnEnabled", true);
             builder.pop();
             
             builder.pop();
