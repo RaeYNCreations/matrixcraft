@@ -1099,6 +1099,31 @@ public class MatrixCraftCommands {
                     return 1;
                 })
             )
+
+            .then(Commands.literal("silenthill")
+                .requires(source -> source.hasPermission(2)) // OP only
+                .executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+                    
+                    SilentHillMode.toggle(player);
+                    
+                    if (SilentHillMode.isInSilentHillMode(player)) {
+                        context.getSource().sendSuccess(
+                            () -> Component.literal("Silent Hill Mode ENABLED")
+                                .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD),
+                            false
+                        );
+                    } else {
+                        context.getSource().sendSuccess(
+                            () -> Component.literal("Silent Hill Mode disabled")
+                                .withStyle(ChatFormatting.GRAY),
+                            false
+                        );
+                    }
+                    
+                    return 1;
+                })
+            )
             
             .then(Commands.literal("glassrepair")
                 .then(Commands.literal("enable")
