@@ -7,10 +7,9 @@ import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ModItems {
-    
-    public static final DeferredRegister.Items ITEMS = 
-        DeferredRegister.createItems(MatrixCraftMod.MODID);
-    
+
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MatrixCraftMod.MODID);
+
     public static final DeferredItem<Item> THE_OBELISK = ITEMS.register(
         "the_obelisk",
         () -> new TheObeliskItem(new Item.Properties())

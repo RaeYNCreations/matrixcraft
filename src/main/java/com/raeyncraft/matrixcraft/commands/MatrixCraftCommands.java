@@ -16,6 +16,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.minecraft.server.level.ServerPlayer;
+import com.raeyncraft.matrixcraft.silenthill.SilentHillMode;
 
 /**
  * MatrixCraft Commands - Reorganized Structure
@@ -38,12 +40,14 @@ public class MatrixCraftCommands {
             .then(buildBulletTimeCommands())
             .then(buildBulletTrailCommands())
             .then(buildUtilitiesCommands())
+            .then(buildSilentHillCommands())  // Added Silent Hill commands here
             .executes(context -> {
                 context.getSource().sendSuccess(() -> 
                     Component.literal("§6=== MatrixCraft Commands ===\n" +
                         "§e/matrix bullettime §7- Bullet time / Focus mode settings\n" +
                         "§e/matrix bullettrails §7- Bullet trail effects\n" +
                         "§e/matrix utilities §7- Glass repair, cobwebs, etc.\n" +
+                        "§e/matrix silenthill §7- Silent Hill mode controls\n" +
                         "§7\nUse each subcommand for more options."), false);
                 return 1;
             })
@@ -912,7 +916,7 @@ public class MatrixCraftCommands {
                         context.getSource().sendSuccess(() -> 
                             Component.literal("Cobwebs ")
                                 .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
-                                .append(" - You will be slowed by cobwebs"), true);
+                                .append(Component.literal(" - You will be slowed by cobwebs")), true);
                         return 1;
                     })
                 )
@@ -922,7 +926,7 @@ public class MatrixCraftCommands {
                         context.getSource().sendSuccess(() -> 
                             Component.literal("Cobwebs ")
                                 .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
-                                .append(" - You can walk through cobwebs freely"), true);
+                                .append(Component.literal(" - You can walk through cobwebs freely")), true);
                         return 1;
                     })
                 )
@@ -944,7 +948,7 @@ public class MatrixCraftCommands {
                         context.getSource().sendSuccess(() -> 
                             Component.literal("Lava damage ")
                                 .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
-                                .append(" - You will take damage from lava/fire"), true);
+                                .append(Component.literal(" - You will take damage from lava/fire")), true);
                         return 1;
                     })
                 )
@@ -954,7 +958,7 @@ public class MatrixCraftCommands {
                         context.getSource().sendSuccess(() -> 
                             Component.literal("Lava damage ")
                                 .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
-                                .append(" - You are immune to lava/fire damage"), true);
+                                .append(Component.literal(" - You are immune to lava/fire damage")), true);
                         return 1;
                     })
                 )
@@ -976,7 +980,7 @@ public class MatrixCraftCommands {
                         context.getSource().sendSuccess(() -> 
                             Component.literal("Water slowdown ")
                                 .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
-                                .append(" - You will be slowed by water"), true);
+                                .append(Component.literal(" - You will be slowed by water")), true);
                         return 1;
                     })
                 )
@@ -986,7 +990,7 @@ public class MatrixCraftCommands {
                         context.getSource().sendSuccess(() -> 
                             Component.literal("Water slowdown ")
                                 .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
-                                .append(" - You can move through water like air"), true);
+                                .append(Component.literal(" - You can move through water like air")), true);
                         return 1;
                     })
                 )
@@ -1051,7 +1055,7 @@ public class MatrixCraftCommands {
                         MatrixCraftConfig.FOCUS_COBWEB_BYPASS.set(false);
                         MatrixCraftConfig.saveCommonConfig();
                         context.getSource().sendSuccess(() -> 
-                            Component.literal("§6[Bullet Time] §7Cobweb bypass: ")
+                            Component.literal("��6[Bullet Time] §7Cobweb bypass: ")
                                 .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
                                 .append(Component.literal(" - Cobwebs work normally during Focus").withStyle(ChatFormatting.GRAY)), true);
                         return 1;
@@ -1096,31 +1100,6 @@ public class MatrixCraftCommands {
                         Component.literal("§6[Bullet Time] §7Water bypass is currently ")
                             .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
                                 .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
-                    return 1;
-                })
-            )
-
-            .then(Commands.literal("silenthill")
-                .requires(source -> source.hasPermission(2)) // OP only
-                .executes(context -> {
-                    ServerPlayer player = context.getSource().getPlayerOrException();
-                    
-                    SilentHillMode.toggle(player);
-                    
-                    if (SilentHillMode.isInSilentHillMode(player)) {
-                        context.getSource().sendSuccess(
-                            () -> Component.literal("Silent Hill Mode ENABLED")
-                                .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD),
-                            false
-                        );
-                    } else {
-                        context.getSource().sendSuccess(
-                            () -> Component.literal("Silent Hill Mode disabled")
-                                .withStyle(ChatFormatting.GRAY),
-                            false
-                        );
-                    }
-                    
                     return 1;
                 })
             )
@@ -1289,6 +1268,101 @@ public class MatrixCraftCommands {
                         "§e/matrix utilities waterbypass [on|off] §7- Water bypass during Focus\n" +
                         "§e/matrix utilities glassrepair §7- Glass repair system\n" +
                         "§e/matrix utilities safehaven §7- Safe Haven Obelisk settings"), false);
+                return 1;
+            });
+    }
+
+    // ==================== SILENT HILL COMMANDS ====================
+
+    private static com.mojang.brigadier.builder.LiteralArgumentBuilder<CommandSourceStack> buildSilentHillCommands() {
+        return Commands.literal("silenthill")
+            .requires(source -> source.hasPermission(2)) // OP required
+            .then(Commands.literal("on")
+                .executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+                    if (SilentHillMode.isInSilentHillMode(player)) {
+                        context.getSource().sendFailure(Component.literal("Silent Hill Mode is already active."));
+                        return 0;
+                    }
+                    SilentHillMode.enable(player);
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("Silent Hill Mode §aENABLED"), true);
+                    return 1;
+                })
+            )
+            .then(Commands.literal("off")
+                .executes(context -> {
+                    ServerPlayer player = context.getSource().getPlayerOrException();
+                    if (!SilentHillMode.isInSilentHillMode(player)) {
+                        context.getSource().sendFailure(Component.literal("Silent Hill Mode is not active."));
+                        return 0;
+                    }
+                    SilentHillMode.disable(player);
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("Silent Hill Mode §cDISABLED"), true);
+                    return 1;
+                })
+            )
+            .then(Commands.literal("duration")
+                .then(Commands.argument("value", IntegerArgumentType.integer(10, 600))
+                    .executes(context -> {
+                        int value = IntegerArgumentType.getInteger(context, "value");
+                        MatrixCraftConfig.OBELISK_DURATION.set(value);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Silent Hill] §7Duration set to §e" + value + " seconds"), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    int current = MatrixCraftConfig.OBELISK_DURATION.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Silent Hill] §7Current duration: §e" + current + " seconds"), false);
+                    return 1;
+                })
+            )
+            .then(Commands.literal("cooldown")
+                .then(Commands.argument("value", IntegerArgumentType.integer(30, 1200))
+                    .executes(context -> {
+                        int value = IntegerArgumentType.getInteger(context, "value");
+                        MatrixCraftConfig.OBELISK_COOLDOWN.set(value);
+                        MatrixCraftConfig.saveCommonConfig();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Silent Hill] §7Cooldown set to §e" + value + " seconds"), true);
+                        return 1;
+                    })
+                )
+                .executes(context -> {
+                    int current = MatrixCraftConfig.OBELISK_COOLDOWN.get();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Silent Hill] §7Current cooldown: §e" + current + " seconds"), false);
+                    return 1;
+                })
+            )
+            .then(Commands.literal("clearcooldowns")
+                .executes(context -> {
+                    com.raeyncraft.matrixcraft.item.TheObeliskItem.clearAllCooldowns();
+                    context.getSource().sendSuccess(() -> 
+                        Component.literal("§6[Silent Hill] §7All cooldowns cleared"), true);
+                    return 1;
+                })
+            )
+            .executes(context -> {
+                ServerPlayer player = context.getSource().getPlayerOrException();
+                boolean active = SilentHillMode.isInSilentHillMode(player);
+                int duration = MatrixCraftConfig.OBELISK_DURATION.get();
+                int cooldown = MatrixCraftConfig.OBELISK_COOLDOWN.get();
+                context.getSource().sendSuccess(() -> 
+                    Component.literal("§6=== Silent Hill Mode ===\n" +
+                        "§7Status: " + (active ? "§aACTIVE" : "§cINACTIVE") + "\n" +
+                        "§7Duration: §e" + duration + " seconds\n" +
+                        "§7Cooldown: §e" + cooldown + " seconds\n" +
+                        "§7\n" +
+                        "§e/matrix silenthill on §7- Enable mode\n" +
+                        "§e/matrix silenthill off §7- Disable mode\n" +
+                        "§e/matrix silenthill duration <10-600> §7- Set duration\n" +
+                        "§e/matrix silenthill cooldown <30-1200> §7- Set cooldown\n" +
+                        "§e/matrix silenthill clearcooldowns §7- Clear all cooldowns"), false);
                 return 1;
             });
     }

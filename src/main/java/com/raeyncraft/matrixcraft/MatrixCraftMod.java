@@ -12,6 +12,9 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.ModConfigSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.raeyncraft.matrixcraft.registry.ModItems;
+import com.raeyncraft.matrixcraft.silenthill.SilentHillMode;
+import com.raeyncraft.matrixcraft.registry.ModCreativeTabEvents;
 
 @Mod(MatrixCraftMod.MODID)
 public class MatrixCraftMod {
@@ -30,10 +33,6 @@ public class MatrixCraftMod {
         // Register bullet time system (items, effects)
         BulletTimeRegistry.register(modEventBus);
         LOGGER.info("Bullet Time system registered!");
-
-        // Register items (The Obelisk, etc.)
-        ModItems.ITEMS.register(modEventBus);
-        LOGGER.info("Items registered!");
         
         // MANUALLY REGISTER WALL RUN EVENT HANDLER
         NeoForge.EVENT_BUS.register(MatrixWallRunEventHandler.class);
@@ -45,12 +44,15 @@ public class MatrixCraftMod {
 
         // Register Custom Blocks
         ModBlocks.BLOCKS.register(modEventBus);
+        ModItems.ITEMS.register(modEventBus);
+        NeoForge.EVENT_BUS.register(SilentHillMode.class);
 
         // Register configs
         modContainer.registerConfig(ModConfig.Type.COMMON, MatrixCraftConfig.COMMON_SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, MatrixCraftConfig.CLIENT_SPEC);
+        modEventBus.register(ModCreativeTabEvents.class);
         LOGGER.info("Config registered!");
-        
+                
         // Client setup
         modEventBus.addListener(this::clientSetup);
         
@@ -59,38 +61,6 @@ public class MatrixCraftMod {
         LOGGER.info("========================================");
     }
     
-    // Silent Hill / Obelisk Config
-    public static ModConfigSpec.IntValue OBELISK_DURATION;
-    public static ModConfigSpec.IntValue OBELISK_COOLDOWN;
-    
-    static {
-        ModConfigSpec.Builder COMMON_BUILDER = new ModConfigSpec.Builder();
-        ModConfigSpec.Builder CLIENT_BUILDER = new ModConfigSpec.Builder();
-        
-        // ... (your existing config)
-        
-        // Silent Hill Mode Settings
-        COMMON_BUILDER.comment("Silent Hill Mode Settings").push("silent_hill");
-        
-        OBELISK_DURATION = COMMON_BUILDER
-            .comment("Duration of Silent Hill Mode in seconds")
-            .defineInRange("obelisk_duration", 60, 10, 600);
-        
-        OBELISK_COOLDOWN = COMMON_BUILDER
-            .comment("Cooldown of The Obelisk in seconds")
-            .defineInRange("obelisk_cooldown", 120, 30, 1200);
-        
-        COMMON_BUILDER.pop();
-        
-        COMMON_SPEC = COMMON_BUILDER.build();
-        CLIENT_SPEC = CLIENT_BUILDER.build();
-    }
-    
-    // Save method (add this if you don't have it)
-    public static void saveCommonConfig() {
-        COMMON_SPEC.save();
-    }
-
     private void clientSetup(FMLClientSetupEvent event) {
         LOGGER.info("MatrixCraft client setup complete!");
     }

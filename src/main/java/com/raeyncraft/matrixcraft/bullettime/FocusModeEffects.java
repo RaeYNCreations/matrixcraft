@@ -114,7 +114,7 @@ public class FocusModeEffects {
                 // Apply high water movement speed
                 AttributeInstance waterSpeed = player.getAttribute(net.minecraft.world.entity.ai.attributes.Attributes.WATER_MOVEMENT_EFFICIENCY);
                 if (waterSpeed != null && waterSpeed.getValue() < 1.0) {
-                    waterSpeed.setBaseValue(1.3);
+                    waterSpeed.setBaseValue(1.75);
                 }
             }
         }

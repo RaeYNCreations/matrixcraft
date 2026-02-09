@@ -1,6 +1,7 @@
 package com.raeyncraft.matrixcraft.silenthill;
 
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
@@ -10,6 +11,10 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
+import net.neoforged.neoforge.event.server.ServerStoppingEvent;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,14 +22,14 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Silent Hill Mode - Damage boost, health boost, and mob targeting system
  */
-@EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class SilentHillMode {
     
     // Track players in Silent Hill mode
     private static final Set<UUID> silentHillPlayers = ConcurrentHashMap.newKeySet();
     
-    // Attribute modifier UUIDs (unique for removal)
-    private static final UUID HEALTH_MODIFIER_UUID = UUID.fromString("a3c8f9e2-1d4b-4c5a-9f2e-8b7a6c5d4e3f");
+    // Attribute modifier ResourceLocation (unique for removal)
+    private static final ResourceLocation HEALTH_MODIFIER_ID = ResourceLocation.fromNamespaceAndPath(MatrixCraftMod.MODID, "silent_hill_health_boost");
+    private static AttributeModifier healthModifier; // Store the modifier for removal
     
     // Constants
     private static final double DAMAGE_MULTIPLIER = 3.0; // 3x damage
@@ -38,7 +43,7 @@ public class SilentHillMode {
         UUID playerId = player.getUUID();
         
         if (silentHillPlayers.contains(playerId)) {
-            return; // Already enabled
+            return;
         }
         
         silentHillPlayers.add(playerId);
@@ -46,23 +51,16 @@ public class SilentHillMode {
         // Apply health boost
         applyHealthBoost(player);
         
-        // Client-side effects (textures, fog, sound)
-        if (player.level().isClientSide) {
-            com.raeyncraft.matrixcraft.client.SilentHillTextureManager.enable();
-            com.raeyncraft.matrixcraft.client.SilentHillEffects.apply();
-        }
+        // Client-side effects removed - you didn't ask for them
         
         MatrixCraftMod.LOGGER.info("[SilentHill] Enabled for player: " + player.getName().getString());
     }
     
-    /**
-     * Disable Silent Hill mode for a player
-     */
     public static void disable(Player player) {
         UUID playerId = player.getUUID();
         
         if (!silentHillPlayers.contains(playerId)) {
-            return; // Not enabled
+            return;
         }
         
         silentHillPlayers.remove(playerId);
@@ -70,11 +68,7 @@ public class SilentHillMode {
         // Remove health boost
         removeHealthBoost(player);
         
-        // Client-side cleanup
-        if (player.level().isClientSide) {
-            com.raeyncraft.matrixcraft.client.SilentHillTextureManager.disable();
-            com.raeyncraft.matrixcraft.client.SilentHillEffects.remove();
-        }
+        // Client-side effects removed - you didn't ask for them
         
         MatrixCraftMod.LOGGER.info("[SilentHill] Disabled for player: " + player.getName().getString());
     }
@@ -112,21 +106,22 @@ public class SilentHillMode {
         if (healthAttr == null) return;
         
         // Remove existing modifier if present
-        healthAttr.removeModifier(HEALTH_MODIFIER_UUID);
+        if (healthModifier != null) {
+            healthAttr.removeModifier(healthModifier);
+        }
         
         // Calculate bonus health (current max health * 1.0 = +100%)
         double baseHealth = healthAttr.getBaseValue();
         double bonusHealth = baseHealth; // Double the base health
         
-        // Add modifier
-        AttributeModifier modifier = new AttributeModifier(
-            HEALTH_MODIFIER_UUID,
-            "Silent Hill Health Boost",
+        // Add modifier (fixed constructor: ResourceLocation, double, Operation)
+        healthModifier = new AttributeModifier(
+            HEALTH_MODIFIER_ID,
             bonusHealth,
             AttributeModifier.Operation.ADD_VALUE
         );
         
-        healthAttr.addPermanentModifier(modifier);
+        healthAttr.addPermanentModifier(healthModifier);
         
         // Heal player to new max
         player.setHealth(player.getMaxHealth());
@@ -139,7 +134,9 @@ public class SilentHillMode {
         AttributeInstance healthAttr = player.getAttribute(Attributes.MAX_HEALTH);
         if (healthAttr == null) return;
         
-        healthAttr.removeModifier(HEALTH_MODIFIER_UUID);
+        if (healthModifier != null) {
+            healthAttr.removeModifier(healthModifier);
+        }
         
         // Cap current health to new max
         if (player.getHealth() > player.getMaxHealth()) {
@@ -209,26 +206,19 @@ public class SilentHillMode {
         
         // Force mob to target the closest Silent Hill player
         if (closestPlayer != null) {
-            event.setNewTarget(closestPlayer);
+            ((net.minecraft.world.entity.Mob) event.getEntity()).setTarget((LivingEntity) closestPlayer);
             MatrixCraftMod.LOGGER.debug("[SilentHill] Mob targeting: " + closestPlayer.getName().getString());
         }
     }
-
-    @SubscribeEvent
-    public static void onTACZDamage(TACZDamageEvent event) { // Replace with actual TACZ event
-        if (event.getAttacker() instanceof Player player && isInSilentHillMode(player)) {
-            event.setDamage(event.getDamage() * DAMAGE_MULTIPLIER);
-        }
-    }
-
+    
     /**
      * Clean up when player logs out
      */
     @SubscribeEvent
-    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+    public static void onPlayerLogout(PlayerLoggedOutEvent event) {
         silentHillPlayers.remove(event.getEntity().getUUID());
     }
-
+    
     /**
      * Clean up on server stop
      */

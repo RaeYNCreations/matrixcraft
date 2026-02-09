@@ -1,8 +1,6 @@
 package com.raeyncraft.matrixcraft.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.packs.repository.Pack;
-import net.minecraft.server.packs.repository.PackRepository;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
@@ -21,20 +19,15 @@ public class SilentHillTextureManager {
     public static void enable() {
         if (silentHillActive) return;
         
-        Minecraft mc = Minecraft.getInstance();
-        PackRepository repo = mc.getResourcePackRepository();
-        
-        // Get current enabled packs
-        List<String> enabled = new ArrayList<>(repo.getSelectedIds());
-        
-        // If Silent Hill pack isn't enabled, add it to TOP priority
-        if (!enabled.contains("matrixcraft:silent_hill")) {
-            enabled.add(0, "matrixcraft:silent_hill"); // Top priority = override others
-            repo.setSelected(enabled);
-            
-            // This is the key: ASYNC reload to avoid stutter
-            mc.execute(() -> mc.reloadResourcePacks());
-        }
+        // Silent Hill textures disabled to prevent green screen
+        // Minecraft mc = Minecraft.getInstance();
+        // PackRepository repo = mc.getResourcePackRepository();
+        // List<String> enabled = new ArrayList<>(repo.getSelectedIds());
+        // if (!enabled.contains("matrixcraft:silent_hill")) {
+        //     enabled.add(0, "matrixcraft:silent_hill");
+        //     repo.setSelected(enabled);
+        //     mc.execute(() -> mc.reloadResourcePacks());
+        // }
         
         silentHillActive = true;
     }
@@ -45,14 +38,12 @@ public class SilentHillTextureManager {
     public static void disable() {
         if (!silentHillActive) return;
         
-        Minecraft mc = Minecraft.getInstance();
-        PackRepository repo = mc.getResourcePackRepository();
-        
-        List<String> enabled = new ArrayList<>(repo.getSelectedIds());
-        enabled.remove("matrixcraft:silent_hill");
-        repo.setSelected(enabled);
-        
-        mc.execute(() -> mc.reloadResourcePacks());
+        // Minecraft mc = Minecraft.getInstance();
+        // PackRepository repo = mc.getResourcePackRepository();
+        // List<String> enabled = new ArrayList<>(repo.getSelectedIds());
+        // enabled.remove("matrixcraft:silent_hill");
+        // repo.setSelected(enabled);
+        // mc.execute(() -> mc.reloadResourcePacks());
         
         silentHillActive = false;
     }
