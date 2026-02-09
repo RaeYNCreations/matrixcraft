@@ -27,8 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Prevents all non-player mobs from spawning within the configured radius
  * of each registered suppressor.
  * 
- * Special handling for flying mobs like Phantoms - uses extended vertical range
- * and also removes them if they enter the zone after spawning.
+ * Special handling for flying mobs like Phantoms - uses extended vertical range.
+ * 
+ * If configured, also removes hostile mobs (monsters) that enter the zone after spawning.
+ * This behavior can be toggled via SAFE_HAVEN_DESPAWN_ENABLED config.
  */
 @EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class MobSuppressionSystem {
@@ -194,13 +196,13 @@ public class MobSuppressionSystem {
     /**
      * Periodically:
      * 1. Validate suppressors (check if lodestone still exists)
-     * 2. Remove any flying mobs that entered the zone after spawning
+     * 2. Remove hostile mobs that entered the zone after spawning (if enabled)
      */
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         int tick = event.getServer().getTickCount();
         
-        // Every 20 ticks (1 second): Remove flying mobs in zones
+        // Every 20 ticks (1 second): Remove hostile mobs in zones
         if (tick % 20 == 0) {
             removeFlyingMobsInZones(event);
         }
