@@ -163,10 +163,10 @@ public class MatrixCraftConfig {
                 .defineInRange("bar_color_b", 0, 0, 255);
         FOCUS_TINT_COLOR_R = CLIENT_BUILDER
                 .comment("Screen tint color - Red component")
-                .defineInRange("tint_color_r", 0, 0, 255);
+                .defineInRange("tint_color_r", 0, 0, 255);  // Changed from 255 to 0
         FOCUS_TINT_COLOR_G = CLIENT_BUILDER
                 .comment("Screen tint color - Green component")
-                .defineInRange("tint_color_g", 255, 0, 255);
+                .defineInRange("tint_color_g", 0, 0, 255);  // Changed from 255 to 0
         FOCUS_TINT_COLOR_B = CLIENT_BUILDER
                 .comment("Screen tint color - Blue component")
                 .defineInRange("tint_color_b", 0, 0, 255);

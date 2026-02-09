@@ -11,10 +11,12 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingChangeTargetEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import com.raeyncraft.matrixcraft.network.SilentHillEffectPacket;
+import net.neoforged.neoforge.network.PacketDistributor;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -39,6 +41,7 @@ public class SilentHillMode {
     /**
      * Enable Silent Hill mode for a player
      */
+    // In enable()
     public static void enable(Player player) {
         UUID playerId = player.getUUID();
         
@@ -51,11 +54,15 @@ public class SilentHillMode {
         // Apply health boost
         applyHealthBoost(player);
         
-        // Client-side effects removed - you didn't ask for them
+        // Send packet to client for effects
+        if (player instanceof ServerPlayer serverPlayer) {
+            PacketDistributor.sendToPlayer(serverPlayer, new SilentHillEffectPacket(true));
+        }
         
         MatrixCraftMod.LOGGER.info("[SilentHill] Enabled for player: " + player.getName().getString());
     }
-    
+
+    // In disable()
     public static void disable(Player player) {
         UUID playerId = player.getUUID();
         
@@ -68,7 +75,10 @@ public class SilentHillMode {
         // Remove health boost
         removeHealthBoost(player);
         
-        // Client-side effects removed - you didn't ask for them
+        // Send packet to client for effects
+        if (player instanceof ServerPlayer serverPlayer) {
+            PacketDistributor.sendToPlayer(serverPlayer, new SilentHillEffectPacket(false));
+        }
         
         MatrixCraftMod.LOGGER.info("[SilentHill] Disabled for player: " + player.getName().getString());
     }
@@ -204,21 +214,29 @@ public class SilentHillMode {
             }
         }
         
-        // Force mob to target the closest Silent Hill player
-        if (closestPlayer != null) {
+        // Force mob to target the closest Silent Hill player (only if not already targeting)
+        if (closestPlayer != null && !mob.getTarget().equals(closestPlayer)) {
             ((net.minecraft.world.entity.Mob) event.getEntity()).setTarget((LivingEntity) closestPlayer);
             MatrixCraftMod.LOGGER.debug("[SilentHill] Mob targeting: " + closestPlayer.getName().getString());
         }
     }
     
-    /**
-     * Clean up when player logs out
-     */
     @SubscribeEvent
-    public static void onPlayerLogout(PlayerLoggedOutEvent event) {
+    public static void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        Player player = event.getEntity();
+        if (isInSilentHillMode(player)) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                PacketDistributor.sendToPlayer(serverPlayer, new SilentHillEffectPacket(true));
+                MatrixCraftMod.LOGGER.info("[SilentHill] Sent enable packet on login for: " + player.getName().getString());
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         silentHillPlayers.remove(event.getEntity().getUUID());
     }
-    
+
     /**
      * Clean up on server stop
      */

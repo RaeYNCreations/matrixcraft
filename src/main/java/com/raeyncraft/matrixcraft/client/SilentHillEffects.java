@@ -1,16 +1,33 @@
 package com.raeyncraft.matrixcraft.client;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.bus.api.SubscribeEvent;
 
 @OnlyIn(Dist.CLIENT)
 public class SilentHillEffects {
     
     private static boolean active = false;
     private static double originalGamma = 0.5;
+    
+    // Register events when the class loads
+    static {
+        NeoForge.EVENT_BUS.register(SilentHillEffects.class);
+    }
+    
+    @SubscribeEvent
+    public static void onFogColors(ViewportEvent.ComputeFogColor event) {
+        if (active) {
+            event.setRed(0.1f);    // Dark gray fog
+            event.setGreen(0.1f);
+            event.setBlue(0.1f);
+        }
+    }
     
     /**
      * Apply Silent Hill visual/audio effects

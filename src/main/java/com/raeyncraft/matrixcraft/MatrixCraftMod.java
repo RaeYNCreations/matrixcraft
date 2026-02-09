@@ -6,15 +6,16 @@ import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunEventHandler;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.fml.config.ModConfig;  // Add this import
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.raeyncraft.matrixcraft.registry.ModItems;
 import com.raeyncraft.matrixcraft.silenthill.SilentHillMode;
 import com.raeyncraft.matrixcraft.registry.ModCreativeTabEvents;
+import com.raeyncraft.matrixcraft.client.SilentHillEffects;
 
 @Mod(MatrixCraftMod.MODID)
 public class MatrixCraftMod {
