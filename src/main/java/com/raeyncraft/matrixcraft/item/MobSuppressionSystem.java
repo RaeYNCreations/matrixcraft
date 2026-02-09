@@ -1,10 +1,12 @@
 package com.raeyncraft.matrixcraft.item;
 
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -25,8 +27,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * Prevents all non-player mobs from spawning within the configured radius
  * of each registered suppressor.
  * 
- * Special handling for flying mobs like Phantoms - uses extended vertical range
- * and also removes them if they enter the zone after spawning.
+ * Special handling for flying mobs like Phantoms - uses extended vertical range.
+ * 
+ * If configured, also removes hostile mobs (monsters) that enter the zone after spawning.
+ * This behavior can be toggled via SAFE_HAVEN_DESPAWN_ENABLED config.
  */
 @EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class MobSuppressionSystem {
@@ -192,13 +196,13 @@ public class MobSuppressionSystem {
     /**
      * Periodically:
      * 1. Validate suppressors (check if lodestone still exists)
-     * 2. Remove any flying mobs that entered the zone after spawning
+     * 2. Remove hostile mobs that entered the zone after spawning (if enabled)
      */
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         int tick = event.getServer().getTickCount();
         
-        // Every 20 ticks (1 second): Remove flying mobs in zones
+        // Every 20 ticks (1 second): Remove hostile mobs in zones
         if (tick % 20 == 0) {
             removeFlyingMobsInZones(event);
         }
@@ -210,19 +214,28 @@ public class MobSuppressionSystem {
     }
     
     /**
-     * Remove flying mobs (like phantoms) that entered suppression zones
+     * Remove hostile mobs (monsters) that entered suppression zones.
+     * Only removes mobs if despawn is enabled in config.
      */
     private static void removeFlyingMobsInZones(ServerTickEvent.Post event) {
+        // Check if despawning is enabled
+        if (!MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get()) {
+            return;
+        }
+        
         for (ServerLevel level : event.getServer().getAllLevels()) {
             Map<BlockPos, Integer> levelSuppressors = suppressors.get(level);
             if (levelSuppressors == null || levelSuppressors.isEmpty()) continue;
             
-            // Find all mobs in suppression zones
+            // Find all hostile mobs in suppression zones
             List<Mob> toRemove = new ArrayList<>();
             
             for (Entity entity : level.getAllEntities()) {
                 if (!(entity instanceof Mob mob)) continue;
                 if (entity instanceof Player) continue;
+                
+                // Only remove hostile mobs (monsters)
+                if (!(entity instanceof Monster)) continue;
                 
                 // Check if this mob is in a suppression zone
                 boolean isFlying = entity instanceof Phantom;

@@ -1,5 +1,6 @@
 package com.raeyncraft.matrixcraft.item;
 
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import net.minecraft.ChatFormatting;
@@ -77,15 +78,18 @@ public class SafeHavenObeliskItem extends Item {
             // Place a lodestone as the base
             level.setBlock(placePos, ModBlocks.SAFE_HAVEN_OBELISK.get().defaultBlockState(), 3);
             
+            // Get radius from config
+            int radius = MatrixCraftConfig.SAFE_HAVEN_RADIUS.get();
+            
             // Register this position with the MobSuppressionSystem
-            MobSuppressionSystem.addSuppressor(serverLevel, placePos, PROTECTION_RADIUS);
+            MobSuppressionSystem.addSuppressor(serverLevel, placePos, radius);
             
             // Play activation sound
             level.playSound(null, placePos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.0f, 0.5f);
             level.playSound(null, placePos, SoundEvents.RESPAWN_ANCHOR_CHARGE, SoundSource.BLOCKS, 0.5f, 0.8f);
             
             MatrixCraftMod.LOGGER.info("[SafeHaven] Obelisk placed at " + placePos + 
-                " with " + PROTECTION_RADIUS + " block radius");
+                " with " + radius + " block radius");
             
             // Consume item if not creative
             if (!player.isCreative()) {
@@ -93,7 +97,7 @@ public class SafeHavenObeliskItem extends Item {
             }
             
             player.displayClientMessage(
-                Component.literal("Safe Haven established. Radius: " + PROTECTION_RADIUS + " blocks.")
+                Component.literal("Safe Haven established. Radius: " + radius + " blocks.")
                     .withStyle(ChatFormatting.DARK_RED, ChatFormatting.BOLD), true);
         }
         
@@ -110,7 +114,9 @@ public class SafeHavenObeliskItem extends Item {
         tooltip.add(Component.literal(""));
         tooltip.add(Component.literal("Effects:")
             .withStyle(ChatFormatting.WHITE));
-        tooltip.add(Component.literal("• Prevents mob spawns in " + PROTECTION_RADIUS + " block radius")
+        
+        int radius = MatrixCraftConfig.SAFE_HAVEN_RADIUS.get();
+        tooltip.add(Component.literal("• Prevents mob spawns in " + radius + " block radius")
             .withStyle(ChatFormatting.RED));
         tooltip.add(Component.literal("• Does not affect players")
             .withStyle(ChatFormatting.GREEN));
