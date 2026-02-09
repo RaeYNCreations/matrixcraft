@@ -1,10 +1,12 @@
 package com.raeyncraft.matrixcraft.item;
 
+import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
@@ -210,19 +212,28 @@ public class MobSuppressionSystem {
     }
     
     /**
-     * Remove flying mobs (like phantoms) that entered suppression zones
+     * Remove hostile mobs (monsters) that entered suppression zones.
+     * Only removes mobs if despawn is enabled in config.
      */
     private static void removeFlyingMobsInZones(ServerTickEvent.Post event) {
+        // Check if despawning is enabled
+        if (!MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get()) {
+            return;
+        }
+        
         for (ServerLevel level : event.getServer().getAllLevels()) {
             Map<BlockPos, Integer> levelSuppressors = suppressors.get(level);
             if (levelSuppressors == null || levelSuppressors.isEmpty()) continue;
             
-            // Find all mobs in suppression zones
+            // Find all hostile mobs in suppression zones
             List<Mob> toRemove = new ArrayList<>();
             
             for (Entity entity : level.getAllEntities()) {
                 if (!(entity instanceof Mob mob)) continue;
                 if (entity instanceof Player) continue;
+                
+                // Only remove hostile mobs (monsters)
+                if (!(entity instanceof Monster)) continue;
                 
                 // Check if this mob is in a suppression zone
                 boolean isFlying = entity instanceof Phantom;
