@@ -2,17 +2,19 @@ package com.raeyncraft.matrixcraft.item;
 
 import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
+import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
+import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.Phantom;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
@@ -32,7 +34,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * If configured, also removes hostile mobs (monsters) that enter the zone after spawning.
  * This behavior can be toggled via SAFE_HAVEN_DESPAWN_ENABLED config.
  */
-@EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class MobSuppressionSystem {
     
     // Map of level -> (position -> radius)
@@ -52,6 +53,17 @@ public class MobSuppressionSystem {
         allSuppressorPositions.computeIfAbsent(level, k -> ConcurrentHashMap.newKeySet()).add(pos.immutable());
         
         MatrixCraftMod.LOGGER.info("[MobSuppression] Added suppressor at " + pos + " with radius " + radius);
+        
+        // Clear existing mobs in the zone
+        for (Entity entity : level.getEntities().getAll()) {
+            if (entity instanceof LivingEntity living && living.getType().getCategory() == MobCategory.MONSTER) {
+                boolean isFlying = living instanceof Phantom;
+                if (isInSuppressionZone(level, living.blockPosition(), isFlying)) {
+                    living.remove(net.minecraft.world.entity.Entity.RemovalReason.DISCARDED);
+                    MatrixCraftMod.LOGGER.info("[MobSuppression] Cleared existing mob " + living.getType() + " at placement");
+                }
+            }
+        }
     }
     
     /**
@@ -130,54 +142,44 @@ public class MobSuppressionSystem {
     // ==================== EVENT HANDLERS ====================
     
     /**
-     * Prevent mobs from joining the world in suppression zones
-     * This catches all mob spawns including natural, spawner, and command spawns
+     * Prevent mob spawns within suppression zones
      */
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGH)
     public static void onEntityJoinLevel(EntityJoinLevelEvent event) {
-        if (event.getLevel().isClientSide()) return;
-        if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
+        if (event.getEntity() instanceof Player) return;
         
-        Entity entity = event.getEntity();
-        
-        // Allow players
-        if (entity instanceof Player) return;
-        
-        // Only block mobs
-        if (!(entity instanceof Mob)) return;
-        
-        // Check if in suppression zone
-        BlockPos spawnPos = entity.blockPosition();
-        
-        // For flying mobs (phantoms), use extended vertical check
-        boolean isFlying = entity instanceof Phantom;
-        
-        if (isInSuppressionZone(serverLevel, spawnPos, isFlying)) {
-            // Cancel the spawn
-            event.setCanceled(true);
-            MatrixCraftMod.LOGGER.debug("[MobSuppression] Blocked spawn of " + 
-                entity.getType().getDescriptionId() + " at " + spawnPos);
+        // Prevent hostile mob spawns in suppression zones
+        if (event.getEntity().getType().getCategory() == MobCategory.MONSTER) {
+            boolean isFlying = event.getEntity() instanceof Phantom;
+            if (isInSuppressionZone(level, event.getEntity().blockPosition(), isFlying)) {
+                event.setCanceled(true);
+                MatrixCraftMod.LOGGER.debug("[MobSuppression] Prevented spawn of " + 
+                    event.getEntity().getType().getDescriptionId() + " in suppression zone");
+            }
         }
     }
     
     /**
-     * Remove suppressor when the lodestone is broken
+     * Handle block break events to remove suppressors when obelisk is destroyed
      */
     @SubscribeEvent
     public static void onBlockBreak(BlockEvent.BreakEvent event) {
-        if (!(event.getLevel() instanceof ServerLevel serverLevel)) return;
+        if (event.getLevel().isClientSide()) return;
+        if (!(event.getLevel() instanceof ServerLevel level)) return;
         
         BlockPos pos = event.getPos();
-        
-        // Check if this is a suppressor location
-        Set<BlockPos> positions = allSuppressorPositions.get(serverLevel);
-        if (positions != null && positions.contains(pos)) {
-            removeSuppressor(serverLevel, pos);
-            
-            if (event.getPlayer() != null) {
-                event.getPlayer().displayClientMessage(
-                    net.minecraft.network.chat.Component.literal("Safe Haven deactivated.")
-                        .withStyle(net.minecraft.ChatFormatting.DARK_RED), true);
+        if (level.getBlockState(pos).is(ModBlocks.SAFE_HAVEN_OBELISK.get())) {
+            // Check if this was a suppressor
+            Map<BlockPos, Integer> levelSuppressors = suppressors.get(level);
+            if (levelSuppressors != null && levelSuppressors.containsKey(pos)) {
+                removeSuppressor(level, pos);
+                
+                if (event.getPlayer() != null) {
+                    event.getPlayer().displayClientMessage(
+                        net.minecraft.network.chat.Component.literal("Safe Haven deactivated.")
+                            .withStyle(net.minecraft.ChatFormatting.DARK_RED), true);
+                }
             }
         }
     }
@@ -195,16 +197,16 @@ public class MobSuppressionSystem {
     
     /**
      * Periodically:
-     * 1. Validate suppressors (check if lodestone still exists)
+     * 1. Validate suppressors (check if obelisk still exists)
      * 2. Remove hostile mobs that entered the zone after spawning (if enabled)
      */
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         int tick = event.getServer().getTickCount();
         
-        // Every 20 ticks (1 second): Remove hostile mobs in zones
-        if (tick % 20 == 0) {
-            removeFlyingMobsInZones(event);
+        // Every 5 ticks (0.25 seconds): Remove hostile mobs in zones
+        if (tick % 5 == 0) {
+            removeHostileMobsInZones(event);
         }
         
         // Every 100 ticks (5 seconds): Validate suppressors
@@ -217,7 +219,7 @@ public class MobSuppressionSystem {
      * Remove hostile mobs (monsters) that entered suppression zones.
      * Only removes mobs if despawn is enabled in config.
      */
-    private static void removeFlyingMobsInZones(ServerTickEvent.Post event) {
+    private static void removeHostileMobsInZones(ServerTickEvent.Post event) {
         // Check if despawning is enabled
         if (!MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get()) {
             return;
@@ -235,7 +237,7 @@ public class MobSuppressionSystem {
                 if (entity instanceof Player) continue;
                 
                 // Only remove hostile mobs (monsters)
-                if (!(entity instanceof Monster)) continue;
+                if (entity.getType().getCategory() != MobCategory.MONSTER) continue;
                 
                 // Check if this mob is in a suppression zone
                 boolean isFlying = entity instanceof Phantom;
@@ -247,14 +249,14 @@ public class MobSuppressionSystem {
             // Remove the mobs
             for (Mob mob : toRemove) {
                 mob.discard();
-                MatrixCraftMod.LOGGER.debug("[MobSuppression] Removed " + 
+                MatrixCraftMod.LOGGER.info("[MobSuppression] Removed " + 
                     mob.getType().getDescriptionId() + " from suppression zone");
             }
         }
     }
     
     /**
-     * Validate that all suppressor lodestones still exist
+     * Validate that all suppressor obelisks still exist
      */
     private static void validateSuppressors(ServerTickEvent.Post event) {
         for (ServerLevel level : event.getServer().getAllLevels()) {
@@ -267,8 +269,8 @@ public class MobSuppressionSystem {
                 // If the chunk isn't loaded, skip
                 if (!level.isLoaded(pos)) continue;
                 
-                // Check if lodestone still exists
-                if (!level.getBlockState(pos).is(Blocks.LODESTONE)) {
+                // Check if obelisk still exists
+                if (!level.getBlockState(pos).is(ModBlocks.SAFE_HAVEN_OBELISK.get())) {
                     toRemove.add(pos);
                 }
             }
@@ -276,7 +278,7 @@ public class MobSuppressionSystem {
             // Remove invalid suppressors
             for (BlockPos pos : toRemove) {
                 removeSuppressor(level, pos);
-                MatrixCraftMod.LOGGER.info("[MobSuppression] Auto-removed suppressor at " + pos + " (lodestone missing)");
+                // Notify players? Maybe not necessary
             }
         }
     }

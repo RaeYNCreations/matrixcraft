@@ -39,7 +39,6 @@ public class MatrixCraftCommands {
             .then(buildBulletTimeCommands())
             .then(buildBulletTrailCommands())
             .then(buildUtilitiesCommands())
-            .then(buildSilentHillCommands())  // Added Silent Hill commands here
             .executes(context -> {
                 context.getSource().sendSuccess(() -> 
                     Component.literal("§6=== MatrixCraft Commands ===\n" +
