@@ -5,14 +5,16 @@ import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.FocusManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.protocol.game.ClientboundPlayerPositionPacket;
 import net.minecraft.network.protocol.game.ClientboundSetEntityMotionPacket;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -132,6 +134,33 @@ public class MatrixWallRunManager {
     }
     
     public static boolean tryStartWallRun(Player player) {
+        MatrixCraftMod.LOGGER.info("Trying to start wallrun for {}", player.getName().getString());
+        
+        // Check if both types are disabled
+        if (!isHorizontalEnabled() && !isVerticalEnabled()) {
+            MatrixCraftMod.LOGGER.info("Wallrun disabled");
+            return false;
+        }
+        
+        if (!FocusManager.isInFocus(player)) {
+            MatrixCraftMod.LOGGER.info("Not in focus");
+            return false;
+        }
+        
+        if (isWallRunning(player)) {
+            MatrixCraftMod.LOGGER.info("Already wallrunning");
+            return false;
+        }
+        
+        if (isOnCooldown(player)) {
+            MatrixCraftMod.LOGGER.info("On cooldown");
+            return false;
+        }
+        
+        if (player.onGround()) {
+            MatrixCraftMod.LOGGER.info("On ground");
+            return false;
+        }
         // Check if both types are disabled
         if (!isHorizontalEnabled() && !isVerticalEnabled()) {
             return false;
@@ -155,14 +184,17 @@ public class MatrixWallRunManager {
         
         Vec3 velocity = player.getDeltaMovement();
         double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+        MatrixCraftMod.LOGGER.info("Horizontal speed: {}", horizontalSpeed);
         
         if (horizontalSpeed < MIN_SPEED) {
+            MatrixCraftMod.LOGGER.info("Speed too low");
             return false;
         }
         
         Level level = player.level();
         BlockPos playerPos = player.blockPosition();
         Vec3 motionDir = new Vec3(velocity.x, 0, velocity.z).normalize();
+        MatrixCraftMod.LOGGER.info("Motion dir: {}", motionDir);
         
         Direction foundWall = null;
         double closestDist = Double.MAX_VALUE;
@@ -179,8 +211,10 @@ public class MatrixWallRunManager {
         }
         
         if (foundWall == null) {
+            MatrixCraftMod.LOGGER.info("No wall found");
             return false;
         }
+        MatrixCraftMod.LOGGER.info("Found wall: {}", foundWall);
         
         Vec3 wallNormal = new Vec3(
             -foundWall.getStepX(),
@@ -193,6 +227,7 @@ public class MatrixWallRunManager {
         
         double angleFromParallel = Math.abs(90.0 - angleToNormal);
         double angleFromInto = 180.0 - angleToNormal;
+        MatrixCraftMod.LOGGER.info("Angles: parallel={}, into={}", angleFromParallel, angleFromInto);
         
         WallRunType type;
         Vec3 runDirection;
@@ -211,8 +246,7 @@ public class MatrixWallRunManager {
             Vec3 ourRight = new Vec3(runDirection.z, 0, -runDirection.x);
             wallIsOnRight = ourRight.dot(wallNormal) < 0;
             
-            MatrixCraftMod.LOGGER.info("HORIZONTAL wall run - wall on {}, max dist: {}", 
-                wallIsOnRight ? "RIGHT" : "LEFT", getHorizontalMaxDistance());
+            MatrixCraftMod.LOGGER.info("Starting HORIZONTAL wallrun");
             
         // Check vertical (only if enabled)
         } else if (isVerticalEnabled() && angleFromInto >= getVerticalAngleMin() && angleFromInto <= getVerticalAngleMax()) {
@@ -220,9 +254,10 @@ public class MatrixWallRunManager {
             runDirection = new Vec3(0, 1, 0);
             wallIsOnRight = false;
             
-            MatrixCraftMod.LOGGER.info("VERTICAL wall run started, max dist: {}", getVerticalMaxDistance());
+            MatrixCraftMod.LOGGER.info("Starting VERTICAL wallrun");
             
         } else {
+            MatrixCraftMod.LOGGER.info("Angles don't match any type");
             return false;
         }
         
@@ -244,6 +279,7 @@ public class MatrixWallRunManager {
             
             Vec3 offset = wallNormal.scale(0.05);
             player.setPos(player.getX() + offset.x, player.getY(), player.getZ() + offset.z);
+            syncPosition(player); // Sync position to client to prevent desync
         } else {
             Vec3 intoWall = wallNormal.scale(-0.08);
             player.setDeltaMovement(intoWall.x, 0.32, intoWall.z);
@@ -361,6 +397,17 @@ public class MatrixWallRunManager {
     private static void syncVelocity(Player player) {
         if (player instanceof ServerPlayer sp) {
             sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
+        }
+    }
+    
+    private static void syncPosition(Player player) {
+        if (player instanceof ServerPlayer sp) {
+            sp.connection.send(new ClientboundPlayerPositionPacket(
+                player.getX(), player.getY(), player.getZ(),
+                player.getYRot(), player.getXRot(),
+                Set.of(), // Empty set for absolute position
+                0 // Teleport ID
+            ));
         }
     }
     
