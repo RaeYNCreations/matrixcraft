@@ -408,7 +408,8 @@ public class DynamicLightManager {
                     return p == null ? 0.0 : p.z;
                 }
                 if (name.equals("ryoamicLights$getDynamicLightWorld") || name.equals("getDynamicLightWorld")) {
-                    return ent == null ? null : ent.level();
+                    if (ent == null) return null;
+                    return ent.level();
                 }
 
                 if (name.equals("ryoamicLights$getLuminance") || name.equals("getLuminance")) {
@@ -450,6 +451,7 @@ public class DynamicLightManager {
         Vec3 base = ent.position();
         if (chainIndex < 0) return base;
         Vec3 vel = ent.getDeltaMovement();
+        if (vel == null) return base;
         double vx = vel.x, vy = vel.y, vz = vel.z;
         double len = Math.sqrt(vx*vx + vy*vy + vz*vz);
         if (len <= 1e-6) return base;
