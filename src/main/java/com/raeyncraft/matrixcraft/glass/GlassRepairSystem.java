@@ -23,10 +23,18 @@ import java.util.*;
 @EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class GlassRepairSystem {
     
+    // Configuration constants
+    private static final int DEFAULT_REPAIR_DELAY_TICKS = 60; // 3 seconds at 20 TPS
+    private static final int DEFAULT_SCAN_RADIUS = 64;
+    private static final int MAX_EFFECTIVE_RADIUS = 32;
+    private static final int MAX_CHECKS_PER_TICK = 1000;
+    private static final int SCAN_FREQUENCY_TICKS = 20; // Scan every second
+    private static final int LOG_FREQUENCY_TICKS = 100; // Log every 5 seconds
+    
     private static final Map<ServerLevel, GlassTracker> trackers = new HashMap<>();
-    private static int repairDelayTicks = 60; // Default 3 seconds
+    private static int repairDelayTicks = DEFAULT_REPAIR_DELAY_TICKS;
     private static boolean enabled = true;
-    private static int scanRadius = 64;
+    private static int scanRadius = DEFAULT_SCAN_RADIUS;
     private static int tickCounter = 0;
     
     private static class GlassTracker {
@@ -128,7 +136,7 @@ public class GlassRepairSystem {
         checkForDirectBlockChanges();
         
         // Every 20 ticks: Full scan for new glass
-        if (tickCounter % 20 == 0) {
+        if (tickCounter % SCAN_FREQUENCY_TICKS == 0) {
             scanForGlassNearPlayers();
         }
         
@@ -197,8 +205,8 @@ public class GlassRepairSystem {
             
             // Scan around each player - use a smaller area with complete coverage
             // 32 blocks = reasonable for most builds, and much faster
-            int effectiveRadius = Math.min(scanRadius, 32);
-            int maxChecksPerTick = 1000; // Limit checks per tick to avoid lag
+            int effectiveRadius = Math.min(scanRadius, MAX_EFFECTIVE_RADIUS);
+            int maxChecksPerTick = MAX_CHECKS_PER_TICK;
             int checksThisTick = 0;
             
             for (ServerPlayer player : level.players()) {
@@ -252,7 +260,7 @@ public class GlassRepairSystem {
             }
             
             // Log status every 5 seconds
-            if (tickCounter % 100 == 0) {
+            if (tickCounter % LOG_FREQUENCY_TICKS == 0) {
                 MatrixCraftMod.LOGGER.info("[GlassRepair] Status: " + 
                     tracker.knownGlass.size() + " glass tracked, " + 
                     tracker.brokenGlass.size() + " pending repair" +
