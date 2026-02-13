@@ -75,9 +75,16 @@ public class DynamicLightManager {
             try {
                 Method get = ryoClass.getMethod("get");
                 dynamicLightsInstance = get.invoke(null);
-                dynamicLightsAvailable = true;
                 MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights detected and singleton obtained.");
-                discoverRyoamicApi();
+                discoverDynamicLightsApi();
+                // Only set available if we successfully discovered the API
+                if (dynamicLightSourceClass != null && methodAddLightSource != null) {
+                    dynamicLightsAvailable = true;
+                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights API successfully initialized.");
+                } else {
+                    MatrixCraftMod.LOGGER.warn("[DynamicLightManager] RyoamicLights detected but API discovery failed!");
+                    dynamicLightsAvailable = false;
+                }
                 return;
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                 MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Ryoamic reflection failed: " + ex.getMessage());
@@ -89,9 +96,16 @@ public class DynamicLightManager {
             try {
                 Method get = lambClass.getMethod("get");
                 dynamicLightsInstance = get.invoke(null);
-                dynamicLightsAvailable = true;
                 MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights detected and singleton obtained.");
-                discoverRyoamicApi();
+                discoverDynamicLightsApi();
+                // Only set available if we successfully discovered the API
+                if (dynamicLightSourceClass != null && methodAddLightSource != null) {
+                    dynamicLightsAvailable = true;
+                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights API successfully initialized.");
+                } else {
+                    MatrixCraftMod.LOGGER.warn("[DynamicLightManager] LambDynLights detected but API discovery failed!");
+                    dynamicLightsAvailable = false;
+                }
                 return;
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                 MatrixCraftMod.LOGGER.debug("[DynamicLightManager] LambDynLights reflection failed: " + ex.getMessage());
@@ -102,7 +116,7 @@ public class DynamicLightManager {
         MatrixCraftMod.LOGGER.info("[DynamicLightManager] No dynamic-lights mod found; using particle glow only.");
     }
 
-    private static void discoverRyoamicApi() {
+    private static void discoverDynamicLightsApi() {
         if (dynamicLightsInstance == null) return;
         Class<?> cls = dynamicLightsInstance.getClass();
         MatrixCraftMod.LOGGER.info("[DynamicLightManager] Dumping methods on detected singleton: " + cls.getName());
@@ -342,6 +356,8 @@ public class DynamicLightManager {
             lastSeenMs.put(id, System.currentTimeMillis());
             return;
         }
+
+        if (dynamicLightSourceClass == null) return;
 
         List<Object> proxies = new ArrayList<>();
         try {
