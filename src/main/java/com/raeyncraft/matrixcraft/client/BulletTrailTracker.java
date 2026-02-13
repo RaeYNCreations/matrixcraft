@@ -96,9 +96,8 @@ public class BulletTrailTracker {
                     } else {
                         DynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
                     }
-                    MatrixCraftMod.LOGGER.info("[BulletTrailTracker] Registered entity-backed dynamic light for entity id=" + entityId);
                 } catch (Throwable ex) {
-                    MatrixCraftMod.LOGGER.info("[BulletTrailTracker] Failed to register entity dynamic light for id=" + entityId + ": " + ex.getMessage());
+                    MatrixCraftMod.LOGGER.warn("[BulletTrailTracker] Failed to register entity dynamic light for id=" + entityId + ": " + ex.getMessage());
                 }
             }
 

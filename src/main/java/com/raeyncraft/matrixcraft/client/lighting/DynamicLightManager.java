@@ -119,18 +119,6 @@ public class DynamicLightManager {
     private static void discoverDynamicLightsApi() {
         if (dynamicLightsInstance == null) return;
         Class<?> cls = dynamicLightsInstance.getClass();
-        MatrixCraftMod.LOGGER.info("[DynamicLightManager] Dumping methods on detected singleton: " + cls.getName());
-        for (Method m : cls.getMethods()) {
-            StringBuilder sig = new StringBuilder();
-            sig.append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
-            Class<?>[] pts = m.getParameterTypes();
-            for (int i = 0; i < pts.length; i++) {
-                sig.append(pts[i].getCanonicalName());
-                if (i < pts.length - 1) sig.append(", ");
-            }
-            sig.append(")");
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] API Method: " + sig.toString());
-        }
 
         for (Method m : cls.getMethods()) {
             String n = m.getName().toLowerCase();
@@ -190,7 +178,6 @@ public class DynamicLightManager {
                     untrackEntityLightById(id);
                     it.remove();
                     lastSeenMs.remove(id);
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] Swept and untracked entity DLS for id=" + id + " (removed=" + (e==null||e.isRemoved()) + " unseenTooLong=" + unseenTooLong + ")");
                 }
             }
         } catch (Throwable ignored) {}
@@ -334,9 +321,8 @@ public class DynamicLightManager {
                     new Class[]{dynamicLightSourceClass}, handler);
             entityDls.put(id, proxy);
             invokeAddLightSource(proxy);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Created and registered entity-backed DLS for entity id=" + id);
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] trackEntityLight failed for id=" + id + ": " + t.getMessage());
+            MatrixCraftMod.LOGGER.warn("[DynamicLightManager] trackEntityLight failed for id=" + id + ": " + t.getMessage());
         }
     }
 
@@ -372,9 +358,8 @@ public class DynamicLightManager {
                 invokeAddLightSource(proxy);
             }
             entityDlsChains.put(id, proxies);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Created and registered entity-backed DLS chain for id=" + id + " count=" + count);
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] trackEntityLightChain failed for id=" + id + ": " + t.getMessage());
+            MatrixCraftMod.LOGGER.warn("[DynamicLightManager] trackEntityLightChain failed for id=" + id + ": " + t.getMessage());
             for (Object p : proxies) {
                 try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
             }
@@ -474,7 +459,6 @@ public class DynamicLightManager {
         }
         entityRefs.remove(id);
         lastSeenMs.remove(id);
-        MatrixCraftMod.LOGGER.info("[DynamicLightManager] Untracked entity-backed DLS for entity id=" + id);
     }
 
     /**

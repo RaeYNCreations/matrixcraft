@@ -154,12 +154,6 @@ public class BulletTrailLighting {
         float[] color = getTrailColor();
         int brightness = getConfiguredLightLevel();
     
-        // Only log occasionally to avoid spam
-        if (activeLights.size() % 50 == 0 && activeLights.size() > 0) {
-            MatrixCraftMod.LOGGER.info("[BulletTrailLighting] Active lights: " + activeLights.size() +
-                ", brightness: " + brightness + ", color: R=" + color[0] + " G=" + color[1] + " B=" + color[2]);
-        }
-    
         int durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
     
         activeLights.put(pos, new LightSource(pos, brightness, durationTicks,
