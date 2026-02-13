@@ -14,11 +14,12 @@ public class MatrixWallRunEventHandler {
     public static void onPlayerTick(PlayerTickEvent.Pre event) {
         Player player = event.getEntity();
         
+        // Handle client-side rendering and animations
         if (player.level().isClientSide) {
             if (MatrixWallRunManager.isWallRunning(player)) {
                 MatrixWallRunManager.clientTick(player);
             }
-            return;
+            // Don't return early - let client-side logic continue below
         }
         
         boolean inFocus = FocusManager.isInFocus(player);
