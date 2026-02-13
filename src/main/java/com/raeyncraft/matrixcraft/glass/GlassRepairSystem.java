@@ -198,16 +198,35 @@ public class GlassRepairSystem {
             // Scan around each player - use a smaller area with complete coverage
             // 32 blocks = reasonable for most builds, and much faster
             int effectiveRadius = Math.min(scanRadius, 32);
+            int maxChecksPerTick = 1000; // Limit checks per tick to avoid lag
+            int checksThisTick = 0;
             
             for (ServerPlayer player : level.players()) {
+                if (checksThisTick >= maxChecksPerTick) break; // Stop if we've done enough
+                
                 BlockPos playerPos = player.blockPosition();
                 
-                // Full scan but with reasonable radius
+                // Use spherical scanning instead of cubic to reduce checks
+                // Only scan in reasonable radius around player
                 for (int x = -effectiveRadius; x <= effectiveRadius; x++) {
                     for (int y = -effectiveRadius; y <= effectiveRadius; y++) {
                         for (int z = -effectiveRadius; z <= effectiveRadius; z++) {
+                            if (checksThisTick >= maxChecksPerTick) break;
+                            
+                            // Skip if outside spherical radius (reduces checks significantly)
+                            if (x*x + y*y + z*z > effectiveRadius * effectiveRadius) {
+                                continue;
+                            }
+                            
                             BlockPos checkPos = playerPos.offset(x, y, z);
+                            
+                            // Check if chunk is loaded before accessing block state
+                            if (!level.isLoaded(checkPos)) {
+                                continue;
+                            }
+                            
                             blocksChecked++;
+                            checksThisTick++;
                             
                             // Skip if already tracked
                             BlockPos immutablePos = checkPos.immutable();

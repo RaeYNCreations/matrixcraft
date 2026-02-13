@@ -72,8 +72,8 @@ public class BulletTrailTracker {
             double maxDist = MatrixCraftConfig.MAX_RENDER_DISTANCE.get();
             if (distSq > maxDist * maxDist) continue;
 
-            if (!processedBullets.contains(entityId)) {
-                processedBullets.add(entityId);
+            // Use atomic add operation - only executes if bullet wasn't already processed
+            if (processedBullets.add(entityId)) {
 
                 long now = System.currentTimeMillis();
                 if (now - lastTrailTime > 100 && velocity.lengthSqr() > 1.0) {

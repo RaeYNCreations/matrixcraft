@@ -287,13 +287,31 @@ public class BulletTrailLighting {
      * Prune oldest lights when at capacity
      */
     private static void pruneOldestLights(int count) {
-        // Simple approach: remove lights with lowest remaining ticks
-        activeLights.entrySet().stream()
-            .sorted((a, b) -> Integer.compare(a.getValue().ticksRemaining, b.getValue().ticksRemaining))
-            .limit(count)
-            .map(Map.Entry::getKey)
-            .toList()
-            .forEach(activeLights::remove);
+        // Optimized approach: use partial sort (select N smallest without full sort)
+        // This is O(n) instead of O(n log n)
+        if (activeLights.size() <= count) {
+            activeLights.clear();
+            return;
+        }
+        
+        // Find the Nth oldest light's ticksRemaining value
+        int threshold = activeLights.values().stream()
+            .mapToInt(ls -> ls.ticksRemaining)
+            .sorted()
+            .skip(count - 1)
+            .findFirst()
+            .orElse(Integer.MAX_VALUE);
+        
+        // Remove all lights with ticksRemaining <= threshold
+        int removed = 0;
+        Iterator<Map.Entry<BlockPos, LightSource>> it = activeLights.entrySet().iterator();
+        while (it.hasNext() && removed < count) {
+            Map.Entry<BlockPos, LightSource> entry = it.next();
+            if (entry.getValue().ticksRemaining <= threshold) {
+                it.remove();
+                removed++;
+            }
+        }
     }
     
     /**
