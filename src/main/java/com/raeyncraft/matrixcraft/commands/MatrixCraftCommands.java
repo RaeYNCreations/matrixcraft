@@ -1198,72 +1198,6 @@ public class MatrixCraftCommands {
                 })
             )
             
-            .then(Commands.literal("safehaven")
-                .then(Commands.literal("radius")
-                    .then(Commands.argument("value", IntegerArgumentType.integer(8, 128))
-                        .executes(context -> {
-                            int value = IntegerArgumentType.getInteger(context, "value");
-                            MatrixCraftConfig.SAFE_HAVEN_RADIUS.set(value);
-                            MatrixCraftConfig.saveCommonConfig();
-                            context.getSource().sendSuccess(() -> 
-                                Component.literal("§6[Safe Haven] §7Radius set to §e" + value + " blocks")
-                                    .append(Component.literal("\n§7New obelisks will use this radius.").withStyle(ChatFormatting.GRAY)), true);
-                            return 1;
-                        })
-                    )
-                    .executes(context -> {
-                        int value = MatrixCraftConfig.SAFE_HAVEN_RADIUS.get();
-                        context.getSource().sendSuccess(() -> 
-                            Component.literal("§6[Safe Haven] §7Current radius: §e" + value + " blocks"), false);
-                        return 1;
-                    })
-                )
-                .then(Commands.literal("despawn")
-                    .then(Commands.literal("on")
-                        .executes(context -> {
-                            MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.set(true);
-                            MatrixCraftConfig.saveCommonConfig();
-                            context.getSource().sendSuccess(() -> 
-                                Component.literal("§6[Safe Haven] §7Despawn: ")
-                                    .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
-                                    .append(Component.literal(" - Hostile mobs entering zones will be removed").withStyle(ChatFormatting.GRAY)), true);
-                            return 1;
-                        })
-                    )
-                    .then(Commands.literal("off")
-                        .executes(context -> {
-                            MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.set(false);
-                            MatrixCraftConfig.saveCommonConfig();
-                            context.getSource().sendSuccess(() -> 
-                                Component.literal("§6[Safe Haven] §7Despawn: ")
-                                    .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
-                                    .append(Component.literal(" - Hostile mobs can enter zones").withStyle(ChatFormatting.GRAY)), true);
-                            return 1;
-                        })
-                    )
-                    .executes(context -> {
-                        boolean enabled = MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get();
-                        context.getSource().sendSuccess(() -> 
-                            Component.literal("§6[Safe Haven] §7Despawn is currently ")
-                                .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
-                                    .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
-                        return 1;
-                    })
-                )
-                .executes(context -> {
-                    int radius = MatrixCraftConfig.SAFE_HAVEN_RADIUS.get();
-                    boolean despawn = MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get();
-                    context.getSource().sendSuccess(() -> 
-                        Component.literal("§6=== Safe Haven Obelisk ===\n" +
-                            "§7Radius: §e" + radius + " blocks\n" +
-                            "§7Despawn: " + (despawn ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7\n" +
-                            "§e/matrix utilities safehaven radius <8-128>\n" +
-                            "§e/matrix utilities safehaven despawn <on|off>"), false);
-                    return 1;
-                })
-            )
-            
             .then(Commands.literal("status")
                 .executes(context -> {
                     boolean cobwebs = MatrixSettings.areCobwebsEnabled();
@@ -1274,8 +1208,6 @@ public class MatrixCraftCommands {
                     boolean waterBypass = MatrixCraftConfig.FOCUS_WATER_BYPASS.get();
                     boolean glassEnabled = GlassRepairSystem.isEnabled();
                     int glassDelay = GlassRepairSystem.getRepairDelaySeconds();
-                    int safeRadius = MatrixCraftConfig.SAFE_HAVEN_RADIUS.get();
-                    boolean safeDespawn = MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get();
                     
                     context.getSource().sendSuccess(() -> 
                         Component.literal("§6=== Utilities Status ===\n" +
@@ -1285,9 +1217,7 @@ public class MatrixCraftCommands {
                             "§7Lava Bypass (Focus): " + (lavaBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
                             "§7Cobweb Bypass (Focus): " + (cobwebBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
                             "§7Water Bypass (Focus): " + (waterBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Glass Repair: " + (glassEnabled ? "§aENABLED" : "§cDISABLED") + " (Delay: §e" + glassDelay + "s)\n" +
-                            "§7Safe Haven Radius: §e" + safeRadius + " blocks\n" +
-                            "§7Safe Haven Despawn: " + (safeDespawn ? "§aENABLED" : "§cDISABLED")), false);
+                            "§7Glass Repair: " + (glassEnabled ? "§aENABLED" : "§cDISABLED") + " (Delay: §e" + glassDelay + "s)")), false);
                     return 1;
                 })
             )
@@ -1302,7 +1232,6 @@ public class MatrixCraftCommands {
                     "§e/matrix utilities cobwebbypass [on|off] §7- Cobweb bypass during Focus\n" +
                     "§e/matrix utilities waterbypass [on|off] §7- Water bypass during Focus\n" +
                     "§e/matrix utilities glassrepair §7- Glass repair system\n" +
-                    "§e/matrix utilities safehaven §7- Safe Haven Obelisk settings\n" +
                     "§e/matrix utilities status §7- Show all utility settings"), false);
             return 1;
         });

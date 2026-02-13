@@ -3,7 +3,6 @@ package com.raeyncraft.matrixcraft;
 import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunEventHandler;
-import com.raeyncraft.matrixcraft.item.MobSuppressionSystem;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
@@ -41,7 +40,6 @@ public class MatrixCraftMod {
         // Register configs
         modContainer.registerConfig(ModConfig.Type.COMMON, MatrixCraftConfig.COMMON_SPEC);
         modContainer.registerConfig(ModConfig.Type.CLIENT, MatrixCraftConfig.CLIENT_SPEC);
-        NeoForge.EVENT_BUS.register(MobSuppressionSystem.class);
         LOGGER.info("Config registered!");
         
         // Client setup
