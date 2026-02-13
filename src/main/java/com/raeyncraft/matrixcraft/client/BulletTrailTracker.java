@@ -102,7 +102,11 @@ public class BulletTrailTracker {
             }
 
             // ping so TTL doesn't remove the light
-            try { DynamicLightManager.pingEntity(entityId); } catch (Throwable ignored) {}
+            try { 
+                DynamicLightManager.pingEntity(entityId); 
+            } catch (Throwable e) {
+                MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Ping entity failed for id=" + entityId + ": " + e.getMessage());
+            }
 
             Vec3 lastPos = bulletLastPos.get(entityId);
             if (lastPos != null && currentPos.distanceToSqr(lastPos) > 0.01) {
@@ -214,7 +218,9 @@ public class BulletTrailTracker {
             if (removed) {
                 try {
                     DynamicLightManager.untrackEntityLightById(id);
-                } catch (Throwable ignored) {}
+                } catch (Throwable ex) {
+                    MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in processedBullets cleanup for id=" + id + ": " + ex.getMessage());
+                }
             }
             return removed;
         });
@@ -226,7 +232,9 @@ public class BulletTrailTracker {
             if (removed) {
                 try {
                     DynamicLightManager.untrackEntityLightById(id);
-                } catch (Throwable ignored) {}
+                } catch (Throwable ex) {
+                    MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in bulletLastPos cleanup for id=" + id + ": " + ex.getMessage());
+                }
             }
             return removed;
         });

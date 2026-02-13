@@ -221,7 +221,9 @@ public class BulletTrailLighting {
             try {
                 com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
                 com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
-            } catch (Throwable ignored) {}
+            } catch (Throwable e) {
+                MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Texture update failed: " + e.getMessage());
+            }
         }
     }
     
@@ -280,7 +282,9 @@ public class BulletTrailLighting {
         activeLights.clear();
         try {
             com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.clearTexture();
-        } catch (Throwable ignored) {}
+        } catch (Throwable e) {
+            MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Clear texture failed: " + e.getMessage());
+        }
     }
     
     /**
