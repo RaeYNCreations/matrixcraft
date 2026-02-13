@@ -349,15 +349,27 @@ public class GlassRepairSystem {
     
     // ========== Command Methods ==========
     
+    /**
+     * Sets the repair delay for broken glass
+     * @param seconds Number of seconds to wait before repairing glass (converted to ticks internally)
+     */
     public static void setRepairDelay(int seconds) {
         repairDelayTicks = seconds * 20;
         MatrixCraftMod.LOGGER.info("[GlassRepair] Delay set to " + seconds + " seconds (" + repairDelayTicks + " ticks)");
     }
     
+    /**
+     * Gets the current repair delay in seconds
+     * @return Repair delay in seconds
+     */
     public static int getRepairDelaySeconds() {
         return repairDelayTicks / 20;
     }
     
+    /**
+     * Enables or disables the glass repair system
+     * @param enable True to enable, false to disable. Disabling clears all pending repairs.
+     */
     public static void setEnabled(boolean enable) {
         enabled = enable;
         if (!enabled) {
@@ -369,15 +381,28 @@ public class GlassRepairSystem {
         MatrixCraftMod.LOGGER.info("[GlassRepair] System " + (enabled ? "enabled" : "disabled"));
     }
     
+    /**
+     * Checks if the glass repair system is currently enabled
+     * @return True if enabled, false otherwise
+     */
     public static boolean isEnabled() {
         return enabled;
     }
     
+    /**
+     * Gets the number of glass blocks pending repair in a level
+     * @param level The server level to check
+     * @return Number of broken glass blocks awaiting repair
+     */
     public static int getPendingRepairCount(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         return tracker == null ? 0 : tracker.brokenGlass.size();
     }
     
+    /**
+     * Clears all pending repairs for a level without repairing them
+     * @param level The server level to clear pending repairs for
+     */
     public static void clearPendingRepairs(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         if (tracker != null) {
@@ -387,6 +412,10 @@ public class GlassRepairSystem {
         }
     }
     
+    /**
+     * Immediately repairs all broken glass in a level, bypassing the delay timer
+     * @param level The server level to repair glass in
+     */
     public static void repairAllNow(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         if (tracker == null || tracker.brokenGlass.isEmpty()) {
@@ -407,6 +436,11 @@ public class GlassRepairSystem {
         MatrixCraftMod.LOGGER.info("[GlassRepair] Instantly repaired " + repaired + " glass blocks");
     }
     
+    /**
+     * Gets the total number of glass blocks being tracked in a level
+     * @param level The server level to check
+     * @return Number of intact glass blocks currently tracked
+     */
     public static int getTrackedGlassCount(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         return tracker == null ? 0 : tracker.knownGlass.size();
@@ -414,6 +448,7 @@ public class GlassRepairSystem {
     
     /**
      * Force re-scan and re-track all glass (useful for debugging)
+     * @param level The server level to rescan
      */
     public static void rescan(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
