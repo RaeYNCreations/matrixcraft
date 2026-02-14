@@ -26,6 +26,10 @@ public class MatrixCraftMod {
         com.raeyncraft.matrixcraft.particle.MatrixParticles.register(modEventBus);
         LOGGER.info("Particles registered!");
         
+        // Register entities
+        com.raeyncraft.matrixcraft.registry.ModEntities.register(modEventBus);
+        LOGGER.info("Entities registered!");
+        
         // Register bullet time system (items, effects)
         BulletTimeRegistry.register(modEventBus);
         LOGGER.info("Bullet Time system registered!");

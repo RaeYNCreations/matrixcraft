@@ -2,6 +2,7 @@ package com.raeyncraft.matrixcraft.client.lighting;
 
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.client.BulletTrailLighting;
+import com.raeyncraft.matrixcraft.registry.ModEntities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -17,19 +18,15 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Simplified Dynamic Light Manager - NO reflection, NO proxies
+ * Simplified Dynamic Light Manager - Creates actual light marker entities
  * 
- * This is a COMPLETE REWRITE that:
- * 1. Doesn't use reflection to avoid crashes
- * 2. Doesn't create dynamic proxies
- * 3. Simply tracks light data for other systems to use
- * 4. Compatible with ALL dynamic lighting mods via standard approaches
+ * This manager creates invisible LightMarkerEntity instances that:
+ * - Follow bullets and other entities
+ * - Emit dynamic light that LambDynLights automatically detects
+ * - Support RGB colored lighting
+ * - Auto-cleanup when targets are removed
  * 
- * How it works:
- * - Tracks light positions and colors
- * - Provides query methods for shaders/other systems
- * - Uses standard Minecraft light level system
- * - No direct LambDynLights integration (let LambDynLights handle entities itself)
+ * LambDynLights will automatically see these entities and create dynamic lights!
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = MatrixCraftMod.MODID)
@@ -40,6 +37,9 @@ public class SimpleDynamicLightManager {
     
     // Track entity references for cleanup
     private static final Map<Integer, WeakReference<Entity>> entityRefs = new ConcurrentHashMap<>();
+    
+    // Track marker entities we've created (target entity ID -> list of markers)
+    private static final Map<Integer, List<LightMarkerEntity>> markerEntities = new ConcurrentHashMap<>();
     
     // Last seen time for TTL cleanup
     private static final Map<Integer, Long> lastSeenMs = new ConcurrentHashMap<>();
@@ -73,10 +73,18 @@ public class SimpleDynamicLightManager {
     }
     
     /**
-     * Initialize - nothing needed, we're passive
+     * Initialize - log that we're using marker entities
      */
     public static void init() {
-        MatrixCraftMod.LOGGER.info("[SimpleDynamicLightManager] Initialized - using passive light tracking");
+        MatrixCraftMod.LOGGER.info("╔════════════════════════════════════════════════════════╗");
+        MatrixCraftMod.LOGGER.info("║ SimpleDynamicLightManager initialized                 ║");
+        MatrixCraftMod.LOGGER.info("║                                                        ║");
+        MatrixCraftMod.LOGGER.info("║ Creates invisible marker entities that emit light     ║");
+        MatrixCraftMod.LOGGER.info("║ LambDynLights will auto-detect these and create       ║");
+        MatrixCraftMod.LOGGER.info("║ dynamic RGB colored lights!                           ║");
+        MatrixCraftMod.LOGGER.info("║                                                        ║");
+        MatrixCraftMod.LOGGER.info("║ Works with: LambDynLights, RyoamicLights, Shaders    ║");
+        MatrixCraftMod.LOGGER.info("╚════════════════════════════════════════════════════════╝");
     }
     
     public static void ensureInit() {
@@ -92,27 +100,84 @@ public class SimpleDynamicLightManager {
     
     /**
      * Track a light on an entity (single light)
+     * Creates an invisible marker entity that emits light
      */
     public static void trackEntityLight(Entity entity, int brightness, float r, float g, float b) {
         if (entity == null) return;
+        
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
         
         int id = entity.getId();
         entityLights.put(id, new EntityLightData(brightness, r, g, b, 1, 0.0));
         entityRefs.put(id, new WeakReference<>(entity));
         lastSeenMs.put(id, System.currentTimeMillis());
+        
+        // Create marker entity
+        try {
+            LightMarkerEntity marker = new LightMarkerEntity(ModEntities.LIGHT_MARKER.get(), mc.level);
+            marker.setPos(entity.getX(), entity.getY(), entity.getZ());
+            marker.setTarget(id, Vec3.ZERO);
+            marker.setLightProperties(brightness, r, g, b);
+            marker.setMaxTicks(60); // 3 seconds
+            
+            mc.level.addFreshEntity(marker);
+            
+            List<LightMarkerEntity> markers = markerEntities.computeIfAbsent(id, k -> new ArrayList<>());
+            markers.add(marker);
+            
+            MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created light marker for entity " + id + 
+                " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Failed to create marker entity: " + e.getMessage());
+        }
     }
     
     /**
      * Track a chain of lights on an entity
+     * Creates multiple marker entities trailing behind the entity
      */
     public static void trackEntityLightChain(Entity entity, int chainCount, double chainSpacing, 
                                              int brightness, float r, float g, float b) {
         if (entity == null) return;
         
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        
         int id = entity.getId();
         entityLights.put(id, new EntityLightData(brightness, r, g, b, chainCount, chainSpacing));
         entityRefs.put(id, new WeakReference<>(entity));
         lastSeenMs.put(id, System.currentTimeMillis());
+        
+        // Create chain of marker entities
+        try {
+            Vec3 velocity = entity.getDeltaMovement();
+            double vLen = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
+            Vec3 direction = vLen > 0.001 ? new Vec3(velocity.x / vLen, velocity.y / vLen, velocity.z / vLen) : Vec3.ZERO;
+            
+            List<LightMarkerEntity> markers = new ArrayList<>();
+            
+            for (int i = 0; i < chainCount; i++) {
+                // Calculate offset for this marker in the chain
+                Vec3 offset = direction.scale(-i * chainSpacing); // Behind the entity
+                
+                LightMarkerEntity marker = new LightMarkerEntity(ModEntities.LIGHT_MARKER.get(), mc.level);
+                marker.setPos(entity.getX() + offset.x, entity.getY() + offset.y, entity.getZ() + offset.z);
+                marker.setTarget(id, offset);
+                marker.setLightProperties(brightness, r, g, b);
+                marker.setMaxTicks(60); // 3 seconds
+                
+                mc.level.addFreshEntity(marker);
+                markers.add(marker);
+            }
+            
+            markerEntities.put(id, markers);
+            
+            MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created " + chainCount + 
+                " light markers for entity " + id + " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Failed to create marker chain: " + e.getMessage());
+        }
     }
     
     /**
@@ -124,11 +189,22 @@ public class SimpleDynamicLightManager {
     
     /**
      * Stop tracking a light by entity ID
+     * Removes all marker entities for this target
      */
     public static void untrackEntityLightById(int id) {
         entityLights.remove(id);
         entityRefs.remove(id);
         lastSeenMs.remove(id);
+        
+        // Remove marker entities
+        List<LightMarkerEntity> markers = markerEntities.remove(id);
+        if (markers != null) {
+            for (LightMarkerEntity marker : markers) {
+                if (marker != null && !marker.isRemoved()) {
+                    marker.discard();
+                }
+            }
+        }
     }
     
     /**
@@ -172,13 +248,25 @@ public class SimpleDynamicLightManager {
     }
     
     /**
-     * Clear all tracked lights
+     * Clear all tracked lights and marker entities
      */
     public static void clearAllDynamicLights() {
+        // Remove all marker entities
+        for (List<LightMarkerEntity> markers : markerEntities.values()) {
+            if (markers != null) {
+                for (LightMarkerEntity marker : markers) {
+                    if (marker != null && !marker.isRemoved()) {
+                        marker.discard();
+                    }
+                }
+            }
+        }
+        
         entityLights.clear();
         entityRefs.clear();
         lastSeenMs.clear();
-        MatrixCraftMod.LOGGER.info("[SimpleDynamicLightManager] Cleared all tracked lights");
+        markerEntities.clear();
+        MatrixCraftMod.LOGGER.info("[SimpleDynamicLightManager] Cleared all tracked lights and markers");
     }
     
     /**
