@@ -298,6 +298,13 @@ public class DynamicLightManager {
         if (entity == null) return;
         if (!isDynamicLightsModAvailable()) return;
         ensureInit();
+        
+        // Additional safety check - verify API is properly initialized
+        if (dynamicLightSourceClass == null || methodAddLightSource == null) {
+            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] API not initialized, skipping entity light tracking");
+            return;
+        }
+        
         int id = entity.getId();
 
         try {
@@ -316,7 +323,6 @@ public class DynamicLightManager {
                 return;
             }
 
-            if (dynamicLightSourceClass == null) return;
             entityRefs.put(id, new WeakReference<>(entity));
             lastSeenMs.put(id, System.currentTimeMillis());
 
@@ -338,6 +344,13 @@ public class DynamicLightManager {
         if (entity == null) return;
         if (!isDynamicLightsModAvailable()) return;
         ensureInit();
+        
+        // Additional safety check - verify API is properly initialized
+        if (dynamicLightSourceClass == null || methodAddLightSource == null) {
+            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] API not initialized, skipping entity light chain tracking");
+            return;
+        }
+        
         int id = entity.getId();
 
         // don't double-register chain if exists
@@ -346,8 +359,6 @@ public class DynamicLightManager {
             lastSeenMs.put(id, System.currentTimeMillis());
             return;
         }
-
-        if (dynamicLightSourceClass == null) return;
 
         List<Object> proxies = new ArrayList<>();
         try {

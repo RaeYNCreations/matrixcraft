@@ -117,10 +117,12 @@ public class LambDynLightsCompat {
      */
     public static float[] getTrailLightColor() {
         try {
-            float r = MatrixCraftConfig.TRAIL_COLOR_R.get() / 255f;
-            float g = MatrixCraftConfig.TRAIL_COLOR_G.get() / 255f;
-            float b = MatrixCraftConfig.TRAIL_COLOR_B.get() / 255f;
-            return new float[] { r, g, b };
+            // Clamp values to valid range [0-255] before normalization
+            int r = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_R.get()));
+            int g = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_G.get()));
+            int b = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_B.get()));
+            
+            return new float[] { r / 255f, g / 255f, b / 255f };
         } catch (Exception e) {
             return new float[] { 0f, 1f, 0f }; // Default green
         }

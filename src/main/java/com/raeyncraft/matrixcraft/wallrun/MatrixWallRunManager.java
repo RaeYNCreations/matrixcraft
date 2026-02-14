@@ -106,6 +106,7 @@ public class MatrixWallRunManager {
         public final float playerYaw;
         public final double maxDistance;
         public int ticksActive;
+        public double lastYVelocity;
         
         public WallRunState(WallRunType type, Direction wallDirection, Vec3 wallNormal, 
                            Vec3 startPos, Vec3 runDirection, boolean wallIsOnRight, float playerYaw) {
@@ -118,6 +119,7 @@ public class MatrixWallRunManager {
             this.playerYaw = playerYaw;
             this.ticksActive = 0;
             this.maxDistance = type == WallRunType.HORIZONTAL ? getHorizontalMaxDistance() : getVerticalMaxDistance();
+            this.lastYVelocity = 0;
         }
         
         public double getDistanceTraveled(Vec3 currentPos) {
@@ -329,6 +331,18 @@ public class MatrixWallRunManager {
         }
         
         state.ticksActive++;
+        
+        // Detect jump attempt: sudden upward velocity change
+        double currentYVel = player.getDeltaMovement().y;
+        if (currentYVel > state.lastYVelocity + 0.3) {
+            // Player is trying to jump off the wall
+            MatrixCraftMod.LOGGER.info("Player jump detected: Y velocity changed from {} to {}", 
+                state.lastYVelocity, currentYVel);
+            endWallRun(player, state, true);
+            return;
+        }
+        state.lastYVelocity = currentYVel;
+        
         double distance = state.getDistanceTraveled(player.position());
         double maxDist = state.getMaxDistance();
         
@@ -420,20 +434,46 @@ public class MatrixWallRunManager {
         }
     }
     
+    /**
+     * Allows player to jump off the wall at any time during a wallrun
+     * Called when player presses jump key while wallrunning
+     */
+    public static void jumpOffWall(Player player) {
+        WallRunState state = activeWallRuns.get(player.getUUID());
+        if (state == null) {
+            return;
+        }
+        
+        // End the wallrun with a jump
+        endWallRun(player, state, true);
+        MatrixCraftMod.LOGGER.info("Player jumped off wall early at {} ticks", state.ticksActive);
+    }
+    
     private static void syncVelocity(Player player) {
         if (player instanceof ServerPlayer sp) {
-            sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
+            try {
+                sp.connection.send(new ClientboundSetEntityMotionPacket(sp));
+            } catch (Exception e) {
+                MatrixCraftMod.LOGGER.warn("[MatrixWallRun] Failed to sync velocity for player {}: {}", 
+                    player.getName().getString(), e.getMessage());
+            }
         }
     }
     
     private static void syncPosition(Player player) {
         if (player instanceof ServerPlayer sp) {
-            sp.connection.send(new ClientboundPlayerPositionPacket(
-                player.getX(), player.getY(), player.getZ(),
-                player.getYRot(), player.getXRot(),
-                Set.of(), // Empty set for absolute position
-                0 // Teleport ID
-            ));
+            try {
+                // Use relative flags set to force absolute positioning
+                sp.connection.send(new ClientboundPlayerPositionPacket(
+                    player.getX(), player.getY(), player.getZ(),
+                    player.getYRot(), player.getXRot(),
+                    Set.of(), // Empty set for absolute position
+                    0 // Teleport ID
+                ));
+            } catch (Exception e) {
+                MatrixCraftMod.LOGGER.warn("[MatrixWallRun] Failed to sync position for player {}: {}", 
+                    player.getName().getString(), e.getMessage());
+            }
         }
     }
     
