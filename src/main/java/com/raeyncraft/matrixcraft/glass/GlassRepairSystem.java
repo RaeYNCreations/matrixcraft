@@ -15,6 +15,8 @@ import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Tracks glass blocks near players and repairs them when destroyed.
@@ -31,19 +33,19 @@ public class GlassRepairSystem {
     private static final int SCAN_FREQUENCY_TICKS = 20; // Scan every second
     private static final int LOG_FREQUENCY_TICKS = 100; // Log every 5 seconds
     
-    private static final Map<ServerLevel, GlassTracker> trackers = new HashMap<>();
+    private static final Map<ServerLevel, GlassTracker> trackers = new ConcurrentHashMap<>();
     private static int repairDelayTicks = DEFAULT_REPAIR_DELAY_TICKS;
     private static boolean enabled = true;
     private static int scanRadius = DEFAULT_SCAN_RADIUS;
     private static int tickCounter = 0;
     
     private static class GlassTracker {
-        // Maps position -> original block state
-        Map<BlockPos, BlockState> knownGlass = new HashMap<>();
-        // Glass waiting to be repaired
-        List<BrokenGlass> brokenGlass = new ArrayList<>();
+        // Thread-safe maps and lists - events can fire concurrently
+        Map<BlockPos, BlockState> knownGlass = new ConcurrentHashMap<>();
+        // Use CopyOnWriteArrayList for thread-safety during iteration
+        List<BrokenGlass> brokenGlass = new CopyOnWriteArrayList<>();
         // Snapshot of glass states from last tick for change detection
-        Map<BlockPos, BlockState> lastTickSnapshot = new HashMap<>();
+        Map<BlockPos, BlockState> lastTickSnapshot = new ConcurrentHashMap<>();
     }
     
     private static class BrokenGlass {

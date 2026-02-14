@@ -44,8 +44,21 @@ public class MatrixParticles {
                                      double xSpeed, double ySpeed, double zSpeed) {
             super(level, x, y, z, xSpeed, ySpeed, zSpeed);
             
-            this.lifetime = MatrixCraftConfig.TRAIL_LENGTH.get() + 5;
-            float width = MatrixCraftConfig.TRAIL_WIDTH.get().floatValue();
+            // Safe config access with defaults
+            try {
+                Integer lifetimeConfig = MatrixCraftConfig.TRAIL_LENGTH.get();
+                this.lifetime = (lifetimeConfig != null ? lifetimeConfig : 20) + 5;
+            } catch (Exception e) {
+                this.lifetime = 25; // Default: 20 + 5
+            }
+            
+            float width;
+            try {
+                Number widthConfig = MatrixCraftConfig.TRAIL_WIDTH.get();
+                width = widthConfig != null ? widthConfig.floatValue() : 0.5f;
+            } catch (Exception e) {
+                width = 0.5f; // Default
+            }
             
             this.gravity = 0.0F;
             this.hasPhysics = false;
@@ -61,9 +74,17 @@ public class MatrixParticles {
             
             // Get color from config - apply HDR boost for glow
             // Clamp values to valid range [0-255] before normalization
-            int r = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_R.get()));
-            int g = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_G.get()));
-            int b = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_B.get()));
+            int r, g, b;
+            try {
+                r = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_R.get()));
+                g = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_G.get()));
+                b = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_B.get()));
+            } catch (Exception e) {
+                // Default: green
+                r = 0;
+                g = 255;
+                b = 0;
+            }
             
             float rNorm = r / 255f;
             float gNorm = g / 255f;
@@ -76,7 +97,12 @@ public class MatrixParticles {
             this.bCol = bNorm * hdrBoost;
             
             // Alpha from config
-            this.initialAlpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue();
+            try {
+                Number alphaConfig = MatrixCraftConfig.TRAIL_ALPHA.get();
+                this.initialAlpha = alphaConfig != null ? alphaConfig.floatValue() : 1.0f;
+            } catch (Exception e) {
+                this.initialAlpha = 1.0f; // Default: fully opaque
+            }
             this.alpha = this.initialAlpha;
             
             // Check if this particle should emit light

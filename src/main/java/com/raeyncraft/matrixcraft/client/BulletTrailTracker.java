@@ -15,10 +15,10 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Bullet Trail Tracker - working copy adjusted to use config-driven lighting parameters.
@@ -55,8 +55,9 @@ public class BulletTrailTracker {
     private static long lastTrailTime = 0;
     private static final long TRAIL_COOLDOWN_MS = 30;
 
-    private static final Set<Integer> processedBullets = new HashSet<>();
-    private static final Map<Integer, Vec3> bulletLastPos = new HashMap<>();
+    // Use thread-safe collections for client-side rendering
+    private static final Set<Integer> processedBullets = ConcurrentHashMap.newKeySet();
+    private static final Map<Integer, Vec3> bulletLastPos = new ConcurrentHashMap<>();
 
     private static int tickCounter = 0;
 
