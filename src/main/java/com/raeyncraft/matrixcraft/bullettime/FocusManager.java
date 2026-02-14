@@ -32,7 +32,13 @@ public class FocusManager {
      */
     public static int getFocusDuration() {
         try {
-            return MatrixCraftConfig.getFocusDurationTicks();
+            int duration = MatrixCraftConfig.getFocusDurationTicks();
+            // Validate duration is positive
+            if (duration <= 0) {
+                MatrixCraftMod.LOGGER.warn("[FocusManager] Invalid duration " + duration + ", using default");
+                return FOCUS_DURATION_TICKS;
+            }
+            return duration;
         } catch (Exception e) {
             // Config not loaded yet, use default
             return FOCUS_DURATION_TICKS;
@@ -47,12 +53,14 @@ public class FocusManager {
         
         public FocusState(int durationTicks, boolean isSinglePlayer) {
             this.startTime = System.currentTimeMillis();
-            this.durationTicks = durationTicks;
-            this.ticksRemaining = durationTicks;
+            this.durationTicks = Math.max(1, durationTicks); // Ensure at least 1 tick
+            this.ticksRemaining = this.durationTicks;
             this.isSinglePlayer = isSinglePlayer;
         }
         
         public float getProgress() {
+            // Prevent division by zero
+            if (durationTicks <= 0) return 0.0f;
             return (float) ticksRemaining / (float) durationTicks;
         }
     }

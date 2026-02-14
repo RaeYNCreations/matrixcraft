@@ -13,15 +13,29 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Manages dynamic lighting for bullet trails - "Torch Bullets"
  * 
+ * RGB Color System:
+ * - Fully configurable RGB colors via MatrixCraftConfig
+ * - TRAIL_COLOR_R: Red component (0-255)
+ * - TRAIL_COLOR_G: Green component (0-255)
+ * - TRAIL_COLOR_B: Blue component (0-255)
+ * - Default: Green (R=0, G=255, B=0)
+ * 
  * Features:
  * - Colored light based on trail color config
  * - Configurable light level (1-15)
  * - Fading light as trails decay
- * - Integration with RyoamicLights (if available)
+ * - Integration with LambDynLights (if available)
  * - Shader-friendly data for Iris/Optifine
  * 
  * The light color matches the bullet trail color from config,
  * so red trails make red light, green trails make green light, etc.
+ * 
+ * Color Examples:
+ * - Matrix Green: R=0, G=255, B=0 (default)
+ * - Blood Red: R=255, G=0, B=0
+ * - Ice Blue: R=0, G=128, B=255
+ * - Purple: R=128, G=0, B=255
+ * - Orange: R=255, G=128, B=0
  */
 @OnlyIn(Dist.CLIENT)
 public class BulletTrailLighting {
@@ -29,9 +43,9 @@ public class BulletTrailLighting {
     // Track active light sources: position -> light data
     private static final Map<BlockPos, LightSource> activeLights = new ConcurrentHashMap<>();
     
-    // RyoamicLights availability flag
-    private static boolean ryoamicLightsAvailable = false;
-    private static boolean checkedForRyoamicLights = false;
+    // Dynamic lights availability flag
+    private static boolean dynamicLightsAvailable = false;
+    private static boolean checkedForDynamicLights = false;
     
     // Light settings
     private static final int MAX_LIGHTS = 300; // Prevent too many light sources
@@ -95,7 +109,16 @@ public class BulletTrailLighting {
     }
     
     /**
-     * Get trail color from config (normalized 0-1)
+     * Get trail color from config (normalized 0-1 range for rendering)
+     * Returns RGB values normalized to 0.0-1.0 range
+     * 
+     * @return float array [R, G, B] where each component is 0.0-1.0
+     * 
+     * Examples:
+     * - Green (default): [0.0, 1.0, 0.0]
+     * - Red: [1.0, 0.0, 0.0]
+     * - Blue: [0.0, 0.0, 1.0]
+     * - Purple: [0.5, 0.0, 1.0]
      */
     public static float[] getTrailColor() {
         try {
@@ -109,29 +132,22 @@ public class BulletTrailLighting {
     }
     
     /**
-     * Check if RyoamicLights is available
+     * Check if LambDynLights is available
      */
-    public static boolean isRyoamicLightsAvailable() {
-        if (!checkedForRyoamicLights) {
-            checkedForRyoamicLights = true;
+    public static boolean isDynamicLightsAvailable() {
+        if (!checkedForDynamicLights) {
+            checkedForDynamicLights = true;
             try {
-                // Check if RyoamicLights API class exists
+                // Check if LambDynLights API class exists
                 Class.forName("dev.lambdaurora.lambdynlights.api.DynamicLightHandlers");
-                ryoamicLightsAvailable = true;
-                MatrixCraftMod.LOGGER.info("[BulletTrailLighting] RyoamicLights detected!");
+                dynamicLightsAvailable = true;
+                MatrixCraftMod.LOGGER.info("[BulletTrailLighting] LambDynLights detected!");
             } catch (ClassNotFoundException e) {
-                // Try alternate class name for RyoamicLights
-                try {
-                    Class.forName("org.thinkingstudio.ryoamiclights.RyoamicLights");
-                    ryoamicLightsAvailable = true;
-                    MatrixCraftMod.LOGGER.info("[BulletTrailLighting] RyoamicLights detected (alternate)!");
-                } catch (ClassNotFoundException e2) {
-                    ryoamicLightsAvailable = false;
-                    MatrixCraftMod.LOGGER.info("[BulletTrailLighting] No dynamic lights mod found, using shader-based lighting");
-                }
+                dynamicLightsAvailable = false;
+                MatrixCraftMod.LOGGER.info("[BulletTrailLighting] No dynamic lights mod found, using shader-based lighting");
             }
         }
-        return ryoamicLightsAvailable;
+        return dynamicLightsAvailable;
     }
     
     /**
@@ -207,23 +223,31 @@ public class BulletTrailLighting {
             return;
         }
         
-        Iterator<Map.Entry<BlockPos, LightSource>> iterator = activeLights.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<BlockPos, LightSource> entry = iterator.next();
+        // Create list of positions to remove (avoid concurrent modification)
+        java.util.List<BlockPos> toRemove = new java.util.ArrayList<>();
+        
+        // Update all lights and collect expired ones
+        for (Map.Entry<BlockPos, LightSource> entry : activeLights.entrySet()) {
             LightSource light = entry.getValue();
             
             light.ticksRemaining--;
             
             if (light.ticksRemaining <= 0) {
-                iterator.remove();
+                toRemove.add(entry.getKey());
             }
-            // Update trail-light texture for shader ACL
-            try {
-                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
-                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
-            } catch (Throwable e) {
-                MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Texture update failed: " + e.getMessage());
-            }
+        }
+        
+        // Remove expired lights
+        for (BlockPos pos : toRemove) {
+            activeLights.remove(pos);
+        }
+        
+        // Update trail-light texture for shader ACL
+        try {
+            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
+            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
+        } catch (Throwable e) {
+            MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Texture update failed: " + e.getMessage());
         }
     }
     

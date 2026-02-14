@@ -22,11 +22,13 @@ public class MatrixWallRunManager {
     
     private static final Map<UUID, WallRunState> activeWallRuns = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> consecutiveWallJumps = new ConcurrentHashMap<>();
     
     private static final double MIN_SPEED = 0.1;
     private static final int MAX_HORIZONTAL_TICKS = 120;
     private static final int MAX_VERTICAL_TICKS = 100;
     private static final long COOLDOWN_MS = 500;
+    private static final long WALL_TO_WALL_COOLDOWN_MS = 50; // Very short cooldown for wall-to-wall jumps
     
     // ========== Config Getters ==========
     
@@ -163,6 +165,16 @@ public class MatrixWallRunManager {
     
     private static void setCooldown(Player player) {
         cooldowns.put(player.getUUID(), System.currentTimeMillis() + COOLDOWN_MS);
+        // Reset wall jump count when entering normal cooldown
+        consecutiveWallJumps.remove(player.getUUID());
+    }
+    
+    private static void setWallToWallCooldown(Player player) {
+        // Short cooldown for wall-to-wall transitions
+        cooldowns.put(player.getUUID(), System.currentTimeMillis() + WALL_TO_WALL_COOLDOWN_MS);
+        // Increment wall jump count
+        int count = consecutiveWallJumps.getOrDefault(player.getUUID(), 0);
+        consecutiveWallJumps.put(player.getUUID(), count + 1);
     }
     
     public static boolean tryStartWallRun(Player player) {
@@ -294,10 +306,20 @@ public class MatrixWallRunManager {
             return false;
         }
         
-        BlockState state1 = level.getBlockState(check1);
-        BlockState state2 = level.getBlockState(check2);
-        
-        return state1.isSolid() || state2.isSolid();
+        // Wrap in try-catch to handle race condition where chunk unloads between check and access
+        try {
+            BlockState state1 = level.getBlockState(check1);
+            BlockState state2 = level.getBlockState(check2);
+            
+            return state1.isSolid() || state2.isSolid();
+        } catch (NullPointerException e) {
+            // Chunk unloaded between check and access - treat as no wall
+            return false;
+        } catch (Exception e) {
+            // Log unexpected exceptions for debugging
+            MatrixCraftMod.LOGGER.warn("[MatrixWallRun] Unexpected exception in isWallAt: " + e.getMessage());
+            return false;
+        }
     }
     
     public static void updateWallRun(Player player) {
@@ -379,9 +401,14 @@ public class MatrixWallRunManager {
             player.setDeltaMovement(jumpVel);
             syncVelocity(player);
             MatrixCraftMod.LOGGER.info("Wall jump!");
+            
+            // Use short cooldown to allow wall-to-wall transitions
+            setWallToWallCooldown(player);
+        } else {
+            // Normal cooldown for non-jump exits
+            setCooldown(player);
         }
         
-        setCooldown(player);
         activeWallRuns.remove(player.getUUID());
         MatrixCraftMod.LOGGER.info("Wall run stopped after {} ticks", state.ticksActive);
     }
@@ -413,12 +440,16 @@ public class MatrixWallRunManager {
     public static void stopAllWallRuns() {
         activeWallRuns.clear();
         cooldowns.clear();
+        consecutiveWallJumps.clear();
     }
     
     public static void clientTick(Player player) {
+        // Client-side tick for visual effects only
+        // Do NOT modify state - server is authoritative
         WallRunState state = activeWallRuns.get(player.getUUID());
         if (state != null) {
-            state.ticksActive++;
+            // Reserved for client-side visual effects/animations
+            // State modifications happen server-side only
         }
     }
 }

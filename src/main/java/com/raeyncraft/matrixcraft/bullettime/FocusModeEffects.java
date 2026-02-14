@@ -22,20 +22,14 @@ import java.util.UUID;
 /**
  * Handles Focus mode effects that integrate with other game systems:
  * - Lava/fire immunity during Focus (configurable)
- * - Automatic cobweb bypass during Focus (configurable)
- * - Automatic water bypass during Focus (configurable)
+ * - Cobweb bypass during Focus (handled in CobwebBlockMixin)
+ * - Water bypass during Focus (configurable)
  * - Manual lava immunity toggle (separate from Focus)
  * 
  * These effects can be toggled via commands and are saved to config.
  */
 @EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class FocusModeEffects {
-    
-    // Track players who had cobwebs disabled before Focus (to restore their state)
-    private static final Set<UUID> cobwebsWereEnabled = new HashSet<>();
-    
-    // Track players who had water disabled before Focus (to restore their state)
-    private static final Set<UUID> waterWereEnabled = new HashSet<>();
     
     /**
      * Handle lava/fire damage immunity
@@ -75,33 +69,14 @@ public class FocusModeEffects {
     }
     
     /**
-     * Handle cobweb bypass during Focus mode
-     * This is checked every tick to enable/disable cobwebs based on Focus state
+     * Handle water bypass and lava effects during Focus mode
      */
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Pre event) {
         Player player = event.getEntity();
         if (player.level().isClientSide) return;
         
-        // Check if cobweb bypass is enabled
-        if (!isFocusCobwebBypassEnabled()) return;
-        
-        UUID playerId = player.getUUID();
         boolean inFocus = FocusManager.isInFocus(player);
-        
-        if (inFocus) {
-            // Entering Focus - disable cobwebs if they were enabled
-            if (MatrixSettings.areCobwebsEnabled()) {
-                cobwebsWereEnabled.add(playerId);
-                MatrixSettings.setCobwebsEnabled(false);
-            }
-        } else {
-            // Not in Focus - restore cobwebs if we disabled them
-            if (cobwebsWereEnabled.contains(playerId)) {
-                cobwebsWereEnabled.remove(playerId);
-                MatrixSettings.setCobwebsEnabled(true);
-            }
-        }
         
         // Handle water bypass
         boolean waterBypassActive = !MatrixSettings.isWaterEnabled() || (inFocus && isFocusWaterBypassEnabled());

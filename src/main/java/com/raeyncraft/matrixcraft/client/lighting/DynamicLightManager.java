@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * - supports entity-backed single proxies and chains of proxies trailing an entity
  * - provides clearAllDynamicLights()
  * - TTL-based sweep and pinging
- * - forceUpdateAll() (throttled) to force Ryoamic/Lamb to refresh
+ * - forceUpdateAll() (throttled) to force LambDynLights to refresh
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = MatrixCraftMod.MODID)
@@ -64,33 +64,19 @@ public class DynamicLightManager {
     // Force-update throttle (ms)
     private static long lastForceUpdateMs = 0L;
     private static final long FORCE_UPDATE_MIN_INTERVAL_MS = 200L;
+    
+    // Size limits to prevent memory leaks
+    private static final int MAX_CACHE_SIZE = 1000;
+    private static final int MAX_ENTITY_LIGHTS = 500;
+    
+    // Track current level to detect world changes
+    private static WeakReference<Level> lastLevel = new WeakReference<>(null);
 
     public static void init() {
         if (initialized) return;
         initialized = true;
 
-        // Discover dynamic-lights implementation (Ryoamic / Lamb)
-        try {
-            Class<?> ryoClass = Class.forName("org.thinkingstudio.ryoamiclights.RyoamicLights");
-            try {
-                Method get = ryoClass.getMethod("get");
-                dynamicLightsInstance = get.invoke(null);
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights detected and singleton obtained.");
-                discoverDynamicLightsApi();
-                // Only set available if we successfully discovered the API
-                if (dynamicLightSourceClass != null && methodAddLightSource != null) {
-                    dynamicLightsAvailable = true;
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights API successfully initialized.");
-                } else {
-                    MatrixCraftMod.LOGGER.warn("[DynamicLightManager] RyoamicLights detected but API discovery failed!");
-                    dynamicLightsAvailable = false;
-                }
-                return;
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-                MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Ryoamic reflection failed: " + ex.getMessage());
-            }
-        } catch (ClassNotFoundException ignored) {}
-
+        // Discover LambDynLights implementation
         try {
             Class<?> lambClass = Class.forName("dev.lambdaurora.lambdynlights.LambDynLights");
             try {
@@ -156,6 +142,15 @@ public class DynamicLightManager {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.isPaused()) return;
 
+        // Check for world change and clear if changed
+        Level currentLevel = mc.level;
+        Level lastLevelRef = lastLevel.get();
+        if (lastLevelRef != currentLevel) {
+            clearAllDynamicLights();
+            lastLevel = new WeakReference<>(currentLevel);
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] World changed, cleared all lights");
+        }
+
         BulletTrailLighting.tick();
 
         if (isDynamicLightsModAvailable()) {
@@ -183,6 +178,9 @@ public class DynamicLightManager {
         } catch (Throwable e) {
             MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Entity light sweep error: " + e.getMessage());
         }
+        
+        // Check size limits and cleanup if needed
+        enforceMemoryLimits();
     }
 
     private static void syncDynamicLights(Level level) {
@@ -543,5 +541,49 @@ public class DynamicLightManager {
 
     public static void ensureInit() {
         if (!initialized) init();
+    }
+    
+    /**
+     * Enforce memory limits to prevent unbounded growth
+     */
+    private static void enforceMemoryLimits() {
+        // Limit dlsCache size
+        if (dlsCache.size() > MAX_CACHE_SIZE) {
+            // Remove entries to bring size down to 80% of limit
+            int targetSize = (MAX_CACHE_SIZE * 4) / 5; 
+            int toRemove = dlsCache.size() - targetSize;
+            
+            List<BlockPos> positions = new ArrayList<>(dlsCache.keySet());
+            for (int i = 0; i < toRemove && i < positions.size(); i++) {
+                BlockPos pos = positions.get(i);
+                Object dls = dlsCache.remove(pos);
+                if (dls != null) {
+                    invokeRemoveLightSource(dls);
+                }
+            }
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Cleaned up " + toRemove + " lights from cache (limit exceeded)");
+        }
+        
+        // Limit entity lights size
+        int totalEntityLights = entityDls.size() + entityDlsChains.values().stream().mapToInt(List::size).sum();
+        if (totalEntityLights > MAX_ENTITY_LIGHTS) {
+            int targetSize = (MAX_ENTITY_LIGHTS * 4) / 5;
+            int toRemove = Math.max(1, totalEntityLights - targetSize); // Ensure at least 1 removed
+            
+            // Remove oldest entity lights first
+            List<Integer> entityIds = new ArrayList<>(lastSeenMs.keySet());
+            entityIds.sort((a, b) -> {
+                Long timeA = lastSeenMs.get(a);
+                Long timeB = lastSeenMs.get(b);
+                if (timeA == null) return -1;
+                if (timeB == null) return 1;
+                return timeA.compareTo(timeB);
+            });
+            
+            for (int i = 0; i < toRemove && i < entityIds.size(); i++) {
+                untrackEntityLightById(entityIds.get(i));
+            }
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Cleaned up " + toRemove + " entity lights (limit exceeded)");
+        }
     }
 }

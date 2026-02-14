@@ -3,6 +3,7 @@ package com.raeyncraft.matrixcraft.bullettime;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -25,6 +26,7 @@ public class FocusServerEvents {
     
     /**
      * Apply damage resistance when in Focus mode
+     * Also provides fall damage protection during Focus mode
      */
     @SubscribeEvent
     public static void onLivingDamage(LivingDamageEvent.Pre event) {
@@ -35,10 +37,19 @@ public class FocusServerEvents {
         }
         
         if (FocusManager.isInFocus(player)) {
-            // Apply damage resistance
-            float multiplier = FocusManager.getDamageResistanceMultiplier(player);
-            float newDamage = event.getOriginalDamage() * multiplier;
-            event.setNewDamage(newDamage);
+            // Check if this is fall damage
+            boolean isFallDamage = event.getSource().is(DamageTypes.FALL);
+            
+            if (isFallDamage) {
+                // Cancel fall damage entirely during Focus mode
+                event.setNewDamage(0);
+                player.fallDistance = 0; // Reset fall distance to prevent accumulated damage
+            } else {
+                // Apply normal damage resistance for other damage types
+                float multiplier = FocusManager.getDamageResistanceMultiplier(player);
+                float newDamage = event.getOriginalDamage() * multiplier;
+                event.setNewDamage(newDamage);
+            }
         }
     }
     
