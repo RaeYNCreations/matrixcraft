@@ -105,26 +105,47 @@ public class SimpleDynamicLightManager {
     public static void trackEntityLight(Entity entity, int brightness, float r, float g, float b) {
         if (entity == null) return;
         
+        // CLIENT-ONLY check - prevent server crashes
+        if (!entity.level().isClientSide) {
+            return;
+        }
+        
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
+        if (mc == null || mc.level == null) return;
         
         int id = entity.getId();
+        
+        // Check if already tracking this entity - prevent duplicates
+        if (markerEntities.containsKey(id)) {
+            // Just update the timestamp
+            lastSeenMs.put(id, System.currentTimeMillis());
+            return;
+        }
+        
         entityLights.put(id, new EntityLightData(brightness, r, g, b, 1, 0.0));
         entityRefs.put(id, new WeakReference<>(entity));
         lastSeenMs.put(id, System.currentTimeMillis());
         
         // Create marker entity
         try {
-            LightMarkerEntity marker = new LightMarkerEntity(ModEntities.LIGHT_MARKER.get(), mc.level);
+            // Null check for entity type
+            EntityType<LightMarkerEntity> entityType = ModEntities.LIGHT_MARKER.get();
+            if (entityType == null) {
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] LIGHT_MARKER entity type not registered yet!");
+                return;
+            }
+            
+            LightMarkerEntity marker = new LightMarkerEntity(entityType, mc.level);
             marker.setPos(entity.getX(), entity.getY(), entity.getZ());
             marker.setTarget(id, Vec3.ZERO);
             marker.setLightProperties(brightness, r, g, b);
-            marker.setMaxTicks(60); // 3 seconds
+            marker.setMaxTicks(100); // 5 seconds (increased from 3)
             
             mc.level.addFreshEntity(marker);
             
-            List<LightMarkerEntity> markers = markerEntities.computeIfAbsent(id, k -> new ArrayList<>());
+            List<LightMarkerEntity> markers = new ArrayList<>();
             markers.add(marker);
+            markerEntities.put(id, markers);
             
             MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created light marker for entity " + id + 
                 " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
@@ -141,17 +162,42 @@ public class SimpleDynamicLightManager {
                                              int brightness, float r, float g, float b) {
         if (entity == null) return;
         
+        // CLIENT-ONLY check - prevent server crashes
+        if (!entity.level().isClientSide) {
+            return;
+        }
+        
         Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return;
+        if (mc == null || mc.level == null) return;
         
         int id = entity.getId();
+        
+        // Check if already tracking this entity - prevent duplicates
+        if (markerEntities.containsKey(id)) {
+            // Just update the timestamp
+            lastSeenMs.put(id, System.currentTimeMillis());
+            return;
+        }
+        
         entityLights.put(id, new EntityLightData(brightness, r, g, b, chainCount, chainSpacing));
         entityRefs.put(id, new WeakReference<>(entity));
         lastSeenMs.put(id, System.currentTimeMillis());
         
         // Create chain of marker entities
         try {
+            // Null check for entity type
+            EntityType<LightMarkerEntity> entityType = ModEntities.LIGHT_MARKER.get();
+            if (entityType == null) {
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] LIGHT_MARKER entity type not registered yet!");
+                return;
+            }
+            
+            // Null check for velocity
             Vec3 velocity = entity.getDeltaMovement();
+            if (velocity == null) {
+                velocity = Vec3.ZERO;
+            }
+            
             double vLen = Math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
             Vec3 direction = vLen > 0.001 ? new Vec3(velocity.x / vLen, velocity.y / vLen, velocity.z / vLen) : Vec3.ZERO;
             
@@ -161,11 +207,11 @@ public class SimpleDynamicLightManager {
                 // Calculate offset for this marker in the chain
                 Vec3 offset = direction.scale(-i * chainSpacing); // Behind the entity
                 
-                LightMarkerEntity marker = new LightMarkerEntity(ModEntities.LIGHT_MARKER.get(), mc.level);
+                LightMarkerEntity marker = new LightMarkerEntity(entityType, mc.level);
                 marker.setPos(entity.getX() + offset.x, entity.getY() + offset.y, entity.getZ() + offset.z);
                 marker.setTarget(id, offset);
                 marker.setLightProperties(brightness, r, g, b);
-                marker.setMaxTicks(60); // 3 seconds
+                marker.setMaxTicks(100); // 5 seconds (increased from 3)
                 
                 mc.level.addFreshEntity(marker);
                 markers.add(marker);
@@ -190,18 +236,25 @@ public class SimpleDynamicLightManager {
     /**
      * Stop tracking a light by entity ID
      * Removes all marker entities for this target
+     * Thread-safe to prevent concurrent modification issues
      */
     public static void untrackEntityLightById(int id) {
         entityLights.remove(id);
         entityRefs.remove(id);
         lastSeenMs.remove(id);
         
-        // Remove marker entities
+        // Remove marker entities (synchronized to prevent concurrent modification)
         List<LightMarkerEntity> markers = markerEntities.remove(id);
         if (markers != null) {
-            for (LightMarkerEntity marker : markers) {
-                if (marker != null && !marker.isRemoved()) {
-                    marker.discard();
+            synchronized (markers) {
+                for (LightMarkerEntity marker : markers) {
+                    if (marker != null && !marker.isRemoved()) {
+                        try {
+                            marker.discard();
+                        } catch (Exception e) {
+                            // Ignore - entity might already be discarded
+                        }
+                    }
                 }
             }
         }

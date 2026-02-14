@@ -1,14 +1,9 @@
 package com.raeyncraft.matrixcraft.client.lighting;
 
-import com.raeyncraft.matrixcraft.MatrixCraftMod;
-import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 
 /**
  * Light Marker Entity - An invisible entity that emits dynamic light
@@ -21,8 +16,10 @@ import net.neoforged.api.distmarker.OnlyIn;
  * - Auto-removes when target is gone
  * 
  * LambDynLights will automatically detect this entity and create dynamic lights!
+ * 
+ * NOTE: This entity is CLIENT-ONLY but not annotated @OnlyIn to avoid server crashes.
+ * It's only ever spawned on the client side in SimpleDynamicLightManager.
  */
-@OnlyIn(Dist.CLIENT)
 public class LightMarkerEntity extends Entity {
     
     private int targetEntityId = -1;
