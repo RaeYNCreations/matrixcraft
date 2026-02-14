@@ -313,9 +313,15 @@ public class MatrixWallRunManager {
             BlockState state1 = level.getBlockState(check1);
             BlockState state2 = level.getBlockState(check2);
             
+            // Additional null safety checks
+            if (state1 == null || state2 == null) {
+                return false;
+            }
+            
             return state1.isSolid() || state2.isSolid();
         } catch (NullPointerException e) {
             // Chunk unloaded between check and access - treat as no wall
+            MatrixCraftMod.LOGGER.debug("[MatrixWallRun] Chunk unloaded during wall check: " + e.getMessage());
             return false;
         } catch (Exception e) {
             // Log unexpected exceptions for debugging

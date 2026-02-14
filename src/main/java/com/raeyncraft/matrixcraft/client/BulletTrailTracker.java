@@ -239,7 +239,17 @@ public class BulletTrailTracker {
     }
 
     private static void cleanupOldEntries(Minecraft mc) {
+        // Add null checks to prevent crashes during world changes
+        if (mc == null || mc.level == null) {
+            return;
+        }
+        
         processedBullets.removeIf(id -> {
+            // Re-check mc.level in case world changed during iteration
+            if (mc.level == null) {
+                return false; // Don't remove if we can't verify
+            }
+            
             Entity e = mc.level.getEntity(id);
             boolean removed = (e == null || e.isRemoved());
             if (removed) {
@@ -253,6 +263,11 @@ public class BulletTrailTracker {
         });
 
         bulletLastPos.entrySet().removeIf(entry -> {
+            // Re-check mc.level in case world changed during iteration
+            if (mc.level == null) {
+                return false; // Don't remove if we can't verify
+            }
+            
             int id = entry.getKey();
             Entity e = mc.level.getEntity(id);
             boolean removed = (e == null || e.isRemoved());
