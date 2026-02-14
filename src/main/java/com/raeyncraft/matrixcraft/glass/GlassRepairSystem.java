@@ -116,6 +116,10 @@ public class GlassRepairSystem {
         // Check if any known glass was at this position
         BlockState knownState = tracker.knownGlass.get(changedPos);
         if (knownState != null) {
+            // Check if chunk is loaded before accessing block state
+            if (!serverLevel.isLoaded(changedPos)) {
+                return;
+            }
             BlockState currentState = serverLevel.getBlockState(changedPos);
             if (!isGlassBlock(currentState.getBlock())) {
                 // Glass was here, now it's gone!
@@ -161,6 +165,11 @@ public class GlassRepairSystem {
                 Map.Entry<BlockPos, BlockState> glassEntry = iterator.next();
                 BlockPos pos = glassEntry.getKey();
                 BlockState expectedState = glassEntry.getValue();
+                
+                // Check if chunk is loaded before accessing block state
+                if (!level.isLoaded(pos)) {
+                    continue;
+                }
                 
                 // Check the actual block
                 BlockState currentState = level.getBlockState(pos);
@@ -280,6 +289,12 @@ public class GlassRepairSystem {
                 glass.ticksUntilRepair--;
                 
                 if (glass.ticksUntilRepair <= 0) {
+                    // Check if chunk is loaded before accessing block state
+                    if (!level.isLoaded(glass.position)) {
+                        // Keep in queue if chunk unloaded
+                        continue;
+                    }
+                    
                     BlockState currentState = level.getBlockState(glass.position);
                     
                     // Only repair if still air (don't replace player-placed blocks)
@@ -425,6 +440,10 @@ public class GlassRepairSystem {
         
         int repaired = 0;
         for (BrokenGlass g : tracker.brokenGlass) {
+            // Check if chunk is loaded before accessing block state
+            if (!level.isLoaded(g.position)) {
+                continue;
+            }
             if (level.getBlockState(g.position).isAir()) {
                 level.setBlock(g.position, g.originalState, 3);
                 tracker.knownGlass.put(g.position, g.originalState);
