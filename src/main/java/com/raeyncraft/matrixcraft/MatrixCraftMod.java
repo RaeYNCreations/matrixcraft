@@ -51,6 +51,12 @@ public class MatrixCraftMod {
     }
     
     private void clientSetup(FMLClientSetupEvent event) {
+        // Initialize simplified dynamic lighting (no reflection, no crashes!)
+        com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.init();
+        
+        // Initialize LambDynLights integration (passive, safe approach)
+        com.raeyncraft.matrixcraft.client.lighting.LambDynLightsIntegration.init();
+        
         LOGGER.info("MatrixCraft client setup complete!");
     }
 }

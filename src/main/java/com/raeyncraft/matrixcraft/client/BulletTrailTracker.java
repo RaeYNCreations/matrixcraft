@@ -3,7 +3,7 @@ package com.raeyncraft.matrixcraft.client;
 import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.particle.MatrixParticles;
-import com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager;
+import com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.Entity;
@@ -118,16 +118,16 @@ public class BulletTrailTracker {
                     int brightness = BulletTrailLighting.getConfiguredLightLevel();
                     float[] color = BulletTrailLighting.getTrailColor(); // RGB normalized 0-1
 
-                    DynamicLightManager.ensureInit();
+                    SimpleDynamicLightManager.ensureInit();
 
                     if (MatrixCraftConfig.TRAIL_CHAIN_ENABLED.get()) {
                         int chainCount = MatrixCraftConfig.TRAIL_CHAIN_COUNT.get();
                         double chainSpacing = MatrixCraftConfig.TRAIL_CHAIN_SPACING.get();
                         // Create chain of RGB lights trailing the bullet
-                        DynamicLightManager.trackEntityLightChain(entity, chainCount, chainSpacing, brightness, color[0], color[1], color[2]);
+                        SimpleDynamicLightManager.trackEntityLightChain(entity, chainCount, chainSpacing, brightness, color[0], color[1], color[2]);
                     } else {
                         // Create single RGB light at bullet position
-                        DynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
+                        SimpleDynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
                     }
                 } catch (Throwable ex) {
                     MatrixCraftMod.LOGGER.warn("[BulletTrailTracker] Failed to register entity dynamic light for id=" + entityId + ": " + ex.getMessage());
@@ -136,7 +136,7 @@ public class BulletTrailTracker {
 
             // ping so TTL doesn't remove the light
             try { 
-                DynamicLightManager.pingEntity(entityId); 
+                SimpleDynamicLightManager.pingEntity(entityId); 
             } catch (Throwable e) {
                 MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Ping entity failed for id=" + entityId + ": " + e.getMessage());
             }
@@ -244,7 +244,7 @@ public class BulletTrailTracker {
             boolean removed = (e == null || e.isRemoved());
             if (removed) {
                 try {
-                    DynamicLightManager.untrackEntityLightById(id);
+                    SimpleDynamicLightManager.untrackEntityLightById(id);
                 } catch (Throwable ex) {
                     MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in processedBullets cleanup for id=" + id + ": " + ex.getMessage());
                 }
@@ -258,7 +258,7 @@ public class BulletTrailTracker {
             boolean removed = (e == null || e.isRemoved());
             if (removed) {
                 try {
-                    DynamicLightManager.untrackEntityLightById(id);
+                    SimpleDynamicLightManager.untrackEntityLightById(id);
                 } catch (Throwable ex) {
                     MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in bulletLastPos cleanup for id=" + id + ": " + ex.getMessage());
                 }

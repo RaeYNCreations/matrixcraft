@@ -2,7 +2,7 @@ package com.raeyncraft.matrixcraft.client;
 
 import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
-import com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager;
+import com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.neoforged.api.distmarker.Dist;
@@ -99,8 +99,8 @@ public class HitEntityLightingHandler {
             hitEntities.put(entityId, new HitLightState(entityId, color[0], color[1], color[2]));
             
             // Register with dynamic light manager (passes RGB to LambDynLights)
-            DynamicLightManager.ensureInit();
-            DynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
+            SimpleDynamicLightManager.ensureInit();
+            SimpleDynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
             
             MatrixCraftMod.LOGGER.debug("[HitEntityLighting] Added RGB light to entity " + entityId + 
                 " (R=" + (int)(color[0]*255) + ", G=" + (int)(color[1]*255) + ", B=" + (int)(color[2]*255) + ")");
@@ -131,7 +131,7 @@ public class HitEntityLightingHandler {
             // Remove if expired
             if (state.ticksRemaining <= 0) {
                 try {
-                    DynamicLightManager.untrackEntityLightById(entityId);
+                    SimpleDynamicLightManager.untrackEntityLightById(entityId);
                 } catch (Exception e) {
                     MatrixCraftMod.LOGGER.debug("[HitEntityLighting] Failed to remove light: " + e.getMessage());
                 }
@@ -140,7 +140,7 @@ public class HitEntityLightingHandler {
             
             // Ping to keep alive
             try {
-                DynamicLightManager.pingEntity(entityId);
+                SimpleDynamicLightManager.pingEntity(entityId);
             } catch (Exception e) {
                 MatrixCraftMod.LOGGER.debug("[HitEntityLighting] Failed to ping entity: " + e.getMessage());
             }
@@ -155,7 +155,7 @@ public class HitEntityLightingHandler {
     public static void clearAll() {
         for (Integer entityId : hitEntities.keySet()) {
             try {
-                DynamicLightManager.untrackEntityLightById(entityId);
+                SimpleDynamicLightManager.untrackEntityLightById(entityId);
             } catch (Exception e) {
                 MatrixCraftMod.LOGGER.debug("[HitEntityLighting] Failed to clear light: " + e.getMessage());
             }
