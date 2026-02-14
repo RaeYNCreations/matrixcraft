@@ -23,12 +23,19 @@ import java.util.Set;
 /**
  * Bullet Trail Tracker - working copy adjusted to use config-driven lighting parameters.
  *
- * Uses config keys:
- *  - MatrixCraftConfig.TRAIL_LIGHT_SPACING
- *  - MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS
- *  - MatrixCraftConfig.TRAIL_CHAIN_ENABLED
- *  - MatrixCraftConfig.TRAIL_CHAIN_COUNT
- *  - MatrixCraftConfig.TRAIL_CHAIN_SPACING
+ * RGB Dynamic Lighting System:
+ * - Bullets emit colored dynamic lights matching trail color
+ * - Uses TRAIL_COLOR_R/G/B config (0-255 each component)
+ * - Supports both single light and chained light modes
+ * - Color automatically syncs with bullet trail particles
+ * 
+ * Configuration Options:
+ *  - MatrixCraftConfig.TRAIL_LIGHT_SPACING: Distance between lights
+ *  - MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS: How long lights last
+ *  - MatrixCraftConfig.TRAIL_CHAIN_ENABLED: Enable light chains
+ *  - MatrixCraftConfig.TRAIL_CHAIN_COUNT: Number of lights in chain
+ *  - MatrixCraftConfig.TRAIL_CHAIN_SPACING: Spacing between chain lights
+ *  - MatrixCraftConfig.TRAIL_COLOR_R/G/B: RGB color components (0-255)
  */
 @EventBusSubscriber(value = Dist.CLIENT)
 public class BulletTrailTracker {
@@ -98,17 +105,20 @@ public class BulletTrailTracker {
                 bulletLastPos.put(entityId, currentPos);
 
                 // register lights (single or chain depending on config)
+                // Uses RGB color from TRAIL_COLOR_R/G/B configuration
                 try {
                     int brightness = BulletTrailLighting.getConfiguredLightLevel();
-                    float[] color = BulletTrailLighting.getTrailColor();
+                    float[] color = BulletTrailLighting.getTrailColor(); // RGB normalized 0-1
 
                     DynamicLightManager.ensureInit();
 
                     if (MatrixCraftConfig.TRAIL_CHAIN_ENABLED.get()) {
                         int chainCount = MatrixCraftConfig.TRAIL_CHAIN_COUNT.get();
                         double chainSpacing = MatrixCraftConfig.TRAIL_CHAIN_SPACING.get();
+                        // Create chain of RGB lights trailing the bullet
                         DynamicLightManager.trackEntityLightChain(entity, chainCount, chainSpacing, brightness, color[0], color[1], color[2]);
                     } else {
+                        // Create single RGB light at bullet position
                         DynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
                     }
                 } catch (Throwable ex) {

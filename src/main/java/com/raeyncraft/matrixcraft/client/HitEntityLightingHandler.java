@@ -16,6 +16,18 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Handles dynamic lighting for entities hit by bullets.
  * When a bullet hits an entity, it briefly lights up that entity.
+ * 
+ * RGB Color System:
+ * - Uses the SAME RGB color as bullet trails (TRAIL_COLOR_R/G/B config)
+ * - Default: Green (R=0, G=255, B=0)
+ * - Configurable in MatrixCraftConfig.TRAIL_COLOR_R/G/B (0-255 each)
+ * - Examples:
+ *   - Red bullets: R=255, G=0, B=0
+ *   - Blue bullets: R=0, G=0, B=255
+ *   - Purple bullets: R=128, G=0, B=255
+ *   - Orange bullets: R=255, G=128, B=0
+ * 
+ * The lighting system automatically matches bullet trail colors for visual consistency.
  */
 @EventBusSubscriber(value = Dist.CLIENT, modid = MatrixCraftMod.MODID)
 public class HitEntityLightingHandler {
@@ -70,23 +82,28 @@ public class HitEntityLightingHandler {
     
     /**
      * Add dynamic lighting to an entity that was hit
+     * Uses RGB color from trail configuration for consistency
      */
     private static void addHitEntityLight(LivingEntity entity) {
         if (entity == null) return;
         
         try {
             int entityId = entity.getId();
+            
+            // Get RGB color from trail configuration (TRAIL_COLOR_R/G/B)
+            // This ensures hit entities glow with the same color as bullet trails
             float[] color = BulletTrailLighting.getTrailColor();
             int brightness = BulletTrailLighting.getConfiguredLightLevel();
             
-            // Create or update hit light state
+            // Create or update hit light state with RGB values
             hitEntities.put(entityId, new HitLightState(entityId, color[0], color[1], color[2]));
             
-            // Register with dynamic light manager
+            // Register with dynamic light manager (passes RGB to LambDynLights)
             DynamicLightManager.ensureInit();
             DynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
             
-            MatrixCraftMod.LOGGER.debug("[HitEntityLighting] Added light to entity " + entityId);
+            MatrixCraftMod.LOGGER.debug("[HitEntityLighting] Added RGB light to entity " + entityId + 
+                " (R=" + (int)(color[0]*255) + ", G=" + (int)(color[1]*255) + ", B=" + (int)(color[2]*255) + ")");
         } catch (Exception e) {
             MatrixCraftMod.LOGGER.warn("[HitEntityLighting] Failed to add light to hit entity: " + e.getMessage());
         }

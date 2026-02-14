@@ -13,6 +13,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Manages dynamic lighting for bullet trails - "Torch Bullets"
  * 
+ * RGB Color System:
+ * - Fully configurable RGB colors via MatrixCraftConfig
+ * - TRAIL_COLOR_R: Red component (0-255)
+ * - TRAIL_COLOR_G: Green component (0-255)
+ * - TRAIL_COLOR_B: Blue component (0-255)
+ * - Default: Green (R=0, G=255, B=0)
+ * 
  * Features:
  * - Colored light based on trail color config
  * - Configurable light level (1-15)
@@ -22,6 +29,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * 
  * The light color matches the bullet trail color from config,
  * so red trails make red light, green trails make green light, etc.
+ * 
+ * Color Examples:
+ * - Matrix Green: R=0, G=255, B=0 (default)
+ * - Blood Red: R=255, G=0, B=0
+ * - Ice Blue: R=0, G=128, B=255
+ * - Purple: R=128, G=0, B=255
+ * - Orange: R=255, G=128, B=0
  */
 @OnlyIn(Dist.CLIENT)
 public class BulletTrailLighting {
@@ -95,7 +109,16 @@ public class BulletTrailLighting {
     }
     
     /**
-     * Get trail color from config (normalized 0-1)
+     * Get trail color from config (normalized 0-1 range for rendering)
+     * Returns RGB values normalized to 0.0-1.0 range
+     * 
+     * @return float array [R, G, B] where each component is 0.0-1.0
+     * 
+     * Examples:
+     * - Green (default): [0.0, 1.0, 0.0]
+     * - Red: [1.0, 0.0, 0.0]
+     * - Blue: [0.0, 0.0, 1.0]
+     * - Purple: [0.5, 0.0, 1.0]
      */
     public static float[] getTrailColor() {
         try {
