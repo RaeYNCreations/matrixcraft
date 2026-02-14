@@ -312,8 +312,12 @@ public class MatrixWallRunManager {
             BlockState state2 = level.getBlockState(check2);
             
             return state1.isSolid() || state2.isSolid();
-        } catch (Exception e) {
+        } catch (NullPointerException e) {
             // Chunk unloaded between check and access - treat as no wall
+            return false;
+        } catch (Exception e) {
+            // Log unexpected exceptions for debugging
+            MatrixCraftMod.LOGGER.warn("[MatrixWallRun] Unexpected exception in isWallAt: " + e.getMessage());
             return false;
         }
     }

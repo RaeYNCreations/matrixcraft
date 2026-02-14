@@ -151,8 +151,10 @@ public class HitEntityLightingHandler {
      */
     private static boolean isTaczBullet(Entity entity) {
         if (entity == null) return false;
-        return entity.getClass().getName().equals("com.tacz.guns.entity.EntityKineticBullet")
-                || String.valueOf(entity.getType()).toLowerCase().contains("tacz");
+        // Cache the class name check for efficiency
+        String className = entity.getClass().getName();
+        return "com.tacz.guns.entity.EntityKineticBullet".equals(className)
+                || entity.getType().toString().toLowerCase().contains("tacz");
     }
     
     /**

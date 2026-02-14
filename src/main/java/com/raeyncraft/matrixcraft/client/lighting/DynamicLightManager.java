@@ -549,7 +549,10 @@ public class DynamicLightManager {
     private static void enforceMemoryLimits() {
         // Limit dlsCache size
         if (dlsCache.size() > MAX_CACHE_SIZE) {
-            int toRemove = dlsCache.size() - (MAX_CACHE_SIZE * 4 / 5); // Remove 20% excess
+            // Remove entries to bring size down to 80% of limit
+            int targetSize = (MAX_CACHE_SIZE * 4) / 5; 
+            int toRemove = dlsCache.size() - targetSize;
+            
             List<BlockPos> positions = new ArrayList<>(dlsCache.keySet());
             for (int i = 0; i < toRemove && i < positions.size(); i++) {
                 BlockPos pos = positions.get(i);
@@ -564,7 +567,8 @@ public class DynamicLightManager {
         // Limit entity lights size
         int totalEntityLights = entityDls.size() + entityDlsChains.values().stream().mapToInt(List::size).sum();
         if (totalEntityLights > MAX_ENTITY_LIGHTS) {
-            int toRemove = totalEntityLights - (MAX_ENTITY_LIGHTS * 4 / 5);
+            int targetSize = (MAX_ENTITY_LIGHTS * 4) / 5;
+            int toRemove = Math.max(1, totalEntityLights - targetSize); // Ensure at least 1 removed
             
             // Remove oldest entity lights first
             List<Integer> entityIds = new ArrayList<>(lastSeenMs.keySet());
