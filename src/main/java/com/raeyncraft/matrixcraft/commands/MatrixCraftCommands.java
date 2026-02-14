@@ -644,8 +644,8 @@ public class MatrixCraftCommands {
                                 MatrixCraftConfig.saveClientConfig();
                                 // Force dynamic lights to refresh colors (throttled inside manager)
                                 try {
-                                    com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager.ensureInit();
-                                    com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager.forceUpdateAll();
+                                    com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.ensureInit();
+                                    com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.forceUpdateAll();
                                     MatrixCraftMod.LOGGER.info("[MatrixCraftCommands] Requested dynamic-lights updateAll after color change.");
                                 } catch (Throwable ignored) {}
                                 context.getSource().sendSuccess(() -> 

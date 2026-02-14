@@ -26,6 +26,10 @@ public class MatrixCraftMod {
         com.raeyncraft.matrixcraft.particle.MatrixParticles.register(modEventBus);
         LOGGER.info("Particles registered!");
         
+        // Register entities
+        com.raeyncraft.matrixcraft.registry.ModEntities.register(modEventBus);
+        LOGGER.info("Entities registered!");
+        
         // Register bullet time system (items, effects)
         BulletTimeRegistry.register(modEventBus);
         LOGGER.info("Bullet Time system registered!");
@@ -51,6 +55,12 @@ public class MatrixCraftMod {
     }
     
     private void clientSetup(FMLClientSetupEvent event) {
+        // Initialize simplified dynamic lighting (no reflection, no crashes!)
+        com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.init();
+        
+        // Initialize LambDynLights integration (passive, safe approach)
+        com.raeyncraft.matrixcraft.client.lighting.LambDynLightsIntegration.init();
+        
         LOGGER.info("MatrixCraft client setup complete!");
     }
 }

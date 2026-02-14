@@ -18,12 +18,20 @@ public class EntityDebugger {
     public static void onEntitySpawn(EntityJoinLevelEvent event) {
         Entity entity = event.getEntity();
         
+        if (entity == null) {
+            return;
+        }
+        
         // Only log on client side
         if (!entity.level().isClientSide) {
             return;
         }
         
         String className = entity.getClass().getName();
+        
+        if (className == null) {
+            return;
+        }
         
         // Log any entity from TacZ
         if (className.contains("tacz") || className.contains("TACZ")) {

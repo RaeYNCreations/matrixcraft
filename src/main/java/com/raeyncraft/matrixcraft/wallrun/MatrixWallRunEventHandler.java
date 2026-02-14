@@ -14,14 +14,16 @@ public class MatrixWallRunEventHandler {
     public static void onPlayerTick(PlayerTickEvent.Pre event) {
         Player player = event.getEntity();
         
-        // Handle client-side rendering and animations
+        // Separate client and server logic completely
         if (player.level().isClientSide) {
+            // Client-side: Only handle rendering and animations
             if (MatrixWallRunManager.isWallRunning(player)) {
                 MatrixWallRunManager.clientTick(player);
             }
-            // Don't return early - let client-side logic continue below
+            return; // Don't run server logic on client
         }
         
+        // Server-side only from here on
         boolean inFocus = FocusManager.isInFocus(player);
         
         if (!inFocus) {
@@ -32,6 +34,7 @@ public class MatrixWallRunEventHandler {
         }
         
         if (MatrixWallRunManager.isWallRunning(player)) {
+            // Jump detection is now handled inside updateWallRun via velocity changes
             MatrixWallRunManager.updateWallRun(player);
         } else if (!player.onGround() && player.getDeltaMovement().horizontalDistanceSqr() > 0.01) {
             MatrixWallRunManager.tryStartWallRun(player);
