@@ -64,6 +64,9 @@ public class BulletTrailTracker {
         tickCounter++;
 
         BulletTrailLighting.tick();
+        
+        // Update hit entity lighting
+        HitEntityLightingHandler.tick(mc.level);
 
         scanBulletEntities(mc);
 

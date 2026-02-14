@@ -64,6 +64,13 @@ public class DynamicLightManager {
     // Force-update throttle (ms)
     private static long lastForceUpdateMs = 0L;
     private static final long FORCE_UPDATE_MIN_INTERVAL_MS = 200L;
+    
+    // Size limits to prevent memory leaks
+    private static final int MAX_CACHE_SIZE = 1000;
+    private static final int MAX_ENTITY_LIGHTS = 500;
+    
+    // Track current level to detect world changes
+    private static WeakReference<Level> lastLevel = new WeakReference<>(null);
 
     public static void init() {
         if (initialized) return;
@@ -135,6 +142,15 @@ public class DynamicLightManager {
         Minecraft mc = Minecraft.getInstance();
         if (mc.level == null || mc.isPaused()) return;
 
+        // Check for world change and clear if changed
+        Level currentLevel = mc.level;
+        Level lastLevelRef = lastLevel.get();
+        if (lastLevelRef != currentLevel) {
+            clearAllDynamicLights();
+            lastLevel = new WeakReference<>(currentLevel);
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] World changed, cleared all lights");
+        }
+
         BulletTrailLighting.tick();
 
         if (isDynamicLightsModAvailable()) {
@@ -162,6 +178,9 @@ public class DynamicLightManager {
         } catch (Throwable e) {
             MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Entity light sweep error: " + e.getMessage());
         }
+        
+        // Check size limits and cleanup if needed
+        enforceMemoryLimits();
     }
 
     private static void syncDynamicLights(Level level) {
@@ -522,5 +541,45 @@ public class DynamicLightManager {
 
     public static void ensureInit() {
         if (!initialized) init();
+    }
+    
+    /**
+     * Enforce memory limits to prevent unbounded growth
+     */
+    private static void enforceMemoryLimits() {
+        // Limit dlsCache size
+        if (dlsCache.size() > MAX_CACHE_SIZE) {
+            int toRemove = dlsCache.size() - (MAX_CACHE_SIZE * 4 / 5); // Remove 20% excess
+            List<BlockPos> positions = new ArrayList<>(dlsCache.keySet());
+            for (int i = 0; i < toRemove && i < positions.size(); i++) {
+                BlockPos pos = positions.get(i);
+                Object dls = dlsCache.remove(pos);
+                if (dls != null) {
+                    invokeRemoveLightSource(dls);
+                }
+            }
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Cleaned up " + toRemove + " lights from cache (limit exceeded)");
+        }
+        
+        // Limit entity lights size
+        int totalEntityLights = entityDls.size() + entityDlsChains.values().stream().mapToInt(List::size).sum();
+        if (totalEntityLights > MAX_ENTITY_LIGHTS) {
+            int toRemove = totalEntityLights - (MAX_ENTITY_LIGHTS * 4 / 5);
+            
+            // Remove oldest entity lights first
+            List<Integer> entityIds = new ArrayList<>(lastSeenMs.keySet());
+            entityIds.sort((a, b) -> {
+                Long timeA = lastSeenMs.get(a);
+                Long timeB = lastSeenMs.get(b);
+                if (timeA == null) return -1;
+                if (timeB == null) return 1;
+                return timeA.compareTo(timeB);
+            });
+            
+            for (int i = 0; i < toRemove && i < entityIds.size(); i++) {
+                untrackEntityLightById(entityIds.get(i));
+            }
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Cleaned up " + toRemove + " entity lights (limit exceeded)");
+        }
     }
 }
