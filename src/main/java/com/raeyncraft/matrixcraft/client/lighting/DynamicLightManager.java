@@ -33,6 +33,7 @@ public class DynamicLightManager {
 
     private static boolean initialized = false;
     private static boolean dynamicLightsAvailable = false;
+    private static boolean permanentlyDisabled = false; // Kill switch - disable on ANY error
 
     private static Object dynamicLightsInstance = null;
     private static Method methodAddLightSource = null;
@@ -75,6 +76,12 @@ public class DynamicLightManager {
     public static void init() {
         if (initialized) return;
         initialized = true;
+        
+        // Check if already permanently disabled
+        if (permanentlyDisabled) {
+            MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights integration permanently disabled due to previous errors");
+            return;
+        }
 
         // Discover LambDynLights implementation
         try {
@@ -90,16 +97,40 @@ public class DynamicLightManager {
                     MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights API successfully initialized.");
                 } else {
                     MatrixCraftMod.LOGGER.warn("[DynamicLightManager] LambDynLights detected but API discovery failed!");
-                    dynamicLightsAvailable = false;
+                    permanentlyDisableDynamicLights("API discovery failed");
                 }
                 return;
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                 MatrixCraftMod.LOGGER.debug("[DynamicLightManager] LambDynLights reflection failed: " + ex.getMessage());
+                permanentlyDisableDynamicLights("Reflection failed: " + ex.getMessage());
             }
         } catch (ClassNotFoundException ignored) {}
 
         dynamicLightsAvailable = false;
         MatrixCraftMod.LOGGER.info("[DynamicLightManager] No dynamic-lights mod found; using particle glow only.");
+    }
+    
+    /**
+     * Permanently disable LambDynLights integration on any error to prevent crashes
+     */
+    private static void permanentlyDisableDynamicLights(String reason) {
+        permanentlyDisabled = true;
+        dynamicLightsAvailable = false;
+        dynamicLightsInstance = null;
+        methodAddLightSource = null;
+        methodRemoveLightSource = null;
+        methodUpdateTracking = null;
+        methodClearLightSources = null;
+        methodUpdateAll = null;
+        dynamicLightSourceClass = null;
+        
+        MatrixCraftMod.LOGGER.error("╔════════════════════════════════════════════════════════════════╗");
+        MatrixCraftMod.LOGGER.error("║ LambDynLights integration PERMANENTLY DISABLED                ║");
+        MatrixCraftMod.LOGGER.error("║ Reason: " + String.format("%-54s", reason) + " ║");
+        MatrixCraftMod.LOGGER.error("║                                                                ║");
+        MatrixCraftMod.LOGGER.error("║ This is NOT a bug - it's a safety feature to prevent crashes. ║");
+        MatrixCraftMod.LOGGER.error("║ Bullet trail lighting will still work via shaders/particles.   ║");
+        MatrixCraftMod.LOGGER.error("╚════════════════════════════════════════════════════════════════╝");
     }
 
     private static void discoverDynamicLightsApi() {
@@ -133,6 +164,7 @@ public class DynamicLightManager {
     }
 
     public static boolean isDynamicLightsModAvailable() {
+        if (permanentlyDisabled) return false;
         if (!initialized) init();
         return dynamicLightsAvailable;
     }
@@ -227,27 +259,27 @@ public class DynamicLightManager {
     }
 
     private static void invokeAddLightSource(Object dls) {
-        if (dynamicLightsInstance == null || methodAddLightSource == null) return;
+        if (permanentlyDisabled || dynamicLightsInstance == null || methodAddLightSource == null) return;
         try {
             methodAddLightSource.invoke(dynamicLightsInstance, dls);
-        } catch (IllegalAccessException | InvocationTargetException ex) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] addLightSource invocation failed: " + ex.getMessage());
+        } catch (Throwable ex) {
+            permanentlyDisableDynamicLights("addLightSource invocation failed: " + ex.getMessage());
         }
     }
 
     private static void invokeRemoveLightSource(Object dls) {
-        if (dynamicLightsInstance == null) return;
+        if (permanentlyDisabled || dynamicLightsInstance == null) return;
         try {
             if (methodRemoveLightSource != null) {
                 methodRemoveLightSource.invoke(dynamicLightsInstance, dls);
             }
-        } catch (IllegalAccessException | InvocationTargetException ex) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] removeLightSource invocation failed: " + ex.getMessage());
+        } catch (Throwable ex) {
+            permanentlyDisableDynamicLights("removeLightSource invocation failed: " + ex.getMessage());
         }
     }
 
     private static Object createDynamicLightSource(Level level, BlockPos pos, BulletTrailLighting.LightSource light) {
-        if (dynamicLightSourceClass == null) return null;
+        if (permanentlyDisabled || dynamicLightSourceClass == null) return null;
 
         final double dx = pos.getX() + 0.5;
         final double dy = pos.getY() + 0.5;
@@ -275,7 +307,7 @@ public class DynamicLightManager {
                     new Class[]{dynamicLightSourceClass}, handler);
             return proxy;
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Proxy creation failed (pos-based): " + t.getMessage());
+            permanentlyDisableDynamicLights("Proxy creation failed: " + t.getMessage());
             return null;
         }
     }
@@ -296,6 +328,7 @@ public class DynamicLightManager {
      */
     public static void trackEntityLight(Entity entity, int luminance, float r, float g, float b) {
         if (entity == null) return;
+        if (permanentlyDisabled) return; // Kill switch check
         if (!isDynamicLightsModAvailable()) return;
         ensureInit();
         
@@ -317,7 +350,7 @@ public class DynamicLightManager {
                     try { 
                         methodUpdateTracking.invoke(dynamicLightsInstance, existing); 
                     } catch (Throwable e) {
-                        MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Update tracking failed: " + e.getMessage());
+                        permanentlyDisableDynamicLights("Update tracking failed: " + e.getMessage());
                     }
                 }
                 return;
@@ -332,7 +365,7 @@ public class DynamicLightManager {
             entityDls.put(id, proxy);
             invokeAddLightSource(proxy);
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.warn("[DynamicLightManager] trackEntityLight failed for id=" + id + ": " + t.getMessage());
+            permanentlyDisableDynamicLights("trackEntityLight proxy creation failed: " + t.getMessage());
         }
     }
 
@@ -342,6 +375,7 @@ public class DynamicLightManager {
      */
     public static void trackEntityLightChain(Entity entity, int count, double spacing, int luminance, float r, float g, float b) {
         if (entity == null) return;
+        if (permanentlyDisabled) return; // Kill switch check
         if (!isDynamicLightsModAvailable()) return;
         ensureInit();
         
@@ -371,16 +405,21 @@ public class DynamicLightManager {
                         new Class[]{dynamicLightSourceClass}, handler);
                 proxies.add(proxy);
                 invokeAddLightSource(proxy);
+                
+                // Check if we got disabled during invocation
+                if (permanentlyDisabled) {
+                    // Clean up what we created
+                    for (Object p : proxies) {
+                        try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
+                    }
+                    return;
+                }
             }
             entityDlsChains.put(id, proxies);
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.warn("[DynamicLightManager] trackEntityLightChain failed for id=" + id + ": " + t.getMessage());
+            permanentlyDisableDynamicLights("trackEntityLightChain proxy creation failed: " + t.getMessage());
             for (Object p : proxies) {
-                try { 
-                    invokeRemoveLightSource(p); 
-                } catch (Throwable e) {
-                    MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Cleanup failed during chain error: " + e.getMessage());
-                }
+                try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
             }
         }
     }
@@ -390,6 +429,11 @@ public class DynamicLightManager {
             private boolean enabled = true;
             @Override
             public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+                if (permanentlyDisabled) {
+                    // Return safe defaults if permanently disabled
+                    return getDefaultReturn(method.getReturnType());
+                }
+                
                 String name = method.getName();
 
                 if ("equals".equals(name) && args != null && args.length == 1) return proxy == args[0];
@@ -433,12 +477,12 @@ public class DynamicLightManager {
                     boolean e = (boolean) args[0];
                     enabled = e;
                     try {
-                        if (dynamicLightsInstance != null) {
+                        if (dynamicLightsInstance != null && !permanentlyDisabled) {
                             if (e && methodAddLightSource != null) methodAddLightSource.invoke(dynamicLightsInstance, proxy);
                             else if (!e && methodRemoveLightSource != null) methodRemoveLightSource.invoke(dynamicLightsInstance, proxy);
                         }
                     } catch (Throwable ex) {
-                        MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Set light enabled failed: " + ex.getMessage());
+                        permanentlyDisableDynamicLights("setDynamicLightEnabled failed: " + ex.getMessage());
                     }
                     return null;
                 }
