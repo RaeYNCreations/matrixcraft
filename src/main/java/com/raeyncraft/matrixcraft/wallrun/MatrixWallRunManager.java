@@ -153,7 +153,8 @@ public class MatrixWallRunManager {
     private static boolean isOnCooldown(Player player) {
         Long cooldownEnd = cooldowns.get(player.getUUID());
         if (cooldownEnd == null) return false;
-        if (System.currentTimeMillis() >= cooldownEnd) {
+        long now = System.currentTimeMillis();
+        if (now >= cooldownEnd) {
             cooldowns.remove(player.getUUID());
             return false;
         }
@@ -287,6 +288,11 @@ public class MatrixWallRunManager {
     private static boolean isWallAt(Level level, BlockPos playerPos, Direction dir) {
         BlockPos check1 = playerPos.relative(dir);
         BlockPos check2 = check1.above();
+        
+        // Check if chunks are loaded to prevent server crashes
+        if (!level.isLoaded(check1) || !level.isLoaded(check2)) {
+            return false;
+        }
         
         BlockState state1 = level.getBlockState(check1);
         BlockState state2 = level.getBlockState(check2);

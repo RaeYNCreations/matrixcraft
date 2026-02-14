@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.player.Player;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -131,16 +132,18 @@ public class FocusManager {
      * Called every server tick to update focus states
      */
     public static void serverTick() {
-        var iterator = activeFocusStates.entrySet().iterator();
+        // Create a snapshot to avoid ConcurrentModificationException
+        // if deactivateFocus() is called during iteration
+        var entries = new ArrayList<>(activeFocusStates.entrySet());
         
-        while (iterator.hasNext()) {
-            var entry = iterator.next();
+        for (var entry : entries) {
+            UUID playerId = entry.getKey();
             FocusState state = entry.getValue();
             
             state.ticksRemaining--;
             
             if (state.ticksRemaining <= 0) {
-                iterator.remove();
+                activeFocusStates.remove(playerId);
                 // Note: The mob effect will auto-expire, which triggers cleanup
             }
         }
