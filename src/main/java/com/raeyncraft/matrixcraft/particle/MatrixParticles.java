@@ -60,15 +60,20 @@ public class MatrixParticles {
             this.quadSize = this.initialSize;
             
             // Get color from config - apply HDR boost for glow
-            float r = MatrixCraftConfig.TRAIL_COLOR_R.get() / 255f;
-            float g = MatrixCraftConfig.TRAIL_COLOR_G.get() / 255f;
-            float b = MatrixCraftConfig.TRAIL_COLOR_B.get() / 255f;
+            // Clamp values to valid range [0-255] before normalization
+            int r = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_R.get()));
+            int g = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_G.get()));
+            int b = Math.max(0, Math.min(255, MatrixCraftConfig.TRAIL_COLOR_B.get()));
+            
+            float rNorm = r / 255f;
+            float gNorm = g / 255f;
+            float bNorm = b / 255f;
             
             // HDR boost - values > 1.0 create bloom effect with shaders
             float hdrBoost = 1.8f;
-            this.rCol = r * hdrBoost;
-            this.gCol = g * hdrBoost;
-            this.bCol = b * hdrBoost;
+            this.rCol = rNorm * hdrBoost;
+            this.gCol = gNorm * hdrBoost;
+            this.bCol = bNorm * hdrBoost;
             
             // Alpha from config
             this.initialAlpha = MatrixCraftConfig.TRAIL_ALPHA.get().floatValue();

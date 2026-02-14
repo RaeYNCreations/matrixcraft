@@ -83,12 +83,20 @@ public class BulletTrailTracker {
     }
 
     private static void scanBulletEntities(Minecraft mc) {
+        if (mc == null || mc.level == null || mc.player == null) {
+            return;
+        }
+        
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (!isTaczBullet(entity)) continue;
+            if (entity == null || !isTaczBullet(entity)) continue;
 
             int entityId = entity.getId();
             Vec3 currentPos = entity.position();
             Vec3 velocity = entity.getDeltaMovement();
+            
+            if (currentPos == null || velocity == null) {
+                continue;
+            }
 
             double distSq = mc.player.distanceToSqr(entity);
             double maxDist = MatrixCraftConfig.MAX_RENDER_DISTANCE.get();
@@ -260,8 +268,30 @@ public class BulletTrailTracker {
     }
 
     private static boolean isTaczBullet(Entity entity) {
-        return entity.getClass().getName().equals("com.tacz.guns.entity.EntityKineticBullet")
-                || String.valueOf(entity.getType()).toLowerCase().contains("tacz");
+        if (entity == null) {
+            return false;
+        }
+        
+        try {
+            String className = entity.getClass().getName();
+            if (className == null) {
+                return false;
+            }
+            
+            if ("com.tacz.guns.entity.EntityKineticBullet".equals(className)) {
+                return true;
+            }
+            
+            String typeString = String.valueOf(entity.getType());
+            if (typeString == null) {
+                return false;
+            }
+            
+            return typeString.toLowerCase().contains("tacz");
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Error checking entity type: " + e.getMessage());
+            return false;
+        }
     }
 
     private static boolean isGlowEnabled() {
