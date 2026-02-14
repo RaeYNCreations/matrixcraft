@@ -440,9 +440,12 @@ public class MatrixWallRunManager {
     }
     
     public static void clientTick(Player player) {
+        // Client-side tick for visual effects only
+        // Do NOT modify state - server is authoritative
         WallRunState state = activeWallRuns.get(player.getUUID());
         if (state != null) {
-            state.ticksActive++;
+            // Reserved for client-side visual effects/animations
+            // State modifications happen server-side only
         }
     }
 }

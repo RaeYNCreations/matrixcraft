@@ -200,23 +200,31 @@ public class BulletTrailLighting {
             return;
         }
         
-        Iterator<Map.Entry<BlockPos, LightSource>> iterator = activeLights.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<BlockPos, LightSource> entry = iterator.next();
+        // Create list of positions to remove (avoid concurrent modification)
+        java.util.List<BlockPos> toRemove = new java.util.ArrayList<>();
+        
+        // Update all lights and collect expired ones
+        for (Map.Entry<BlockPos, LightSource> entry : activeLights.entrySet()) {
             LightSource light = entry.getValue();
             
             light.ticksRemaining--;
             
             if (light.ticksRemaining <= 0) {
-                iterator.remove();
+                toRemove.add(entry.getKey());
             }
-            // Update trail-light texture for shader ACL
-            try {
-                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
-                com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
-            } catch (Throwable e) {
-                MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Texture update failed: " + e.getMessage());
-            }
+        }
+        
+        // Remove expired lights
+        for (BlockPos pos : toRemove) {
+            activeLights.remove(pos);
+        }
+        
+        // Update trail-light texture for shader ACL
+        try {
+            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
+            com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
+        } catch (Throwable e) {
+            MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Texture update failed: " + e.getMessage());
         }
     }
     
