@@ -20,8 +20,7 @@ public class ClientEvents {
                 MatrixParticles.BulletTrailParticle.Provider::new);
             MatrixCraftMod.LOGGER.info("✓ Registered BULLET_TRAIL provider");
         } catch (Exception e) {
-            MatrixCraftMod.LOGGER.error("✗ Failed to register BULLET_TRAIL: " + e.getMessage());
-            e.printStackTrace();
+            MatrixCraftMod.LOGGER.error("✗ Failed to register BULLET_TRAIL: " + e.getMessage(), e);
         }
         
         MatrixCraftMod.LOGGER.info("========================================");

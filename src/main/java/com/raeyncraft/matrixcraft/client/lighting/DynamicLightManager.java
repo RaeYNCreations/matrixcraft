@@ -75,9 +75,16 @@ public class DynamicLightManager {
             try {
                 Method get = ryoClass.getMethod("get");
                 dynamicLightsInstance = get.invoke(null);
-                dynamicLightsAvailable = true;
                 MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights detected and singleton obtained.");
-                discoverRyoamicApi();
+                discoverDynamicLightsApi();
+                // Only set available if we successfully discovered the API
+                if (dynamicLightSourceClass != null && methodAddLightSource != null) {
+                    dynamicLightsAvailable = true;
+                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights API successfully initialized.");
+                } else {
+                    MatrixCraftMod.LOGGER.warn("[DynamicLightManager] RyoamicLights detected but API discovery failed!");
+                    dynamicLightsAvailable = false;
+                }
                 return;
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                 MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Ryoamic reflection failed: " + ex.getMessage());
@@ -89,9 +96,16 @@ public class DynamicLightManager {
             try {
                 Method get = lambClass.getMethod("get");
                 dynamicLightsInstance = get.invoke(null);
-                dynamicLightsAvailable = true;
                 MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights detected and singleton obtained.");
-                discoverRyoamicApi();
+                discoverDynamicLightsApi();
+                // Only set available if we successfully discovered the API
+                if (dynamicLightSourceClass != null && methodAddLightSource != null) {
+                    dynamicLightsAvailable = true;
+                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] LambDynLights API successfully initialized.");
+                } else {
+                    MatrixCraftMod.LOGGER.warn("[DynamicLightManager] LambDynLights detected but API discovery failed!");
+                    dynamicLightsAvailable = false;
+                }
                 return;
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
                 MatrixCraftMod.LOGGER.debug("[DynamicLightManager] LambDynLights reflection failed: " + ex.getMessage());
@@ -102,21 +116,9 @@ public class DynamicLightManager {
         MatrixCraftMod.LOGGER.info("[DynamicLightManager] No dynamic-lights mod found; using particle glow only.");
     }
 
-    private static void discoverRyoamicApi() {
+    private static void discoverDynamicLightsApi() {
         if (dynamicLightsInstance == null) return;
         Class<?> cls = dynamicLightsInstance.getClass();
-        MatrixCraftMod.LOGGER.info("[DynamicLightManager] Dumping methods on detected singleton: " + cls.getName());
-        for (Method m : cls.getMethods()) {
-            StringBuilder sig = new StringBuilder();
-            sig.append(m.getReturnType().getSimpleName()).append(" ").append(m.getName()).append("(");
-            Class<?>[] pts = m.getParameterTypes();
-            for (int i = 0; i < pts.length; i++) {
-                sig.append(pts[i].getCanonicalName());
-                if (i < pts.length - 1) sig.append(", ");
-            }
-            sig.append(")");
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] API Method: " + sig.toString());
-        }
 
         for (Method m : cls.getMethods()) {
             String n = m.getName().toLowerCase();
@@ -176,10 +178,11 @@ public class DynamicLightManager {
                     untrackEntityLightById(id);
                     it.remove();
                     lastSeenMs.remove(id);
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] Swept and untracked entity DLS for id=" + id + " (removed=" + (e==null||e.isRemoved()) + " unseenTooLong=" + unseenTooLong + ")");
                 }
             }
-        } catch (Throwable ignored) {}
+        } catch (Throwable e) {
+            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Entity light sweep error: " + e.getMessage());
+        }
     }
 
     private static void syncDynamicLights(Level level) {
@@ -306,7 +309,11 @@ public class DynamicLightManager {
                 lastSeenMs.put(id, System.currentTimeMillis());
                 Object existing = entityDls.get(id);
                 if (existing != null && methodUpdateTracking != null) {
-                    try { methodUpdateTracking.invoke(dynamicLightsInstance, existing); } catch (Throwable ignored) {}
+                    try { 
+                        methodUpdateTracking.invoke(dynamicLightsInstance, existing); 
+                    } catch (Throwable e) {
+                        MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Update tracking failed: " + e.getMessage());
+                    }
                 }
                 return;
             }
@@ -320,9 +327,8 @@ public class DynamicLightManager {
                     new Class[]{dynamicLightSourceClass}, handler);
             entityDls.put(id, proxy);
             invokeAddLightSource(proxy);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Created and registered entity-backed DLS for entity id=" + id);
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] trackEntityLight failed for id=" + id + ": " + t.getMessage());
+            MatrixCraftMod.LOGGER.warn("[DynamicLightManager] trackEntityLight failed for id=" + id + ": " + t.getMessage());
         }
     }
 
@@ -343,6 +349,8 @@ public class DynamicLightManager {
             return;
         }
 
+        if (dynamicLightSourceClass == null) return;
+
         List<Object> proxies = new ArrayList<>();
         try {
             entityRefs.put(id, new WeakReference<>(entity));
@@ -356,11 +364,14 @@ public class DynamicLightManager {
                 invokeAddLightSource(proxy);
             }
             entityDlsChains.put(id, proxies);
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] Created and registered entity-backed DLS chain for id=" + id + " count=" + count);
         } catch (Throwable t) {
-            MatrixCraftMod.LOGGER.info("[DynamicLightManager] trackEntityLightChain failed for id=" + id + ": " + t.getMessage());
+            MatrixCraftMod.LOGGER.warn("[DynamicLightManager] trackEntityLightChain failed for id=" + id + ": " + t.getMessage());
             for (Object p : proxies) {
-                try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
+                try { 
+                    invokeRemoveLightSource(p); 
+                } catch (Throwable e) {
+                    MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Cleanup failed during chain error: " + e.getMessage());
+                }
             }
         }
     }
@@ -402,7 +413,9 @@ public class DynamicLightManager {
                             BulletTrailLighting.LightSource near = BulletTrailLighting.getNearestLight(p, 3.0);
                             if (near != null) return near.getCurrentBrightness();
                         }
-                    } catch (Throwable ignored) {}
+                    } catch (Throwable e) {
+                        MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Luminance calculation error: " + e.getMessage());
+                    }
                     return BulletTrailLighting.getConfiguredLightLevel();
                 }
 
@@ -415,13 +428,17 @@ public class DynamicLightManager {
                             if (e && methodAddLightSource != null) methodAddLightSource.invoke(dynamicLightsInstance, proxy);
                             else if (!e && methodRemoveLightSource != null) methodRemoveLightSource.invoke(dynamicLightsInstance, proxy);
                         }
-                    } catch (Throwable ignored) {}
+                    } catch (Throwable ex) {
+                        MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Set light enabled failed: " + ex.getMessage());
+                    }
                     return null;
                 }
                 if (name.equals("ryoamiclights$updateDynamicLight") || name.equals("updateDynamicLight")) {
                     try {
                         if (ent == null || ent.isRemoved() || !ent.isAlive()) return false;
-                    } catch (Throwable ignored) {}
+                    } catch (Throwable e) {
+                        MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Update light check failed: " + e.getMessage());
+                    }
                     return true;
                 }
                 return getDefaultReturn(method.getReturnType());
@@ -448,17 +465,24 @@ public class DynamicLightManager {
     public static void untrackEntityLightById(int id) {
         Object single = entityDls.remove(id);
         if (single != null) {
-            try { invokeRemoveLightSource(single); } catch (Throwable ignored) {}
+            try { 
+                invokeRemoveLightSource(single); 
+            } catch (Throwable e) {
+                MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Remove single light failed for id=" + id + ": " + e.getMessage());
+            }
         }
         List<Object> chain = entityDlsChains.remove(id);
         if (chain != null) {
             for (Object p : chain) {
-                try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
+                try { 
+                    invokeRemoveLightSource(p); 
+                } catch (Throwable e) {
+                    MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Remove chain light failed for id=" + id + ": " + e.getMessage());
+                }
             }
         }
         entityRefs.remove(id);
         lastSeenMs.remove(id);
-        MatrixCraftMod.LOGGER.info("[DynamicLightManager] Untracked entity-backed DLS for entity id=" + id);
     }
 
     /**

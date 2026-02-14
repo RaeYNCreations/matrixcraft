@@ -154,12 +154,6 @@ public class BulletTrailLighting {
         float[] color = getTrailColor();
         int brightness = getConfiguredLightLevel();
     
-        // Only log occasionally to avoid spam
-        if (activeLights.size() % 50 == 0 && activeLights.size() > 0) {
-            MatrixCraftMod.LOGGER.info("[BulletTrailLighting] Active lights: " + activeLights.size() +
-                ", brightness: " + brightness + ", color: R=" + color[0] + " G=" + color[1] + " B=" + color[2]);
-        }
-    
         int durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
     
         activeLights.put(pos, new LightSource(pos, brightness, durationTicks,
@@ -227,7 +221,9 @@ public class BulletTrailLighting {
             try {
                 com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.ensureInit();
                 com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.updateTexture();
-            } catch (Throwable ignored) {}
+            } catch (Throwable e) {
+                MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Texture update failed: " + e.getMessage());
+            }
         }
     }
     
@@ -286,20 +282,40 @@ public class BulletTrailLighting {
         activeLights.clear();
         try {
             com.raeyncraft.matrixcraft.client.lighting.DynamicLightTextureManager.clearTexture();
-        } catch (Throwable ignored) {}
+        } catch (Throwable e) {
+            MatrixCraftMod.LOGGER.debug("[BulletTrailLighting] Clear texture failed: " + e.getMessage());
+        }
     }
     
     /**
      * Prune oldest lights when at capacity
      */
     private static void pruneOldestLights(int count) {
-        // Simple approach: remove lights with lowest remaining ticks
-        activeLights.entrySet().stream()
-            .sorted((a, b) -> Integer.compare(a.getValue().ticksRemaining, b.getValue().ticksRemaining))
-            .limit(count)
-            .map(Map.Entry::getKey)
-            .toList()
-            .forEach(activeLights::remove);
+        // Optimized approach: use partial sort (select N smallest without full sort)
+        // This is O(n) instead of O(n log n)
+        if (activeLights.size() <= count) {
+            activeLights.clear();
+            return;
+        }
+        
+        // Find the Nth oldest light's ticksRemaining value
+        int threshold = activeLights.values().stream()
+            .mapToInt(ls -> ls.ticksRemaining)
+            .sorted()
+            .skip(count - 1)
+            .findFirst()
+            .orElse(Integer.MAX_VALUE);
+        
+        // Remove all lights with ticksRemaining <= threshold
+        int removed = 0;
+        Iterator<Map.Entry<BlockPos, LightSource>> it = activeLights.entrySet().iterator();
+        while (it.hasNext() && removed < count) {
+            Map.Entry<BlockPos, LightSource> entry = it.next();
+            if (entry.getValue().ticksRemaining <= threshold) {
+                it.remove();
+                removed++;
+            }
+        }
     }
     
     /**

@@ -25,9 +25,20 @@ public class FocusHudRenderer {
     private static final ResourceLocation FOCUS_HUD_LAYER = 
         ResourceLocation.fromNamespaceAndPath(MatrixCraftMod.MODID, "focus_hud");
     
-    // Bar dimensions
+    // Bar dimensions and positioning
     private static final int BAR_WIDTH = 100;
     private static final int BAR_HEIGHT = 5;
+    private static final int BAR_Y_OFFSET = 90; // Distance from bottom of screen
+    
+    // Vignette effect
+    private static final int VIGNETTE_EDGE_SIZE = 30;
+    
+    // Animation speeds (milliseconds)
+    private static final double PULSE_SPEED_MS = 100.0;
+    private static final double TEXT_PULSE_SPEED_MS = 500.0;
+    
+    // Scan line effect
+    private static final int SCAN_LINE_SPACING = 4;
     
     // Background colors (not configurable)
     private static final int BAR_BG_COLOR = 0x80000000;  // Semi-transparent black
@@ -82,16 +93,14 @@ public class FocusHudRenderer {
         int alpha = MatrixCraftConfig.getVignetteAlpha(intensity);
         int vignetteColor = (alpha << 24);
         
-        int edgeSize = 30;
-        
         // Top
-        graphics.fill(0, 0, width, edgeSize, vignetteColor);
+        graphics.fill(0, 0, width, VIGNETTE_EDGE_SIZE, vignetteColor);
         // Bottom
-        graphics.fill(0, height - edgeSize, width, height, vignetteColor);
+        graphics.fill(0, height - VIGNETTE_EDGE_SIZE, width, height, vignetteColor);
         // Left
-        graphics.fill(0, 0, edgeSize, height, vignetteColor);
+        graphics.fill(0, 0, VIGNETTE_EDGE_SIZE, height, vignetteColor);
         // Right
-        graphics.fill(width - edgeSize, 0, width, height, vignetteColor);
+        graphics.fill(width - VIGNETTE_EDGE_SIZE, 0, width, height, vignetteColor);
     }
     
     /**
@@ -111,9 +120,8 @@ public class FocusHudRenderer {
         float progress = FocusManager.getClientFocusProgress();
         
         // Position: center of screen, above the hotbar/health/xp area
-        // screenHeight - 90 puts it well above the standard HUD elements
         int barX = (screenWidth - BAR_WIDTH) / 2;
-        int barY = screenHeight - 90;
+        int barY = screenHeight - BAR_Y_OFFSET;
         
         // Get colors from config
         int borderColor = MatrixCraftConfig.getFocusBarBorderColor();
@@ -135,7 +143,7 @@ public class FocusHudRenderer {
         
         // Pulsing warning effect when low
         if (progress < 0.3f) {
-            float pulse = (float)(Math.sin(System.currentTimeMillis() / 100.0) * 0.5 + 0.5);
+            float pulse = (float)(Math.sin(System.currentTimeMillis() / PULSE_SPEED_MS) * 0.5 + 0.5);
             int pulseAlpha = (int)(100 * pulse);
             int pulseColor = (pulseAlpha << 24) | 0xFF0000; // Red pulse warning
             graphics.fill(barX - 2, barY - 2, barX + BAR_WIDTH + 2, barY + BAR_HEIGHT + 2, pulseColor);
@@ -156,7 +164,7 @@ public class FocusHudRenderer {
         int y = screenHeight - 105; // Above the focus bar
         
         // Calculate alpha based on intensity and time for subtle pulse
-        float pulse = (float)(Math.sin(System.currentTimeMillis() / 500.0) * 0.2 + 0.8);
+        float pulse = (float)(Math.sin(System.currentTimeMillis() / TEXT_PULSE_SPEED_MS) * 0.2 + 0.8);
         float alpha = intensity * pulse;
         
         int textColor = MatrixCraftConfig.getFocusTextColor(alpha);
@@ -176,8 +184,8 @@ public class FocusHudRenderer {
         int alpha = (int)(20 * intensity);
         int lineColor = (alpha << 24);
         
-        // Draw horizontal lines every 4 pixels
-        for (int y = 0; y < height; y += 4) {
+        // Draw horizontal lines at regular spacing
+        for (int y = 0; y < height; y += SCAN_LINE_SPACING) {
             graphics.fill(0, y, width, y + 1, lineColor);
         }
     }

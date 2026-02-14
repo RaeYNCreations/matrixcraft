@@ -32,6 +32,18 @@ import java.util.Set;
  */
 @EventBusSubscriber(value = Dist.CLIENT)
 public class BulletTrailTracker {
+    
+    // Trail rendering constants
+    private static final double PLAYER_TRAIL_LENGTH = 100.0;
+    private static final int PLAYER_TRAIL_PARTICLE_COUNT = 150;
+    private static final double BULLET_TRAIL_LENGTH = 80.0;
+    private static final int BULLET_TRAIL_PARTICLE_COUNT = 120;
+    private static final double TRAIL_PARTICLE_OFFSET_LARGE = 0.04;
+    private static final double TRAIL_PARTICLE_OFFSET_SMALL = 0.03;
+    private static final int TRAIL_SEGMENT_MULTIPLIER = 3;
+    private static final int TRAIL_SEGMENT_MAX_COUNT = 20;
+    private static final int TRAIL_SEGMENT_MIN_COUNT = 3;
+    private static final double TRAIL_SEGMENT_MIN_DISTANCE = 0.1;
 
     private static long lastTrailTime = 0;
     private static final long TRAIL_COOLDOWN_MS = 30;
@@ -72,8 +84,8 @@ public class BulletTrailTracker {
             double maxDist = MatrixCraftConfig.MAX_RENDER_DISTANCE.get();
             if (distSq > maxDist * maxDist) continue;
 
-            if (!processedBullets.contains(entityId)) {
-                processedBullets.add(entityId);
+            // Use atomic add operation - only executes if bullet wasn't already processed
+            if (processedBullets.add(entityId)) {
 
                 long now = System.currentTimeMillis();
                 if (now - lastTrailTime > 100 && velocity.lengthSqr() > 1.0) {
@@ -96,14 +108,17 @@ public class BulletTrailTracker {
                     } else {
                         DynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
                     }
-                    MatrixCraftMod.LOGGER.info("[BulletTrailTracker] Registered entity-backed dynamic light for entity id=" + entityId);
                 } catch (Throwable ex) {
-                    MatrixCraftMod.LOGGER.info("[BulletTrailTracker] Failed to register entity dynamic light for id=" + entityId + ": " + ex.getMessage());
+                    MatrixCraftMod.LOGGER.warn("[BulletTrailTracker] Failed to register entity dynamic light for id=" + entityId + ": " + ex.getMessage());
                 }
             }
 
             // ping so TTL doesn't remove the light
-            try { DynamicLightManager.pingEntity(entityId); } catch (Throwable ignored) {}
+            try { 
+                DynamicLightManager.pingEntity(entityId); 
+            } catch (Throwable e) {
+                MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Ping entity failed for id=" + entityId + ": " + e.getMessage());
+            }
 
             Vec3 lastPos = bulletLastPos.get(entityId);
             if (lastPos != null && currentPos.distanceToSqr(lastPos) > 0.01) {
@@ -118,20 +133,17 @@ public class BulletTrailTracker {
         Vec3 lookDir = player.getLookAngle();
         Vec3 muzzle = eyePos.add(lookDir.scale(0.5));
 
-        double trailLength = 100.0;
-        int particleCount = 150;
-
         boolean addLights = isGlowEnabled();
 
         int spacing = MatrixCraftConfig.TRAIL_LIGHT_SPACING.get();
 
-        for (int i = 0; i < particleCount; i++) {
-            double t = (double) i / particleCount;
-            Vec3 pos = muzzle.add(lookDir.scale(t * trailLength));
+        for (int i = 0; i < PLAYER_TRAIL_PARTICLE_COUNT; i++) {
+            double t = (double) i / PLAYER_TRAIL_PARTICLE_COUNT;
+            Vec3 pos = muzzle.add(lookDir.scale(t * PLAYER_TRAIL_LENGTH));
 
-            double ox = (Math.random() - 0.5) * 0.04;
-            double oy = (Math.random() - 0.5) * 0.04;
-            double oz = (Math.random() - 0.5) * 0.04;
+            double ox = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
+            double oy = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
+            double oz = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
 
             level.addAlwaysVisibleParticle(
                     MatrixParticles.BULLET_TRAIL.get(),
@@ -149,20 +161,17 @@ public class BulletTrailTracker {
     private static void spawnTrailFromBullet(Vec3 bulletPos, Vec3 velocity, ClientLevel level) {
         Vec3 direction = velocity.normalize();
 
-        double trailLength = 80.0;
-        int particleCount = 120;
-
         boolean addLights = isGlowEnabled();
 
         int spacing = MatrixCraftConfig.TRAIL_LIGHT_SPACING.get();
 
-        for (int i = 0; i < particleCount; i++) {
-            double t = (double) i / particleCount;
-            Vec3 pos = bulletPos.subtract(direction.scale(t * trailLength));
+        for (int i = 0; i < BULLET_TRAIL_PARTICLE_COUNT; i++) {
+            double t = (double) i / BULLET_TRAIL_PARTICLE_COUNT;
+            Vec3 pos = bulletPos.subtract(direction.scale(t * BULLET_TRAIL_LENGTH));
 
-            double ox = (Math.random() - 0.5) * 0.04;
-            double oy = (Math.random() - 0.5) * 0.04;
-            double oz = (Math.random() - 0.5) * 0.04;
+            double ox = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
+            double oy = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
+            double oz = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
 
             level.addAlwaysVisibleParticle(
                     MatrixParticles.BULLET_TRAIL.get(),
@@ -179,10 +188,10 @@ public class BulletTrailTracker {
 
     private static void spawnTrailSegment(Vec3 from, Vec3 to, ClientLevel level) {
         double distance = from.distanceTo(to);
-        if (distance < 0.1) return;
+        if (distance < TRAIL_SEGMENT_MIN_DISTANCE) return;
 
-        int count = Math.max(3, (int)(distance * 3));
-        count = Math.min(count, 20);
+        int count = Math.max(TRAIL_SEGMENT_MIN_COUNT, (int)(distance * TRAIL_SEGMENT_MULTIPLIER));
+        count = Math.min(count, TRAIL_SEGMENT_MAX_COUNT);
 
         boolean addLights = isGlowEnabled();
         int spacing = MatrixCraftConfig.TRAIL_LIGHT_SPACING.get();
@@ -191,9 +200,9 @@ public class BulletTrailTracker {
             double t = (double) i / count;
             Vec3 pos = from.lerp(to, t);
 
-            double ox = (Math.random() - 0.5) * 0.03;
-            double oy = (Math.random() - 0.5) * 0.03;
-            double oz = (Math.random() - 0.5) * 0.03;
+            double ox = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_SMALL;
+            double oy = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_SMALL;
+            double oz = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_SMALL;
 
             level.addAlwaysVisibleParticle(
                     MatrixParticles.BULLET_TRAIL.get(),
@@ -215,7 +224,9 @@ public class BulletTrailTracker {
             if (removed) {
                 try {
                     DynamicLightManager.untrackEntityLightById(id);
-                } catch (Throwable ignored) {}
+                } catch (Throwable ex) {
+                    MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in processedBullets cleanup for id=" + id + ": " + ex.getMessage());
+                }
             }
             return removed;
         });
@@ -227,7 +238,9 @@ public class BulletTrailTracker {
             if (removed) {
                 try {
                     DynamicLightManager.untrackEntityLightById(id);
-                } catch (Throwable ignored) {}
+                } catch (Throwable ex) {
+                    MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in bulletLastPos cleanup for id=" + id + ": " + ex.getMessage());
+                }
             }
             return removed;
         });

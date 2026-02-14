@@ -28,37 +28,68 @@ public class MatrixWallRunManager {
     private static final int MAX_VERTICAL_TICKS = 100;
     private static final long COOLDOWN_MS = 500;
     
-    // Config getters - Enable/Disable
+    // ========== Config Getters ==========
+    
+    /**
+     * Checks if horizontal wall running is enabled in config
+     * @return True if players can run parallel along walls
+     */
     public static boolean isHorizontalEnabled() {
         return MatrixCraftConfig.WALLRUN_HORIZONTAL_ENABLED.get();
     }
     
+    /**
+     * Checks if vertical wall running is enabled in config
+     * @return True if players can climb straight up walls
+     */
     public static boolean isVerticalEnabled() {
         return MatrixCraftConfig.WALLRUN_VERTICAL_ENABLED.get();
     }
     
-    // Config getters - Distance
+    /**
+     * Gets the maximum distance a player can run horizontally along a wall
+     * @return Maximum horizontal wall run distance in blocks (default: 32.0)
+     */
     public static double getHorizontalMaxDistance() {
         return MatrixCraftConfig.WALLRUN_HORIZONTAL_MAX_DISTANCE.get();
     }
     
+    /**
+     * Gets the maximum distance a player can climb vertically up a wall
+     * @return Maximum vertical wall climb distance in blocks (default: 4.5)
+     */
     public static double getVerticalMaxDistance() {
         return MatrixCraftConfig.WALLRUN_VERTICAL_MAX_DISTANCE.get();
     }
     
-    // Config getters - Angles
+    /**
+     * Gets the minimum angle from parallel for horizontal wall running
+     * @return Minimum angle in degrees (default: 30.0)
+     */
     public static double getHorizontalAngleMin() {
         return MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MIN.get();
     }
     
+    /**
+     * Gets the maximum angle from parallel for horizontal wall running
+     * @return Maximum angle in degrees (default: 60.0)
+     */
     public static double getHorizontalAngleMax() {
         return MatrixCraftConfig.WALLRUN_HORIZONTAL_ANGLE_MAX.get();
     }
     
+    /**
+     * Gets the minimum angle from perpendicular for vertical wall running
+     * @return Minimum angle in degrees (default: 0.0)
+     */
     public static double getVerticalAngleMin() {
         return MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MIN.get();
     }
     
+    /**
+     * Gets the maximum angle from perpendicular for vertical wall running
+     * @return Maximum angle in degrees (default: 25.0)
+     */
     public static double getVerticalAngleMax() {
         return MatrixCraftConfig.WALLRUN_VERTICAL_ANGLE_MAX.get();
     }
@@ -134,33 +165,6 @@ public class MatrixWallRunManager {
     }
     
     public static boolean tryStartWallRun(Player player) {
-        MatrixCraftMod.LOGGER.info("Trying to start wallrun for {}", player.getName().getString());
-        
-        // Check if both types are disabled
-        if (!isHorizontalEnabled() && !isVerticalEnabled()) {
-            MatrixCraftMod.LOGGER.info("Wallrun disabled");
-            return false;
-        }
-        
-        if (!FocusManager.isInFocus(player)) {
-            MatrixCraftMod.LOGGER.info("Not in focus");
-            return false;
-        }
-        
-        if (isWallRunning(player)) {
-            MatrixCraftMod.LOGGER.info("Already wallrunning");
-            return false;
-        }
-        
-        if (isOnCooldown(player)) {
-            MatrixCraftMod.LOGGER.info("On cooldown");
-            return false;
-        }
-        
-        if (player.onGround()) {
-            MatrixCraftMod.LOGGER.info("On ground");
-            return false;
-        }
         // Check if both types are disabled
         if (!isHorizontalEnabled() && !isVerticalEnabled()) {
             return false;
@@ -184,17 +188,14 @@ public class MatrixWallRunManager {
         
         Vec3 velocity = player.getDeltaMovement();
         double horizontalSpeed = Math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-        MatrixCraftMod.LOGGER.info("Horizontal speed: {}", horizontalSpeed);
         
         if (horizontalSpeed < MIN_SPEED) {
-            MatrixCraftMod.LOGGER.info("Speed too low");
             return false;
         }
         
         Level level = player.level();
         BlockPos playerPos = player.blockPosition();
         Vec3 motionDir = new Vec3(velocity.x, 0, velocity.z).normalize();
-        MatrixCraftMod.LOGGER.info("Motion dir: {}", motionDir);
         
         Direction foundWall = null;
         double closestDist = Double.MAX_VALUE;
@@ -211,10 +212,8 @@ public class MatrixWallRunManager {
         }
         
         if (foundWall == null) {
-            MatrixCraftMod.LOGGER.info("No wall found");
             return false;
         }
-        MatrixCraftMod.LOGGER.info("Found wall: {}", foundWall);
         
         Vec3 wallNormal = new Vec3(
             -foundWall.getStepX(),
@@ -227,7 +226,6 @@ public class MatrixWallRunManager {
         
         double angleFromParallel = Math.abs(90.0 - angleToNormal);
         double angleFromInto = 180.0 - angleToNormal;
-        MatrixCraftMod.LOGGER.info("Angles: parallel={}, into={}", angleFromParallel, angleFromInto);
         
         WallRunType type;
         Vec3 runDirection;
@@ -246,18 +244,13 @@ public class MatrixWallRunManager {
             Vec3 ourRight = new Vec3(runDirection.z, 0, -runDirection.x);
             wallIsOnRight = ourRight.dot(wallNormal) < 0;
             
-            MatrixCraftMod.LOGGER.info("Starting HORIZONTAL wallrun");
-            
         // Check vertical (only if enabled)
         } else if (isVerticalEnabled() && angleFromInto >= getVerticalAngleMin() && angleFromInto <= getVerticalAngleMax()) {
             type = WallRunType.VERTICAL;
             runDirection = new Vec3(0, 1, 0);
             wallIsOnRight = false;
             
-            MatrixCraftMod.LOGGER.info("Starting VERTICAL wallrun");
-            
         } else {
-            MatrixCraftMod.LOGGER.info("Angles don't match any type");
             return false;
         }
         
