@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * - supports entity-backed single proxies and chains of proxies trailing an entity
  * - provides clearAllDynamicLights()
  * - TTL-based sweep and pinging
- * - forceUpdateAll() (throttled) to force Ryoamic/Lamb to refresh
+ * - forceUpdateAll() (throttled) to force LambDynLights to refresh
  */
 @OnlyIn(Dist.CLIENT)
 @EventBusSubscriber(value = Dist.CLIENT, modid = MatrixCraftMod.MODID)
@@ -69,28 +69,7 @@ public class DynamicLightManager {
         if (initialized) return;
         initialized = true;
 
-        // Discover dynamic-lights implementation (Ryoamic / Lamb)
-        try {
-            Class<?> ryoClass = Class.forName("org.thinkingstudio.ryoamiclights.RyoamicLights");
-            try {
-                Method get = ryoClass.getMethod("get");
-                dynamicLightsInstance = get.invoke(null);
-                MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights detected and singleton obtained.");
-                discoverDynamicLightsApi();
-                // Only set available if we successfully discovered the API
-                if (dynamicLightSourceClass != null && methodAddLightSource != null) {
-                    dynamicLightsAvailable = true;
-                    MatrixCraftMod.LOGGER.info("[DynamicLightManager] RyoamicLights API successfully initialized.");
-                } else {
-                    MatrixCraftMod.LOGGER.warn("[DynamicLightManager] RyoamicLights detected but API discovery failed!");
-                    dynamicLightsAvailable = false;
-                }
-                return;
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException ex) {
-                MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Ryoamic reflection failed: " + ex.getMessage());
-            }
-        } catch (ClassNotFoundException ignored) {}
-
+        // Discover LambDynLights implementation
         try {
             Class<?> lambClass = Class.forName("dev.lambdaurora.lambdynlights.LambDynLights");
             try {

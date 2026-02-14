@@ -22,11 +22,13 @@ public class MatrixWallRunManager {
     
     private static final Map<UUID, WallRunState> activeWallRuns = new ConcurrentHashMap<>();
     private static final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
+    private static final Map<UUID, Integer> wallJumpCount = new ConcurrentHashMap<>();
     
     private static final double MIN_SPEED = 0.1;
     private static final int MAX_HORIZONTAL_TICKS = 120;
     private static final int MAX_VERTICAL_TICKS = 100;
     private static final long COOLDOWN_MS = 500;
+    private static final long WALL_TO_WALL_COOLDOWN_MS = 50; // Very short cooldown for wall-to-wall jumps
     
     // ========== Config Getters ==========
     
@@ -163,6 +165,16 @@ public class MatrixWallRunManager {
     
     private static void setCooldown(Player player) {
         cooldowns.put(player.getUUID(), System.currentTimeMillis() + COOLDOWN_MS);
+        // Reset wall jump count when entering normal cooldown
+        wallJumpCount.remove(player.getUUID());
+    }
+    
+    private static void setWallToWallCooldown(Player player) {
+        // Short cooldown for wall-to-wall transitions
+        cooldowns.put(player.getUUID(), System.currentTimeMillis() + WALL_TO_WALL_COOLDOWN_MS);
+        // Increment wall jump count
+        int count = wallJumpCount.getOrDefault(player.getUUID(), 0);
+        wallJumpCount.put(player.getUUID(), count + 1);
     }
     
     public static boolean tryStartWallRun(Player player) {
@@ -379,9 +391,14 @@ public class MatrixWallRunManager {
             player.setDeltaMovement(jumpVel);
             syncVelocity(player);
             MatrixCraftMod.LOGGER.info("Wall jump!");
+            
+            // Use short cooldown to allow wall-to-wall transitions
+            setWallToWallCooldown(player);
+        } else {
+            // Normal cooldown for non-jump exits
+            setCooldown(player);
         }
         
-        setCooldown(player);
         activeWallRuns.remove(player.getUUID());
         MatrixCraftMod.LOGGER.info("Wall run stopped after {} ticks", state.ticksActive);
     }
@@ -413,6 +430,7 @@ public class MatrixWallRunManager {
     public static void stopAllWallRuns() {
         activeWallRuns.clear();
         cooldowns.clear();
+        wallJumpCount.clear();
     }
     
     public static void clientTick(Player player) {

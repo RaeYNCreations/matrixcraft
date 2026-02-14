@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * - Colored light based on trail color config
  * - Configurable light level (1-15)
  * - Fading light as trails decay
- * - Integration with RyoamicLights (if available)
+ * - Integration with LambDynLights (if available)
  * - Shader-friendly data for Iris/Optifine
  * 
  * The light color matches the bullet trail color from config,
@@ -29,9 +29,9 @@ public class BulletTrailLighting {
     // Track active light sources: position -> light data
     private static final Map<BlockPos, LightSource> activeLights = new ConcurrentHashMap<>();
     
-    // RyoamicLights availability flag
-    private static boolean ryoamicLightsAvailable = false;
-    private static boolean checkedForRyoamicLights = false;
+    // Dynamic lights availability flag
+    private static boolean dynamicLightsAvailable = false;
+    private static boolean checkedForDynamicLights = false;
     
     // Light settings
     private static final int MAX_LIGHTS = 300; // Prevent too many light sources
@@ -109,29 +109,22 @@ public class BulletTrailLighting {
     }
     
     /**
-     * Check if RyoamicLights is available
+     * Check if LambDynLights is available
      */
-    public static boolean isRyoamicLightsAvailable() {
-        if (!checkedForRyoamicLights) {
-            checkedForRyoamicLights = true;
+    public static boolean isDynamicLightsAvailable() {
+        if (!checkedForDynamicLights) {
+            checkedForDynamicLights = true;
             try {
-                // Check if RyoamicLights API class exists
+                // Check if LambDynLights API class exists
                 Class.forName("dev.lambdaurora.lambdynlights.api.DynamicLightHandlers");
-                ryoamicLightsAvailable = true;
-                MatrixCraftMod.LOGGER.info("[BulletTrailLighting] RyoamicLights detected!");
+                dynamicLightsAvailable = true;
+                MatrixCraftMod.LOGGER.info("[BulletTrailLighting] LambDynLights detected!");
             } catch (ClassNotFoundException e) {
-                // Try alternate class name for RyoamicLights
-                try {
-                    Class.forName("org.thinkingstudio.ryoamiclights.RyoamicLights");
-                    ryoamicLightsAvailable = true;
-                    MatrixCraftMod.LOGGER.info("[BulletTrailLighting] RyoamicLights detected (alternate)!");
-                } catch (ClassNotFoundException e2) {
-                    ryoamicLightsAvailable = false;
-                    MatrixCraftMod.LOGGER.info("[BulletTrailLighting] No dynamic lights mod found, using shader-based lighting");
-                }
+                dynamicLightsAvailable = false;
+                MatrixCraftMod.LOGGER.info("[BulletTrailLighting] No dynamic lights mod found, using shader-based lighting");
             }
         }
-        return ryoamicLightsAvailable;
+        return dynamicLightsAvailable;
     }
     
     /**
