@@ -69,7 +69,7 @@ public class LightMarkerEntity extends Entity {
      * Get light level - called by LambDynLights
      * Fades out as the entity ages for realistic decay
      */
-    public int getLuminance() {
+    public int getLightLevel() {
         // If expired, return 0 immediately
         if (ticksAlive >= maxTicks) {
             return 0;

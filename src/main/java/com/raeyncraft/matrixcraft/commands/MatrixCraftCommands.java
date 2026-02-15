@@ -1219,7 +1219,7 @@ public class MatrixCraftCommands {
                             "§7Lava Bypass (Focus): " + (lavaBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
                             "§7Cobweb Bypass (Focus): " + (cobwebBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
                             "§7Water Bypass (Focus): " + (waterBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Glass Repair: " + (glassEnabled ? "§aENABLED" : "§cDISABLED") + " (Delay: §e" + glassDelay + "s)")), false);
+                            "§7Glass Repair: " + (glassEnabled ? "§aENABLED" : "§cDISABLED") + " (Delay: §e" + glassDelay + "s)"), false);
                     return 1;
                 })
             )

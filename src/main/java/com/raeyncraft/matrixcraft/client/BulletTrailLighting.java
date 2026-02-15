@@ -172,7 +172,12 @@ public class BulletTrailLighting {
         float[] color = getTrailColor();
         int brightness = getConfiguredLightLevel();
     
-        int durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
+        int durationTicks = 100; // Default
+        try {
+            durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
+        } catch (Exception e) {
+            // Keep default
+        }
     
         activeLights.put(pos, new LightSource(pos, brightness, durationTicks,
             color[0], color[1], color[2]));
@@ -193,7 +198,12 @@ public class BulletTrailLighting {
         BlockPos pos = BlockPos.containing(x, y, z);
         int brightness = getConfiguredLightLevel();
     
-        int durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
+        int durationTicks = 100; // Default
+        try {
+            durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
+        } catch (Exception e) {
+            // Keep default
+        }
     
         activeLights.put(pos, new LightSource(pos, brightness, durationTicks, r, g, b));
     }

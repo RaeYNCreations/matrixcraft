@@ -97,13 +97,15 @@ public class MatrixParticles {
             this.bCol = bNorm * hdrBoost;
             
             // Alpha from config
+            float alphaValue = 1.0f; // Default: fully opaque
             try {
                 Number alphaConfig = MatrixCraftConfig.TRAIL_ALPHA.get();
-                this.initialAlpha = alphaConfig != null ? alphaConfig.floatValue() : 1.0f;
+                alphaValue = alphaConfig != null ? alphaConfig.floatValue() : 1.0f;
             } catch (Exception e) {
-                this.initialAlpha = 1.0f; // Default: fully opaque
+                // Keep default value
             }
-            this.alpha = this.initialAlpha;
+            this.initialAlpha = alphaValue;
+            this.alpha = this.initialAlpha;;
             
             // Check if this particle should emit light
             this.emitsLight = BulletTrailLighting.isDynamicLightingEnabled();
