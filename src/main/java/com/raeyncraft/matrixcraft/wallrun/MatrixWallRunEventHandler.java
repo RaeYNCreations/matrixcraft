@@ -9,6 +9,9 @@ import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 
 @EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class MatrixWallRunEventHandler {
+    private int wallrunTicks = 0;
+    private final double WALL_DETECTION_DISTANCE = 1.0;
+    private final double HORIZONTAL_WALLRUN_SPEED = 0.2;
     
     @SubscribeEvent
     public static void onPlayerTick(PlayerTickEvent.Pre event) {

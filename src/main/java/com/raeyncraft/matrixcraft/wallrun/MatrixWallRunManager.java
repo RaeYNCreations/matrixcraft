@@ -25,8 +25,8 @@ public class MatrixWallRunManager {
     private static final Map<UUID, Integer> consecutiveWallJumps = new ConcurrentHashMap<>();
     
     private static final double MIN_SPEED = 0.1;
-    private static final int MAX_HORIZONTAL_TICKS = 120;
-    private static final int MAX_VERTICAL_TICKS = 100;
+    private static final int MAX_HORIZONTAL_TICKS = 300;
+    private static final int MAX_VERTICAL_TICKS = 200;
     private static final long COOLDOWN_MS = 500;
     private static final long WALL_TO_WALL_COOLDOWN_MS = 50; // Very short cooldown for wall-to-wall jumps
     
@@ -233,14 +233,18 @@ public class MatrixWallRunManager {
         }
         
         Level level = player.level();
-        BlockPos playerPos = player.blockPosition();
+        Vec3 playerPos = player.position();
         Vec3 motionDir = new Vec3(velocity.x, 0, velocity.z).normalize();
         
+        // Find wall by checking for solid blocks within 0.8 blocks in each horizontal direction
         Direction foundWall = null;
         double closestDist = Double.MAX_VALUE;
-        
+
         for (Direction dir : Direction.Plane.HORIZONTAL) {
-            if (isWallAt(level, playerPos, dir)) {
+            Vec3 checkPos = playerPos.add(dir.getStepX() * 1.2, 0, dir.getStepZ() * 1.2);
+            BlockPos blockPos = BlockPos.containing(checkPos);
+            
+            if (isSolidWall(level, blockPos)) {
                 Vec3 dirVec = new Vec3(dir.getStepX(), 0, dir.getStepZ());
                 double dist = 1.0 - Math.abs(motionDir.dot(dirVec));
                 if (dist < closestDist) {
@@ -313,7 +317,7 @@ public class MatrixWallRunManager {
             player.setPos(player.getX() + offset.x, player.getY(), player.getZ() + offset.z);
             syncPosition(player); // Sync position to client to prevent desync
         } else {
-            Vec3 intoWall = wallNormal.scale(-0.08);
+            Vec3 intoWall = wallNormal.scale(-0.12); // Increased from -0.08
             player.setDeltaMovement(intoWall.x, 0.32, intoWall.z);
         }
         
@@ -349,6 +353,43 @@ public class MatrixWallRunManager {
         }
     }
     
+    private static boolean isSolidWall(Level level, BlockPos pos) {
+        if (!level.isLoaded(pos)) {
+            return false;
+        }
+        
+        try {
+            BlockState state = level.getBlockState(pos);
+            // Check if it's solid OR has collision (for walls, fences, etc.)
+            return state.isSolid() || !state.getCollisionShape(level, pos).isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    private static Direction findNearbyWall(Level level, Vec3 playerPos, Vec3 motionDir) {
+        double checkDistance = 1.2;
+        Direction bestDir = null;
+        double closestDist = Double.MAX_VALUE;
+        
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            for (int yOffset = -1; yOffset <= 1; yOffset++) {
+                Vec3 checkPos = playerPos.add(dir.getStepX() * checkDistance, yOffset, dir.getStepZ() * checkDistance);
+                BlockPos blockPos = BlockPos.containing(checkPos);
+                
+                if (isSolidWall(level, blockPos)) {
+                    Vec3 toWall = checkPos.subtract(playerPos);
+                    double angle = Math.abs(motionDir.dot(toWall.normalize()));
+                    if (angle > 0.7) { // Facing roughly towards the wall
+                        bestDir = dir;
+                        closestDist = 0; // Found a good match
+                    }
+                }
+            }
+        }
+        return bestDir;
+    }
+
     public static void updateWallRun(Player player) {
         WallRunState state = activeWallRuns.get(player.getUUID());
         if (state == null) {
@@ -357,70 +398,67 @@ public class MatrixWallRunManager {
         
         state.ticksActive++;
         
-        // Detect jump attempt: sudden upward velocity change
+        // Detect jump attempt: multiple methods for reliability
         double currentYVel = player.getDeltaMovement().y;
-        if (currentYVel > state.lastYVelocity + 0.3) {
-            // Player is trying to jump off the wall
-            MatrixCraftMod.LOGGER.info("Player jump detected: Y velocity changed from {} to {}", 
-                state.lastYVelocity, currentYVel);
+        boolean velocityJump = currentYVel > state.lastYVelocity + 0.08 || currentYVel > 0.12;
+        boolean upwardJump = currentYVel > 0.1 && state.ticksActive > 5; // Prevent false positives at start
+
+        if (velocityJump || upwardJump) {
+            MatrixCraftMod.LOGGER.info("Player jump detected: vel={}, lastVel={}", currentYVel, state.lastYVelocity);
             endWallRun(player, state, true);
             return;
         }
         state.lastYVelocity = currentYVel;
         
+        // Check max distance (from config)
         double distance = state.getDistanceTraveled(player.position());
         double maxDist = state.getMaxDistance();
         
         if (distance >= maxDist) {
-            MatrixCraftMod.LOGGER.info("Wall run ended - max distance {} >= {}", distance, maxDist);
+            MatrixCraftMod.LOGGER.info("Wall run ended - reached max distance {} blocks", maxDist);
             endWallRun(player, state, true);
             return;
         }
         
+        // Check max time (using configured ticks)
         if (state.ticksActive >= state.getMaxTicks()) {
-            MatrixCraftMod.LOGGER.info("Wall run ended - max ticks");
+            MatrixCraftMod.LOGGER.info("Wall run ended - reached max time ({} ticks)", state.getMaxTicks());
             endWallRun(player, state, true);
             return;
         }
         
+        // End if player hits ground
         if (player.onGround()) {
             MatrixCraftMod.LOGGER.info("Wall run ended - hit ground");
             endWallRun(player, state, false);
             return;
         }
         
+        // Check if wall is still there
         Level level = player.level();
-        BlockPos playerPos = player.blockPosition();
+        Vec3 playerPos = player.position();
         
-        if (!isWallAt(level, playerPos, state.wallDirection)) {
+        Direction currentWallDir = findNearbyWall(level, playerPos, state.runDirection);
+        if (currentWallDir == null || !currentWallDir.equals(state.wallDirection)) {
             MatrixCraftMod.LOGGER.info("Wall run ended - lost wall");
             endWallRun(player, state, true);
             return;
         }
         
+        // Update velocity to stay on wall
         if (state.type == WallRunType.HORIZONTAL) {
-            float speed = 0.40f - (state.ticksActive * 0.001f);
-            speed = Math.max(speed, 0.30f);
-            
+            float speed = 0.40f;
             Vec3 newVel = state.runDirection.scale(speed);
-            player.setDeltaMovement(newVel.x, 0, newVel.z);
+            Vec3 wallPush = state.wallNormal.scale(-0.02);
+            player.setDeltaMovement(newVel.x + wallPush.x, 0, newVel.z + wallPush.z);
             
         } else {
             double progress = distance / maxDist;
-            
             float upSpeed = (float) (0.32 * (1.0 - progress * 0.8));
             upSpeed = Math.max(upSpeed, 0.06f);
             
-            Vec3 intoWall = state.wallNormal.scale(-0.06);
+            Vec3 intoWall = state.wallNormal.scale(-0.12);
             player.setDeltaMovement(intoWall.x, upSpeed, intoWall.z);
-            
-            if (state.ticksActive % 10 == 0) {
-                MatrixCraftMod.LOGGER.info("Vertical: dist={}/{}, progress={}, speed={}", 
-                    String.format("%.2f", distance), 
-                    String.format("%.2f", maxDist),
-                    String.format("%.2f", progress),
-                    String.format("%.2f", upSpeed));
-            }
         }
         
         player.fallDistance = 0;
@@ -431,9 +469,15 @@ public class MatrixWallRunManager {
         if (doJump) {
             Vec3 jumpVel;
             if (state.type == WallRunType.HORIZONTAL) {
-                jumpVel = state.wallNormal.scale(0.45)
-                    .add(state.runDirection.scale(0.2))
-                    .add(0, 0.42, 0);
+                // Maintain strong horizontal momentum for wall-to-wall jumps
+                Vec3 currentVel = player.getDeltaMovement();
+                Vec3 horizontalVel = new Vec3(currentVel.x, 0, currentVel.z);
+                // Boost the jump in the run direction slightly
+                Vec3 boost = state.runDirection.scale(0.1);
+                jumpVel = state.wallNormal.scale(0.35)
+                    .add(horizontalVel.scale(0.9))  // Keep 90% of horizontal momentum
+                    .add(boost)  // Extra boost in run direction
+                    .add(0, 0.45, 0);
             } else {
                 jumpVel = state.wallNormal.scale(0.55).add(0, 0.4, 0);
             }
@@ -441,8 +485,16 @@ public class MatrixWallRunManager {
             syncVelocity(player);
             MatrixCraftMod.LOGGER.info("Wall jump!");
             
-            // Use short cooldown to allow wall-to-wall transitions
-            setWallToWallCooldown(player);
+            // Try immediate wall-to-wall transition
+            if (!player.onGround() && player.getDeltaMovement().horizontalDistanceSqr() > 0.01) {
+                // Try multiple times over the next few ticks
+                for (int i = 0; i < 3; i++) {
+                    if (MatrixWallRunManager.tryStartWallRun(player)) {
+                        MatrixCraftMod.LOGGER.info("Wall-to-wall transition successful!");
+                        break;
+                    }
+                }
+            }
         } else {
             // Normal cooldown for non-jump exits
             setCooldown(player);

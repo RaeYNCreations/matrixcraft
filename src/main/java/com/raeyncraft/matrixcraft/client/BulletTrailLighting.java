@@ -90,6 +90,11 @@ public class BulletTrailLighting {
      * Check if dynamic lighting is enabled
      */
     public static boolean isDynamicLightingEnabled() {
+        // Disable if LambDynLights is present to avoid crashes
+        if (isDynamicLightsAvailable()) {
+            return false;
+        }
+        
         try {
             return MatrixCraftConfig.TRAIL_DYNAMIC_LIGHTING.get();
         } catch (Exception e) {
@@ -160,25 +165,25 @@ public class BulletTrailLighting {
         if (!isDynamicLightingEnabled()) {
             return;
         }
-    
+        
         if (activeLights.size() >= MAX_LIGHTS) {
             // Remove oldest lights if at capacity
             pruneOldestLights(50);
         }
-    
+        
         BlockPos pos = BlockPos.containing(x, y, z);
-    
+        
         // Get color from config
         float[] color = getTrailColor();
         int brightness = getConfiguredLightLevel();
-    
+        
         int durationTicks = 100; // Default
         try {
             durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
         } catch (Exception e) {
             // Keep default
         }
-    
+        
         activeLights.put(pos, new LightSource(pos, brightness, durationTicks,
             color[0], color[1], color[2]));
     }
@@ -190,21 +195,21 @@ public class BulletTrailLighting {
         if (!isDynamicLightingEnabled()) {
             return;
         }
-    
+        
         if (activeLights.size() >= MAX_LIGHTS) {
             pruneOldestLights(50);
         }
-    
+        
         BlockPos pos = BlockPos.containing(x, y, z);
         int brightness = getConfiguredLightLevel();
-    
+        
         int durationTicks = 100; // Default
         try {
             durationTicks = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
         } catch (Exception e) {
             // Keep default
         }
-    
+        
         activeLights.put(pos, new LightSource(pos, brightness, durationTicks, r, g, b));
     }
     
@@ -212,8 +217,8 @@ public class BulletTrailLighting {
      * Add multiple light sources along a trail segment
      */
     public static void addTrailSegmentLights(double x1, double y1, double z1, 
-                                              double x2, double y2, double z2, 
-                                              int numLights) {
+                                           double x2, double y2, double z2, 
+                                           int numLights) {
         if (!isDynamicLightingEnabled() || numLights <= 0) {
             return;
         }
