@@ -30,6 +30,13 @@ public class MatrixWallRunManager {
     private static final long COOLDOWN_MS = 500;
     private static final long WALL_TO_WALL_COOLDOWN_MS = 50; // Very short cooldown for wall-to-wall jumps
     
+    // Jump detection thresholds
+    private static final double JUMP_VELOCITY_THRESHOLD = 0.20;
+    private static final double VERTICAL_CLIMB_VELOCITY_THRESHOLD = 0.40;
+    
+    // Wall physics constants
+    private static final double WALL_PUSH_FORCE = -0.01;
+    
     // ========== Config Getters ==========
     
     /**
@@ -246,9 +253,9 @@ public class MatrixWallRunManager {
             
             if (isSolidWall(level, blockPos)) {
                 Vec3 dirVec = new Vec3(dir.getStepX(), 0, dir.getStepZ());
-                // FIX: Calculate actual angle to wall for proper selection
+                // Calculate angle to wall - select wall we're moving most toward
+                // Smaller dot product = more perpendicular approach (better for wallrun)
                 double angleToWall = Math.abs(motionDir.dot(dirVec));
-                // Select wall we're most aligned with (closest to perpendicular approach)
                 if (angleToWall < closestDist) {
                     closestDist = angleToWall;
                     foundWall = dir;
@@ -402,8 +409,8 @@ public class MatrixWallRunManager {
         
         // Detect jump attempt: check for significant upward velocity change
         double currentYVel = player.getDeltaMovement().y;
-        boolean velocityJump = currentYVel > state.lastYVelocity + 0.20; // Increased threshold for actual jumps
-        boolean upwardJump = currentYVel > 0.40 && state.ticksActive > 5; // Much higher for vertical climbs
+        boolean velocityJump = currentYVel > state.lastYVelocity + JUMP_VELOCITY_THRESHOLD;
+        boolean upwardJump = currentYVel > VERTICAL_CLIMB_VELOCITY_THRESHOLD && state.ticksActive > 5;
 
         if (velocityJump || upwardJump) {
             MatrixCraftMod.LOGGER.info("Player jump detected: vel={}, lastVel={}", currentYVel, state.lastYVelocity);
@@ -452,8 +459,8 @@ public class MatrixWallRunManager {
         if (state.type == WallRunType.HORIZONTAL) {
             float speed = 0.40f;
             Vec3 newVel = state.runDirection.scale(speed);
-            // Reduced wall push to prevent bouncing
-            Vec3 wallPush = state.wallNormal.scale(-0.01);
+            // Small push into wall to maintain contact, reduced to prevent bouncing
+            Vec3 wallPush = state.wallNormal.scale(WALL_PUSH_FORCE);
             player.setDeltaMovement(newVel.x + wallPush.x, 0, newVel.z + wallPush.z);
             
         } else {
