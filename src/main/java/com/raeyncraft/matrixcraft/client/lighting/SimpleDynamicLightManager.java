@@ -404,11 +404,11 @@ public class SimpleDynamicLightManager {
                 return timeA.compareTo(timeB);
             });
             
-            int toRemoveCount = entityLights.size() - (MAX_ENTITY_LIGHTS * 4 / 5);
-            for (int i = 0; i < toRemoveCount && i < ids.size(); i++) {
+            int excessLightCount = entityLights.size() - (MAX_ENTITY_LIGHTS * 4 / 5);
+            for (int i = 0; i < excessLightCount && i < ids.size(); i++) {
                 untrackEntityLightById(ids.get(i));
             }
-            MatrixCraftMod.LOGGER.info("[SimpleDynamicLightManager] Cleaned up " + toRemoveCount + " old lights");
+            MatrixCraftMod.LOGGER.info("[SimpleDynamicLightManager] Cleaned up " + excessLightCount + " old lights");
         }
     }
     

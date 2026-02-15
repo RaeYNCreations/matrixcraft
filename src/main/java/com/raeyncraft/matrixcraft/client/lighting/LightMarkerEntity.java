@@ -70,15 +70,22 @@ public class LightMarkerEntity extends Entity {
      * Fades out as the entity ages for realistic decay
      */
     public int getLuminance() {
-        if (maxTicks <= 0) return lightLevel;
+        // If expired, return 0 immediately
+        if (ticksAlive >= maxTicks) {
+            return 0;
+        }
+        
+        if (maxTicks <= 0) {
+            return lightLevel;
+        }
         
         // Calculate fade: full brightness at start, fade to 0 at end
         float progress = (float) ticksAlive / (float) maxTicks;
         float fade = 1.0f - progress;
         
         // Apply fade to light level
-        int fadedLevel = Math.max(0, (int)(lightLevel * fade));
-        return fadedLevel;
+        int fadedLevel = (int)(lightLevel * fade);
+        return Math.max(0, fadedLevel);
     }
     
     /**

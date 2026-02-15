@@ -247,13 +247,37 @@ public class FocusManager {
     
     // ==================== TACZ ADRENALINE MODE INTEGRATION ====================
     
+    // Cache TACZ availability to avoid repeated reflection lookups
+    private static Boolean taczAvailable = null;
+    
+    /**
+     * Check if TACZ is available (cached result)
+     */
+    private static boolean isTaczAvailable() {
+        if (taczAvailable == null) {
+            try {
+                Class.forName("com.tacz.guns.adrenaline.AdrenalineManager");
+                taczAvailable = true;
+                MatrixCraftMod.LOGGER.info("[FocusManager] TACZ detected - adrenaline integration enabled");
+            } catch (ClassNotFoundException e) {
+                taczAvailable = false;
+                MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ not found - adrenaline integration disabled");
+            }
+        }
+        return taczAvailable;
+    }
+    
     /**
      * Try to activate TACZ Adrenaline Mode using reflection
      * This allows integration without requiring TACZ as a dependency
      */
     private static void tryActivateTaczAdrenaline(ServerPlayer player, int durationTicks) {
+        if (!isTaczAvailable()) {
+            return;
+        }
+        
         try {
-            // Check if TACZ is loaded by looking for AdrenalineManager class
+            // Access AdrenalineManager and related classes
             Class<?> adrenalineManagerClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager");
             Class<?> playerDataClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager$PlayerAdrenalineData");
             
@@ -310,11 +334,9 @@ public class FocusManager {
             MatrixCraftMod.LOGGER.info("[FocusManager] Activated TACZ Adrenaline Mode for " + player.getName().getString() + 
                 " (Duration: " + durationSeconds + "s, Health: " + healthMultiplier + "x)");
             
-        } catch (ClassNotFoundException e) {
-            // TACZ not loaded - this is normal, not an error
-            MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ not found, adrenaline mode not activated");
         } catch (Exception e) {
             MatrixCraftMod.LOGGER.warn("[FocusManager] Failed to activate TACZ adrenaline mode: " + e.getMessage());
+            MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ integration error details", e);
         }
     }
     
@@ -322,6 +344,10 @@ public class FocusManager {
      * Try to deactivate TACZ Adrenaline Mode using reflection
      */
     private static void tryDeactivateTaczAdrenaline(ServerPlayer player) {
+        if (!isTaczAvailable()) {
+            return;
+        }
+        
         try {
             Class<?> adrenalineManagerClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager");
             Class<?> playerDataClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager$PlayerAdrenalineData");
@@ -379,11 +405,9 @@ public class FocusManager {
             MatrixCraftMod.LOGGER.info("[FocusManager] Deactivated TACZ Adrenaline Mode for " + player.getName().getString() + 
                 " (Cooldown: " + focusDurationSeconds + "s)");
             
-        } catch (ClassNotFoundException e) {
-            // TACZ not loaded - this is normal
-            MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ not found, adrenaline mode not deactivated");
         } catch (Exception e) {
             MatrixCraftMod.LOGGER.warn("[FocusManager] Failed to deactivate TACZ adrenaline mode: " + e.getMessage());
+            MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ integration error details", e);
         }
     }
 }
