@@ -57,9 +57,8 @@ public class MatrixWallRunClientHandler {
             // The server is authoritative for wallrun state in multiplayer
             PacketDistributor.sendToServer(new WallRunJumpPacket());
             
-            // Also execute locally for immediate client-side response (works in single-player)
-            // In multiplayer, the server will sync the actual state back
-            MatrixWallRunManager.jumpOffWall(mc.player);
+            // DO NOT execute locally - let server be authoritative
+            // The server will sync back the state which updates client
         }
         
         wasJumpKeyDown = isJumpKeyDown;

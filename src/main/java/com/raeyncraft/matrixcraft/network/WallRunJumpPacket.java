@@ -11,6 +11,8 @@ import net.neoforged.neoforge.network.handling.IPayloadContext;
 
 /**
  * Packet sent from client to server when player presses jump during wallrun
+ * 
+ * Security: Server validates player is actually wallrunning before allowing jump
  */
 public record WallRunJumpPacket() implements CustomPacketPayload {
     
@@ -27,10 +29,18 @@ public record WallRunJumpPacket() implements CustomPacketPayload {
     
     /**
      * Handle the packet on the server side
+     * SECURITY: Validates player state before executing jump
      */
     public static void handle(WallRunJumpPacket packet, IPayloadContext context) {
         context.enqueueWork(() -> {
             if (context.player() instanceof ServerPlayer serverPlayer) {
+                // SECURITY: Validate player is actually wallrunning before allowing jump
+                if (!MatrixWallRunManager.isWallRunning(serverPlayer)) {
+                    MatrixCraftMod.LOGGER.debug("[WallRunJumpPacket] Rejected jump request from " + 
+                        serverPlayer.getName().getString() + " - not wallrunning");
+                    return;
+                }
+                
                 // Server-side: Execute the jump off wall
                 MatrixCraftMod.LOGGER.debug("[WallRunJumpPacket] Server received jump request from " + 
                     serverPlayer.getName().getString());

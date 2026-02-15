@@ -145,15 +145,22 @@ public class SimpleDynamicLightManager {
                 return;
             }
             
-            LightMarkerEntity marker = new LightMarkerEntity(entityType, mc.level);
+            // Create marker - re-validate world immediately before constructor
+            Minecraft mcRecheck = Minecraft.getInstance();
+            if (mcRecheck == null || mcRecheck.level == null) {
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] World became null right before entity creation!");
+                return;
+            }
+            
+            LightMarkerEntity marker = new LightMarkerEntity(entityType, mcRecheck.level);
             marker.setPos(entity.getX(), entity.getY(), entity.getZ());
             marker.setTarget(id, Vec3.ZERO);
             marker.setLightProperties(brightness, r, g, b);
             marker.setMaxTicks(100); // 5 seconds (increased from 3)
             
-            // Final validation before adding to world
-            if (mc.level != null && !marker.isRemoved()) {
-                mc.level.addFreshEntity(marker);
+            // Final validation before adding to world (triple-check)
+            if (mcRecheck.level != null && !marker.isRemoved()) {
+                mcRecheck.level.addFreshEntity(marker);
                 
                 List<LightMarkerEntity> markers = new ArrayList<>();
                 markers.add(marker);
@@ -223,8 +230,16 @@ public class SimpleDynamicLightManager {
             Vec3 direction = vLen > 0.001 ? new Vec3(velocity.x / vLen, velocity.y / vLen, velocity.z / vLen) : Vec3.ZERO;
             
             List<LightMarkerEntity> markers = new ArrayList<>();
+            boolean creationSucceeded = true;
             
             for (int i = 0; i < chainCount; i++) {
+                // Re-validate world on each iteration to prevent incomplete chains
+                if (mc.level == null) {
+                    MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] World became null mid-chain creation at marker " + i);
+                    creationSucceeded = false;
+                    break; // Stop creating more markers
+                }
+                
                 // Calculate offset for this marker in the chain
                 Vec3 offset = direction.scale(-i * chainSpacing); // Behind the entity
                 
@@ -240,16 +255,25 @@ public class SimpleDynamicLightManager {
                     markers.add(marker);
                 } else {
                     MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Cannot add chain marker #" + i + " - world is null or marker is removed");
-                    break; // Stop creating more markers if world becomes invalid
+                    creationSucceeded = false;
+                    break; // Stop creating more markers
                 }
             }
             
-            // Only add to tracking if we successfully created markers
-            if (!markers.isEmpty()) {
+            // Only add to tracking if we successfully created ALL markers
+            if (creationSucceeded && !markers.isEmpty()) {
                 markerEntities.put(id, markers);
                 
                 MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created " + markers.size() + 
                     " light markers for entity " + id + " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
+            } else if (!markers.isEmpty()) {
+                // Partial chain created - clean up the markers we added
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Chain creation failed mid-way, cleaning up " + markers.size() + " partial markers");
+                for (LightMarkerEntity marker : markers) {
+                    if (marker != null && !marker.isRemoved()) {
+                        marker.discard();
+                    }
+                }
             }
         } catch (Exception e) {
             MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Failed to create marker chain: " + e.getMessage());
