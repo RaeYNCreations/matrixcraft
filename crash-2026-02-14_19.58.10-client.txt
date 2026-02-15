@@ -1,0 +1,903 @@
+---- Minecraft Crash Report ----
+
+// Hi. I'm Connector, and I'm a crashaholic
+=========================
+SINYTRA CONNECTOR IS PRESENT!
+Please verify issues are not caused by Connector before reporting them to mod authors.
+If you're unsure, file a report on Connector's issue tracker found at https://github.com/Sinytra/Connector/issues.
+=========================
+
+
+// Hi. I'm Minecraft, and I'm a crashaholic.
+
+Time: 2026-02-14 19:58:10
+Description: Unexpected error
+
+java.lang.NullPointerException: Cannot invoke "it.unimi.dsi.fastutil.longs.Long2ObjectMap.isEmpty()" because "chunks" is null
+	at TRANSFORMER/lambdynlights_runtime@4.8.7+1.21.1/dev.lambdaurora.lambdynlights.engine.scheduler.ChunkRebuildScheduler.update(ChunkRebuildScheduler.java:52) ~[lambdynamiclights-4.8.7+1.21.1-neoforge.jar%23870!/:?] {re:classloading,re:mixin}
+	at TRANSFORMER/lambdynlights_runtime@4.8.7+1.21.1/dev.lambdaurora.lambdynlights.LambDynLights.onEndLevelTick(LambDynLights.java:324) ~[lambdynamiclights-4.8.7+1.21.1-neoforge.jar%23870!/:?] {re:mixin,re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.multiplayer.ClientLevel.handler$fen000$lambdynlights_runtime$lambdynlights$onEndWorldTick(ClientLevel.java:5752) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:APP:immersive_melodies.mixins.json:ClientWorldMixin from mod immersive_melodies,pl:mixin:APP:mixins.iris.vertexformat.json:block_rendering.MixinClientLevel from mod iris,pl:mixin:APP:lithium.mixins.json:chunk.entity_class_groups.ClientLevelMixin from mod lithium,pl:mixin:APP:sodium-common.mixins.json:core.world.biome.ClientLevelMixin from mod sodium,pl:mixin:APP:sodium-common.mixins.json:core.world.map.ClientLevelMixin from mod sodium,pl:mixin:APP:shouldersurfing.common.mixins.json:MixinClientLevel from mod shouldersurfing,pl:mixin:APP:entityculling.mixins.json:ClientWorldMixin from mod entityculling,pl:mixin:APP:kuroutils.mixins.json:client.ClientLevelAccessor from mod kuroutils,pl:mixin:APP:architectury.mixins.json:MixinClientLevel from mod architectury,pl:mixin:APP:lambdynlights.mixins.json:ClientLevelMixin from mod lambdynlights_runtime,pl:mixin:APP:entity_sound_features.mixins.json:MixinClientLevel from mod entity_sound_features,pl:mixin:APP:vivecraft.mixins.json:client.multiplayer.ClientLevelMixin from mod vivecraft,pl:mixin:APP:enhancedcelestials.mixins.json:client.MixinClientWorld from mod enhancedcelestials,pl:mixin:APP:sound_physics_remastered.mixins.json:ClientLevelMixin from mod (unknown),pl:mixin:APP:forge-badoptimizations.mixins.json:tick.MixinClientWorld from mod badoptimizations,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.multiplayer.ClientLevel.tickEntities(ClientLevel.java:283) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:APP:immersive_melodies.mixins.json:ClientWorldMixin from mod immersive_melodies,pl:mixin:APP:mixins.iris.vertexformat.json:block_rendering.MixinClientLevel from mod iris,pl:mixin:APP:lithium.mixins.json:chunk.entity_class_groups.ClientLevelMixin from mod lithium,pl:mixin:APP:sodium-common.mixins.json:core.world.biome.ClientLevelMixin from mod sodium,pl:mixin:APP:sodium-common.mixins.json:core.world.map.ClientLevelMixin from mod sodium,pl:mixin:APP:shouldersurfing.common.mixins.json:MixinClientLevel from mod shouldersurfing,pl:mixin:APP:entityculling.mixins.json:ClientWorldMixin from mod entityculling,pl:mixin:APP:kuroutils.mixins.json:client.ClientLevelAccessor from mod kuroutils,pl:mixin:APP:architectury.mixins.json:MixinClientLevel from mod architectury,pl:mixin:APP:lambdynlights.mixins.json:ClientLevelMixin from mod lambdynlights_runtime,pl:mixin:APP:entity_sound_features.mixins.json:MixinClientLevel from mod entity_sound_features,pl:mixin:APP:vivecraft.mixins.json:client.multiplayer.ClientLevelMixin from mod vivecraft,pl:mixin:APP:enhancedcelestials.mixins.json:client.MixinClientWorld from mod enhancedcelestials,pl:mixin:APP:sound_physics_remastered.mixins.json:ClientLevelMixin from mod (unknown),pl:mixin:APP:forge-badoptimizations.mixins.json:tick.MixinClientWorld from mod badoptimizations,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.tick(Minecraft.java:1856) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:computing_frames,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.runTick(Minecraft.java:1161) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:computing_frames,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.run(Minecraft.java:807) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:computing_frames,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.main.Main.main(Main.java:230) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:classloading,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?] {}
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?] {re:mixin}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:136) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:124) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonClientLaunchHandler.runService(CommonClientLaunchHandler.java:32) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.lambda$launchService$4(CommonLaunchHandler.java:118) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.Launcher.run(Launcher.java:103) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.Launcher.main(Launcher.java:74) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at cpw.mods.bootstraplauncher@2.0.2/cpw.mods.bootstraplauncher.BootstrapLauncher.run(BootstrapLauncher.java:210) [bootstraplauncher-2.0.2.jar:?] {}
+	at cpw.mods.bootstraplauncher@2.0.2/cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:69) [bootstraplauncher-2.0.2.jar:?] {}
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?] {}
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?] {re:mixin}
+	at io.github.zekerzhayard.forgewrapper.installer.Main.main(Main.java:67) [ForgeWrapper-prism-2025-12-07.jar:prism-2025-12-07] {}
+	at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:115) [NewLaunch.jar:?] {}
+	at org.prismlauncher.EntryPoint.listen(EntryPoint.java:129) [NewLaunch.jar:?] {}
+	at org.prismlauncher.EntryPoint.main(EntryPoint.java:70) [NewLaunch.jar:?] {}
+
+
+A detailed walkthrough of the error, its code path and all known details is as follows:
+---------------------------------------------------------------------------------------
+
+-- Head --
+Thread: Render thread
+Stacktrace:
+	at TRANSFORMER/lambdynlights_runtime@4.8.7+1.21.1/dev.lambdaurora.lambdynlights.engine.scheduler.ChunkRebuildScheduler.update(ChunkRebuildScheduler.java:52) ~[lambdynamiclights-4.8.7+1.21.1-neoforge.jar%23870!/:?] {re:classloading,re:mixin}
+	at TRANSFORMER/lambdynlights_runtime@4.8.7+1.21.1/dev.lambdaurora.lambdynlights.LambDynLights.onEndLevelTick(LambDynLights.java:324) ~[lambdynamiclights-4.8.7+1.21.1-neoforge.jar%23870!/:?] {re:mixin,re:classloading}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.multiplayer.ClientLevel.handler$fen000$lambdynlights_runtime$lambdynlights$onEndWorldTick(ClientLevel.java:5752) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:APP:immersive_melodies.mixins.json:ClientWorldMixin from mod immersive_melodies,pl:mixin:APP:mixins.iris.vertexformat.json:block_rendering.MixinClientLevel from mod iris,pl:mixin:APP:lithium.mixins.json:chunk.entity_class_groups.ClientLevelMixin from mod lithium,pl:mixin:APP:sodium-common.mixins.json:core.world.biome.ClientLevelMixin from mod sodium,pl:mixin:APP:sodium-common.mixins.json:core.world.map.ClientLevelMixin from mod sodium,pl:mixin:APP:shouldersurfing.common.mixins.json:MixinClientLevel from mod shouldersurfing,pl:mixin:APP:entityculling.mixins.json:ClientWorldMixin from mod entityculling,pl:mixin:APP:kuroutils.mixins.json:client.ClientLevelAccessor from mod kuroutils,pl:mixin:APP:architectury.mixins.json:MixinClientLevel from mod architectury,pl:mixin:APP:lambdynlights.mixins.json:ClientLevelMixin from mod lambdynlights_runtime,pl:mixin:APP:entity_sound_features.mixins.json:MixinClientLevel from mod entity_sound_features,pl:mixin:APP:vivecraft.mixins.json:client.multiplayer.ClientLevelMixin from mod vivecraft,pl:mixin:APP:enhancedcelestials.mixins.json:client.MixinClientWorld from mod enhancedcelestials,pl:mixin:APP:sound_physics_remastered.mixins.json:ClientLevelMixin from mod (unknown),pl:mixin:APP:forge-badoptimizations.mixins.json:tick.MixinClientWorld from mod badoptimizations,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.multiplayer.ClientLevel.tickEntities(ClientLevel.java:283) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:APP:immersive_melodies.mixins.json:ClientWorldMixin from mod immersive_melodies,pl:mixin:APP:mixins.iris.vertexformat.json:block_rendering.MixinClientLevel from mod iris,pl:mixin:APP:lithium.mixins.json:chunk.entity_class_groups.ClientLevelMixin from mod lithium,pl:mixin:APP:sodium-common.mixins.json:core.world.biome.ClientLevelMixin from mod sodium,pl:mixin:APP:sodium-common.mixins.json:core.world.map.ClientLevelMixin from mod sodium,pl:mixin:APP:shouldersurfing.common.mixins.json:MixinClientLevel from mod shouldersurfing,pl:mixin:APP:entityculling.mixins.json:ClientWorldMixin from mod entityculling,pl:mixin:APP:kuroutils.mixins.json:client.ClientLevelAccessor from mod kuroutils,pl:mixin:APP:architectury.mixins.json:MixinClientLevel from mod architectury,pl:mixin:APP:lambdynlights.mixins.json:ClientLevelMixin from mod lambdynlights_runtime,pl:mixin:APP:entity_sound_features.mixins.json:MixinClientLevel from mod entity_sound_features,pl:mixin:APP:vivecraft.mixins.json:client.multiplayer.ClientLevelMixin from mod vivecraft,pl:mixin:APP:enhancedcelestials.mixins.json:client.MixinClientWorld from mod enhancedcelestials,pl:mixin:APP:sound_physics_remastered.mixins.json:ClientLevelMixin from mod (unknown),pl:mixin:APP:forge-badoptimizations.mixins.json:tick.MixinClientWorld from mod badoptimizations,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+[MixinTraceReforged] Mixins in Stack Trace:
+	net.minecraft.client.multiplayer.ClientLevel:
+		net.caffeinemc.mods.sodium.mixin.core.world.map.ClientLevelMixin (sodium-common.mixins.json)
+		dev.lambdaurora.lambdynlights.mixin.ClientLevelMixin (lambdynlights.mixins.json)
+		net.irisshaders.iris.mixin.vertices.block_rendering.MixinClientLevel (mixins.iris.vertexformat.json)
+		org.vivecraft.mixin.client.multiplayer.ClientLevelMixin (vivecraft.mixins.json)
+		dev.architectury.mixin.forge.MixinClientLevel (architectury.mixins.json)
+		dev.corgitaco.enhancedcelestials.mixin.client.MixinClientWorld (enhancedcelestials.mixins.json)
+		forge.me.thosea.badoptimizations.mixin.tick.MixinClientWorld (forge-badoptimizations.mixins.json)
+		com.sonicether.soundphysics.mixin.ClientLevelMixin (sound_physics_remastered.mixins.json)
+		net.caffeinemc.mods.lithium.mixin.chunk.entity_class_groups.ClientLevelMixin (lithium.mixins.json)
+		com.github.exopandora.shouldersurfing.mixins.MixinClientLevel (shouldersurfing.common.mixins.json)
+		immersive_melodies.mixin.ClientWorldMixin (immersive_melodies.mixins.json)
+		traben.entity_sound_features.mixin.mixins.MixinClientLevel (entity_sound_features.mixins.json)
+		cn.chloeprime.commons_impl.mixin.client.ClientLevelAccessor (kuroutils.mixins.json)
+		net.caffeinemc.mods.sodium.mixin.core.world.biome.ClientLevelMixin (sodium-common.mixins.json)
+		dev.tr7zw.entityculling.mixin.ClientWorldMixin (entityculling.mixins.json)
+-- Uptime --
+Details:
+	JVM uptime: 74.973s
+	Wall uptime: 62.502s
+	High-res time: 73.272s
+	Client ticks: 542 ticks / 27.100s
+Stacktrace:
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.fillReport(Minecraft.java:2394) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:computing_frames,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.emergencySaveAndCrash(Minecraft.java:868) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:computing_frames,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.Minecraft.run(Minecraft.java:828) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:mixin,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:computing_frames,pl:accesstransformer:B,pl:connector_pre_launch:A,pl:runtimedistcleaner:A,re:classloading,pl:accesstransformer:B,pl:mixin:A,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at TRANSFORMER/minecraft@1.21.1/net.minecraft.client.main.Main.main(Main.java:230) ~[client-1.21.1-20240808.144430-srg.jar%23379!/:?] {re:classloading,pl:connector_pre_launch:A,pl:runtimedistcleaner:A}
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?] {}
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?] {re:mixin}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.runTarget(CommonLaunchHandler.java:136) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.clientService(CommonLaunchHandler.java:124) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonClientLaunchHandler.runService(CommonClientLaunchHandler.java:32) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/fml_loader@4.0.42/net.neoforged.fml.loading.targets.CommonLaunchHandler.lambda$launchService$4(CommonLaunchHandler.java:118) ~[loader-4.0.42.jar%23161!/:4.0] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandlerDecorator.launch(LaunchServiceHandlerDecorator.java:30) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:53) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.LaunchServiceHandler.launch(LaunchServiceHandler.java:71) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.Launcher.run(Launcher.java:103) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.Launcher.main(Launcher.java:74) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:26) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at MC-BOOTSTRAP/cpw.mods.modlauncher@11.0.5/cpw.mods.modlauncher.BootstrapLaunchConsumer.accept(BootstrapLaunchConsumer.java:23) [modlauncher-11.0.5.jar%23166!/:?] {}
+	at cpw.mods.bootstraplauncher@2.0.2/cpw.mods.bootstraplauncher.BootstrapLauncher.run(BootstrapLauncher.java:210) [bootstraplauncher-2.0.2.jar:?] {}
+	at cpw.mods.bootstraplauncher@2.0.2/cpw.mods.bootstraplauncher.BootstrapLauncher.main(BootstrapLauncher.java:69) [bootstraplauncher-2.0.2.jar:?] {}
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103) ~[?:?] {}
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580) ~[?:?] {re:mixin}
+	at io.github.zekerzhayard.forgewrapper.installer.Main.main(Main.java:67) [ForgeWrapper-prism-2025-12-07.jar:prism-2025-12-07] {}
+	at org.prismlauncher.launcher.impl.StandardLauncher.launch(StandardLauncher.java:115) [NewLaunch.jar:?] {}
+	at org.prismlauncher.EntryPoint.listen(EntryPoint.java:129) [NewLaunch.jar:?] {}
+	at org.prismlauncher.EntryPoint.main(EntryPoint.java:70) [NewLaunch.jar:?] {}
+
+[MixinTraceReforged] Mixins in Stack Trace:
+	net.minecraft.client.Minecraft:
+		net.darkhax.bookshelf.common.mixin.access.client.AccessorMinecraft (bookshelf.mixins.json)
+		me.srrapero720.chloride.mixins.impl.MinecraftMixin (chloride.mixin.json)
+		net.raphimc.immediatelyfast.injection.mixins.core.MixinMinecraftClient (immediatelyfast-common.mixins.json)
+		org.vivecraft.mixin.client_vr.MinecraftVRMixin (vivecraft.mixins.json)
+		net.caffeinemc.mods.lithium.neoforge.mixin.startup.MinecraftMixin (lithium-neoforge.mixins.json)
+		toni.redirected.mixin.net.minecraft.client.MinecraftMixin (mixins.redirected_neoforge_1.21.1.json)
+		me.pajic.accessorify.mixin.MinecraftClientMixin (accessorify.mixins.json)
+		net.fabricmc.fabric.mixin.event.interaction.client.MinecraftClientMixin (fabric-events-interaction-v0.client.mixins.json)
+		org.sinytra.connector.mod.mixin.boot.MinecraftMixin (connector.mixins.json)
+		com.kingcontaria.fastquit.mixin.MinecraftClientMixin (fastquit.mixins.json)
+		com.mrcrayfish.controllable.mixin.client.MinecraftMixin (controllable.common.mixins.json)
+		io.wispforest.owo.mixin.MinecraftClientMixin (owo.mixins.json)
+		dev.tr7zw.transition.mixin.BlockEntityRenderStateMixin (transition.mixins.json)
+		dev.tr7zw.transition.mixin.EntityRenderStateMixin (transition.mixins.json)
+		dev.su5ed.sinytra.connectorextras.modmenu.mixin.MinecraftMixin (mixins.connectorextras_modmenu_bridge.json)
+		dev.tr7zw.skinlayers.mixin.SkullModelStateMixin (skinlayers3d.mixins.json)
+		me.flashyreese.mods.sodiumextra.mixin.gui.MinecraftClientAccessor (sodium-extra.mixins.json)
+		com.teamresourceful.resourcefulconfig.mixins.client.MinecraftMixin (resourcefulconfig.mixins.json)
+		org.embeddedt.modernfix.common.mixin.perf.dedicated_reload_executor.MinecraftMixin (modernfix-common.mixins.json)
+		dev.architectury.mixin.forge.MixinMinecraft (architectury.mixins.json)
+		org.z2six.locksmith.mixin.MixinMinecraft (locksmith.mixins.json)
+		net.irisshaders.iris.mixin.MixinMinecraft_Images (mixins.iris.json)
+		net.irisshaders.iris.mixin.MixinMinecraft_PipelineManagement (mixins.iris.json)
+		com.anthonyhilyard.prism.mixin.MinecraftMixin (prism.mixins.json)
+		traben.entity_model_features.mixin.mixins.MixinResourceReloadStart (entity_model_features.mixins.json)
+		dev.yumi.mc.core.mixin.client.MinecraftClientMixin (yumi_mc_core.mixins.json)
+		de.keksuccino.konkrete.mixin.mixins.client.MixinMinecraft (konkrete.mixins.json)
+		dev.lambdaurora.lambdynlights.mixin.MinecraftClientMixin (lambdynlights.mixins.json)
+		dev.isxander.yacl3.mixin.MinecraftMixin (yacl.mixins.json)
+		com.hollingsworth.arsnouveau.common.mixin.camera.MinecraftMixin (ars_nouveau.mixins.json)
+		net.fabricmc.fabric.mixin.screen.MinecraftClientMixin (fabric-screen-api-v1.mixins.json)
+		me.srrapero720.chloride.mixins.impl.OverlayMixin (chloride.mixin.json)
+		dev.tr7zw.entityculling.mixin.DebugScreenEntriesAccessor (entityculling.mixins.json)
+		org.embeddedt.modernfix.neoforge.mixin.feature.measure_time.MinecraftMixin_Forge (modernfix-neoforge.mixins.json)
+		net.conczin.immersive_furniture.mixin.client.MinecraftMixin (immersive_furniture.mixins.json)
+		org.vivecraft.neoforge.mixin.NeoForgeMinecraftVRMixin (vivecraft.neoforge.mixins.json)
+		de.keksuccino.fancymenu.mixin.mixins.common.client.IMixinMinecraft (fancymenu.mixins.json)
+		team.creative.playerrevive.mixin.MinecraftAccessor (playerrevive.mixins.json)
+		com.sonicether.soundphysics.mixin.MinecraftMixin (sound_physics_remastered.mixins.json)
+		org.embeddedt.modernfix.common.mixin.feature.measure_time.MinecraftMixin (modernfix-common.mixins.json)
+		net.caffeinemc.mods.sodium.mixin.platform.neoforge.EntrypointMixin (sodium-neoforge.mixins.json)
+		net.caffeinemc.mods.sodium.mixin.core.MinecraftMixin (sodium-common.mixins.json)
+		de.keksuccino.drippyloadingscreen.mixin.mixins.common.client.IMixinMinecraft (drippyloadingscreen.mixins.json)
+		dev.engine_room.flywheel.impl.mixin.MinecraftMixin (flywheel.impl.mixins.json)
+		com.aizistral.nochatreports.common.mixins.client.MixinMinecraft (mixins/common/nochatreports.mixins.json)
+		journeymap.common.mixin.client.MinecraftMixin (journeymap.mixins.json)
+		com.anthonyhilyard.iceberg.mixin.MinecraftMixin (iceberg.mixins.json)
+		foundationgames.enhancedblockentities.mixin.MinecraftClientMixin (enhancedblockentities.mixins.json)
+		dev.tr7zw.transition.mixin.EntityRendererMixin (transition.mixins.json)
+		net.fabricmc.fabric.mixin.networking.client.accessor.MinecraftClientAccessor (fabric-networking-api-v1.client.mixins.json)
+		traben.entity_model_features.mixin.mixins.accessor.MinecraftClientAccessor (entity_model_features.mixins.json)
+		com.kingcontaria.fastquit.mixin.MinecraftClientAccessor (fastquit.mixins.json)
+		ca.fxco.moreculling.mixin.Minecraft_managersMixin (moreculling.mixins.json)
+		org.embeddedt.modernfix.common.mixin.feature.remove_telemetry.MinecraftMixin_Telemetry (modernfix-common.mixins.json)
+		org.embeddedt.modernfix.common.mixin.bugfix.world_leaks.MinecraftMixin (modernfix-common.mixins.json)
+		dev.tr7zw.entityculling.mixin.LivingEntityRendererAccessor (entityculling.mixins.json)
+		traben.entity_texture_features.mixin.mixins.reloading.MixinMinecraftClient (entity_texture_features.mixins.json)
+		com.hollingsworth.arsnouveau.common.mixin.light.ClientMixin (ars_nouveau.mixins.json)
+		com.atsuishio.superbwarfare.mixins.MinecraftMixin (mixins.superbwarfare.json)
+		de.keksuccino.fancymenu.mixin.mixins.common.client.MixinMinecraft (fancymenu.mixins.json)
+		dev.tr7zw.transition.mixin.MinecraftMixin (transition.mixins.json)
+		ca.fxco.moreculling.mixin.blockstates.Minecraft_loadBlocksMixin (moreculling.mixins.json)
+		traben.entity_sound_features.mixin.mixins.MixinResourceReload (entity_sound_features.mixins.json)
+		traben.entity_texture_features.mixin.mixins.reloading.MixinResourceReload (entity_texture_features.mixins.json)
+		org.embeddedt.modernfix.common.mixin.bugfix.concurrency.MinecraftMixin (modernfix-common.mixins.json)
+		dev.imb11.skinshuffle.mixin.MinecraftClientMixin (SkinShuffle.mixins.json)
+		dev.imb11.skinshuffle.mixin.accessor.MinecraftClientAccessor (SkinShuffle.mixins.json)
+		me.flashyreese.mods.sodiumextra.mixin.core.MixinMinecraftClient (sodium-extra.mixins.json)
+		io.wispforest.accessories.mixin.client.MinecraftMixin (accessories-common.mixins.json)
+		io.wispforest.owo.mixin.ui.MinecraftClientMixin (owo.mixins.json)
+		net.puffish.skillsmod.mixin.MinecraftClientMixin (puffish_skills.mixins.json)
+		net.irisshaders.iris.mixin.MixinMinecraft_Keybinds (mixins.iris.json)
+		net.blay09.mods.balm.mixin.MinecraftMixin (balm.neoforge.mixins.json)
+		eu.pb4.polymer.rsm.mixin.client.MinecraftClientMixin (polymer-rsm.mixins.json)
+		net.fabricmc.fabric.mixin.event.lifecycle.client.MinecraftClientMixin (fabric-lifecycle-events-v1.client.mixins.json)
+		org.thinkingstudio.obsidianui.neoforge.mixin.MinecraftClientMixin (obsidianui.neoforge.mixins.json)
+
+-- Affected level --
+Details:
+	All players: 1 total; [LocalPlayer['RaeYNCraft'/293, l='ClientLevel', x=-45.51, y=43.00, z=-99.57]]
+	Chunk stats: 529, 313
+	Level dimension: minecraft:overworld
+	Level spawn location: World: (-139,50,-33), Section: (at 5,2,15 in -9,3,-3; chunk contains blocks -144,-64,-48 to -129,319,-33), Region: (-1,-1; contains chunks -32,-32 to -1,-1, blocks -512,-64,-512 to -1,319,-1)
+	Level time: 1924783 game time, 7950 day time
+	Server brand: neoforge
+	Server type: Integrated singleplayer server
+	Tracked entity count: 105
+
+-- Last reload --
+Details:
+	Reload number: 1
+	Reload reason: initial
+	Finished: Yes
+	Packs: tacz_resources, vanilla, fabric, mod_resources, mod/sodium, mod/c2me_fixes_worldgen_threading_issues, mod/accessorify, mod/fabric_language_kotlin, mod/supermartijn642configlib, mod/sodium_extra, mod/gunsmithlib, mod/playeranimator, mod/c2me_rewrites_chunk_serializer, mod/connectorextras_kubejs_bridge, mod/locksmith, mod/fabric_rendering_fluids_v1, mod/tidybinds, mod/fastitems, mod/safermoons, mod/c2me_fixes_general_threading_issues, mod/fabric_convention_tags_v1, mod/neoforge, mod/modernfix, mod/fabric_block_view_api_v2, mod/fabric_command_api_v2, mod/fabric_convention_tags_v2, mod/yungsapi, mod/iris, mod/connectorextras_rei_bridge, mod/eliteholograms, mod/mr_mo_variants, mod/lootbeams, mod/c2me, mod/arsnumerichud, mod/balm, mod/fabric_screen_api_v1, mod/prickle, mod/c2me_base, mod/cloth_config, mod/staaaaaaaaaaaack, mod/connectorextras_terrablender_bridge, mod/fabric_game_rule_api_v1, mod/yayconfig, mod/peacefulmoon, mod/rrc_horde_nights, mod/supermartijn642corelib, mod/resourcefulconfig, mod/metalbundles, mod/spark, mod/reeses_sodium_options, mod/c2me_opts_dfc, mod/curios, mod/noisium, mod/sspb, mod/fabric_entity_events_v1, mod/accessories, mod/worldedit, mod/sodiumoptionsmodcompat, mod/deimos, mod/conditional_mixin, mod/transition, mod/fabric_rendering_data_attachment_v1, mod/infiniverse, mod/despawntweaks, mod/journeymap_api, mod/playerrevive, mod/lazy_chunks, mod/fabric_client_tags_api_v1, mod/puffish_skills, mod/c2me_threading_lighting, mod/lootbundles, mod/sodiumleafculling, mod/fabric_model_loading_api_v1, mod/lithium, mod/attributefix, mod/fabric_screen_handler_api_v1, mod/polymer_registry_sync_manipulator, mod/serversidehorror, mod/paxi, mod/fabric_rendering_v1, mod/arcwise, mod/fabric_renderer_indigo, mod/lightmanscurrency, mod/toadlib, mod/midnightlib, mod/bagofholding, mod/sanguine, mod/c2me_rewrites_chunk_system, mod/tenseambience, mod/fusion, mod/moreculling, mod/luckperms, mod/fabric_particles_v1, mod/c2me_opts_worldgen_vanilla, mod/zombiemoon, mod/c2me_opts_scheduling, mod/feytweaks, mod/drippyloadingscreen, mod/butchery, mod/zoniex, mod/horror_element_mod, mod/militaristic_armor, mod/voicechat,voicechat_api, mod/sound_physics_remastered, mod/terrablender, mod/fabric_api_base, mod/nochatreports, mod/shouldersurfing, mod/iteminteractions, mod/fabric_block_api_v1, mod/corgilib, mod/connectorextras_jei_bridge, mod/fabric_resource_conditions_api_v1, mod/e4mc_minecraft, mod/kotlinforforge, mod/effectivearmors, mod/fabric_item_group_api_v1, mod/c2me_notickvd, mod/entityculling, mod/yumi_mc_core, mod/mr_loot_bags, mod/fabric_registry_sync_v0, mod/immediatelyfast, mod/continuity, mod/lambdynlights_api, mod/fabric_recipe_api_v1, mod/fabric_object_builder_api_v1, mod/puzzleslib, mod/kuroutils, mod/fabric_sound_api_v1, mod/immersive_melodies, mod/fabric_message_api_v1, mod/goop, mod/kuma_api, mod/fabric_renderer_api_v1, mod/geckolib, mod/ars_nouveau, mod/sauce, mod/crittersandcompanions, mod/fabric_item_api_v1, mod/c2me_opts_natives_math, mod/obsidianui, mod/incendium, mod/sophisticatedcore, mod/skinshuffle, mod/prism, mod/cerulean, mod/fabric_data_attachment_api_v1, mod/lambdynlights, mod/redirected, mod/bookshelf, mod/sophisticatedbackpacks, mod/c2me_opts_math, mod/minersmoon, mod/superbwarfare, mod/nuggets, mod/sodiumoptionsapi, mod/melody, mod/connector, mod/iris_uniforms, mod/fzzy_config, mod/fabric_api,forgified_fabric_api, mod/connectorextras_modmenu_bridge,modmenu, mod/c2me_fixes_worldgen_vanilla_bugs, mod/pride, mod/fabric_content_registries_v0, mod/konkrete, mod/taczpackupgrader, mod/entity_model_features, mod/entity_texture_features, mod/destructive_moon, mod/fabric_api_lookup_api_v1, mod/vcinteraction, mod/c2me_fixes_chunkio_threading_issues, mod/endermoon, mod/c2me_client_uncapvd, mod/mixintracereforged, mod/mr_rpg_skilltree, mod/brutalnightmarecci, mod/reactify, mod/patchouli, mod/ars_additions, mod/ars_controle, mod/collective, mod/cerbons_api, mod/fastquit, mod/zombiemod, mod/resourcefullib, mod/starterkit, mod/backpackplus, mod/vrapi, mod/architectury, mod/num_flux, mod/achiopt, mod/fabric_loot_api_v2, mod/lambdynlights_runtime, mod/enhancedblockentities, mod/connectorextras, mod/fabric_loot_api_v3, mod/fixsodiumshaderloader, mod/chunkloaders, mod/fabric_networking_api_v1, mod/framework, mod/c2me_rewrites_chunkio, mod/puffish_attributes, mod/controllable, mod/dataanchor, mod/c2me_opts_allocs, mod/fabric_lifecycle_events_v1, mod/fabric_key_binding_api_v1, mod/betteradvancements, mod/fabric_transfer_api_v1, mod/owo, mod/sittingplus, mod/commonnetworking, mod/connectorextras_pehkui_bridge, mod/tacz, mod/accessories_compat_layer,tclayer,cclayer, mod/fabric_resource_loader_v0, mod/trender, mod/chloride, mod/clumps, mod/journeymap, mod/entity_sound_features, mod/worldeditcui, mod/matrixcraft, mod/spookydoors, mod/mr_immersive_sound, mod/txnilib, mod/connectorextras_energy_bridge, mod/skinlayers3d, mod/vivecraft, mod/vr_throwing_extensions, mod/fabric_transitive_access_wideners_v1, mod/stronger_skill_tree_for_pufferfishs_skills, mod/gpu_tape, mod/invhigh, mod/endermanoverhaul, mod/chunkyborder, mod/chunky, mod/fabric_blockrenderlayer_v1, mod/creativecore, mod/c2me_server_utils, mod/beltborne_lanterns, mod/rocks, mod/immersive_furniture, mod/iceberg, mod/fabric_gametest_api_v1, mod/spruceui, mod/ars_elemental, mod/not_enough_glyphs, mod/ars_unification, mod/immersive_paintings, mod/armoroftheages, mod/bnbloodparticles, mod/fabric_biome_api_v1, mod/c2me_opts_worldgen_general, mod/c2me_opts_chunkio, mod/fancymenu, mod/creeperoverhaul, mod/ferritecore, mod/yet_another_config_lib_v3, mod/enhancedcelestials, mod/async, mod/fokusapi, mod/brutalnightmare, mod/colorwheel, mod/flywheel, mod/lodestone, mod/mr_nightmare_mode, mod/packetfixer, mod/badoptimizations, mod/connectorextras_emi_bridge, mod/skinrestorer, mod/overflowingbars, mod/fabric_data_generation_api_v1, mod/fabric_events_interaction_v0, mod/camp_fires_cook_mobs, mod/bl_accessories_layer, mod/accessorify:resourcepacks/1_21_1/rp
+
+-- Dynamic Lighting --
+Details:
+	Description: This section contains information related to dynamic lighting, this may not be related to your crash.
+	Mode: fancy
+	Dynamic Light Sources: 1
+	Spatial Hash Occupancy: 1 / 1024
+
+-- System Details --
+Details:
+	Minecraft Version: 1.21.1
+	Minecraft Version ID: 1.21.1
+	Operating System: Windows 11 (amd64) version 10.0
+	Java Version: 21.0.9, Azul Systems, Inc.
+	Java VM Version: OpenJDK 64-Bit Server VM (mixed mode, sharing), Azul Systems, Inc.
+	Memory: 967214952 bytes (922 MiB) / 7868514304 bytes (7504 MiB) up to 7868514304 bytes (7504 MiB)
+	CPUs: 32
+	Processor Vendor: GenuineIntel
+	Processor Name: Intel(R) Core(TM) i9-14900K
+	Identifier: Intel64 Family 6 Model 183 Stepping 1
+	Microarchitecture: Raptor Lake
+	Frequency (GHz): 3.19
+	Number of physical packages: 1
+	Number of physical CPUs: 24
+	Number of logical CPUs: 32
+	Graphics card #0 name: NVIDIA GeForce RTX 4070 Ti
+	Graphics card #0 vendor: NVIDIA
+	Graphics card #0 VRAM (MiB): 12282.00
+	Graphics card #0 deviceId: VideoController1
+	Graphics card #0 versionInfo: 32.0.15.6614
+	Graphics card #1 name: NVIDIA GeForce RTX 4070 Ti
+	Graphics card #1 vendor: NVIDIA
+	Graphics card #1 VRAM (MiB): 12282.00
+	Graphics card #1 deviceId: VideoController2
+	Graphics card #1 versionInfo: 32.0.15.6614
+	Memory slot #0 capacity (MiB): 32768.00
+	Memory slot #0 clockSpeed (GHz): 3.60
+	Memory slot #0 type: DDR4
+	Memory slot #1 capacity (MiB): 32768.00
+	Memory slot #1 clockSpeed (GHz): 3.60
+	Memory slot #1 type: DDR4
+	Memory slot #2 capacity (MiB): 32768.00
+	Memory slot #2 clockSpeed (GHz): 3.60
+	Memory slot #2 type: DDR4
+	Memory slot #3 capacity (MiB): 32768.00
+	Memory slot #3 clockSpeed (GHz): 3.60
+	Memory slot #3 type: DDR4
+	Virtual memory max (MiB): 258788.77
+	Virtual memory used (MiB): 105705.66
+	Swap memory total (MiB): 128000.00
+	Swap memory used (MiB): 2765.25
+	Space in storage for jna.tmpdir (MiB): <path not set>
+	Space in storage for org.lwjgl.system.SharedLibraryExtractPath (MiB): <path not set>
+	Space in storage for io.netty.native.workdir (MiB): <path not set>
+	Space in storage for java.io.tmpdir (MiB): available: 116188.04, total: 1649910.25
+	Space in storage for workdir (MiB): available: 116188.04, total: 1649910.25
+	JVM Flags: 21 total; -XX:+UseG1GC -XX:+ParallelRefProcEnabled -XX:MaxGCPauseMillis=200 -XX:+UnlockExperimentalVMOptions -XX:+DisableExplicitGC -XX:+AlwaysPreTouch -XX:G1NewSizePercent=30 -XX:G1MaxNewSizePercent=40 -XX:G1HeapRegionSize=8M -XX:G1ReservePercent=20 -XX:G1HeapWastePercent=5 -XX:G1MixedGCCountTarget=4 -XX:InitiatingHeapOccupancyPercent=15 -XX:G1MixedGCLiveThresholdPercent=90 -XX:G1RSetUpdatingPauseTimePercent=5 -XX:SurvivorRatio=32 -XX:+PerfDisableSharedMem -XX:MaxTenuringThreshold=1 -XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump -Xms7500m -Xmx7500m
+	Loaded Shaderpack: Spooklementary-MatrixCraft-Fixed.zip
+		Profile: HIGH (+0 options changed by user)
+	Yumi MC Core: 1.0.0-beta.1+1.21.1
+	Mods: 
+		accessories: Accessories v1.1.0-beta.53+1.21.1
+		accessories_compat_layer: Accessories Compatibility Layer v0.1.10
+			cclayer: cclayer v0.1.10
+				tclayer: tclayer v0.1.10
+					cclayer: cclayer v0.1.10
+			tclayer: tclayer v0.1.10
+				cclayer: cclayer v0.1.10
+					tclayer: tclayer v0.1.10
+		accessorify: Accessorify v2.4.0-beta.5
+		achiopt: AchievementOptimizer v2.1.0
+		architectury: Architectury v13.0.8
+		arcwise: Arcwise v1.1
+		armoroftheages: Armor of the Ages v1.5.7
+		ars_additions: Ars Additions v1.21.1-21.2.3
+		ars_controle: Ars Controle v1.21.1-1.6.14
+		ars_elemental: Ars Elemental v0.7.6.12
+		ars_nouveau: Ars Nouveau v5.11.1
+		ars_unification: Ars Unification v1.2.18
+		arsnumerichud: Ars NumericHUD v1.0.2
+		async: Async v0.1.8+alpha.1-1.21.1
+		attributefix: AttributeFix v21.1.3
+		backpackplus: Backpack Plus v1.21.1-1.0.0
+		badoptimizations: BadOptimizations v2.2.3
+		bagofholding: Bag Of Holding v21.1.2
+		balm: Balm v21.0.56
+		beltborne_lanterns: Beltborne Lanterns v1.2.4
+		betteradvancements: Better Advancements v0.4.3.21
+		bl_accessories_layer: Beltborne Lanterns: Accessories Layer v1.2.0
+		bnbloodparticles: BN Blood Particles v2.0.0
+		bookshelf: Bookshelf v21.1.81
+		brutalnightmare: Brutal Nightmare : Insane Difficulty v5.0
+		brutalnightmarecci: BrutalNightmareCCI v1.0.0
+		butchery: Butchery v4.6
+		c2me: Concurrent Chunk Management Engine v0.3.0+alpha.0.71+1.21.1
+		c2me_base: Concurrent Chunk Management Engine (Base) v0.3.0+alpha.0.71+1.21.1
+		c2me_client_uncapvd: Concurrent Chunk Management Engine (Client/Uncap View Distance) v0.3.0+alpha.0.71+1.21.1
+		c2me_fixes_chunkio_threading_issues: Concurrent Chunk Management Engine (Fixes/Chunk IO/Threading Issues) v0.3.0+alpha.0.71+1.21.1
+		c2me_fixes_general_threading_issues: Concurrent Chunk Management Engine (Fixes/General/Threading Issues) v0.3.0+alpha.0.71+1.21.1
+		c2me_fixes_worldgen_threading_issues: Concurrent Chunk Management Engine (Fixes/WorldGen/Threading Issues) v0.3.0+alpha.0.71+1.21.1
+		c2me_fixes_worldgen_vanilla_bugs: Concurrent Chunk Management Engine (Fixes/WorldGen/Vanilla Bugs) v0.3.0+alpha.0.71+1.21.1
+		c2me_notickvd: Concurrent Chunk Management Engine (No Tick View Distance) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_allocs: Concurrent Chunk Management Engine (Optimizations/Memory Allocations) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_chunkio: Concurrent Chunk Management Engine (Optimizations/Chunk IO) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_dfc: Concurrent Chunk Management Engine (Optimizations/Density Function Compiler) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_math: Concurrent Chunk Management Engine (Optimizations/Math) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_natives_math: Concurrent Chunk Management Engine (Optimizations/Natives Math) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_scheduling: Concurrent Chunk Management Engine (Optimizations/Scheduling) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_worldgen_general: Concurrent Chunk Management Engine (Optimizations/General WorldGen) v0.3.0+alpha.0.71+1.21.1
+		c2me_opts_worldgen_vanilla: Concurrent Chunk Management Engine (Optimizations/Vanilla WorldGen) v0.3.0+alpha.0.71+1.21.1
+		c2me_rewrites_chunk_serializer: Concurrent Chunk Management Engine (Rewrites/Chunk Serializer) v0.3.0+alpha.0.71+1.21.1
+		c2me_rewrites_chunk_system: Concurrent Chunk Management Engine (Rewrites/Chunk System) v0.3.0+alpha.0.71+1.21.1
+		c2me_rewrites_chunkio: Concurrent Chunk Management Engine (Rewrites/Chunk IO) v0.3.0+alpha.0.71+1.21.1
+		c2me_server_utils: Concurrent Chunk Management Engine (Server Utils) v0.3.0+alpha.0.71+1.21.1
+		c2me_threading_lighting: Concurrent Chunk Management Engine (Threading/Lighting) v0.3.0+alpha.0.71+1.21.1
+		camp_fires_cook_mobs: Camp Fires Cook Mobs v1.3.1
+		cclayer: cclayer v0.1.10
+			tclayer: tclayer v0.1.10
+				cclayer: cclayer v0.1.10
+		cerbons_api: Cerbons API v1.3.0
+		cerulean: Cerulean v1.0.0
+		chloride: Chloride v1.7.5
+		chunkloaders: Chunk Loaders v1.2.9
+		chunky: Chunky v1.4.23
+		chunkyborder: ChunkyBorder v1.2.18
+		cloth_config: Cloth Config v15 API v15.0.140
+		clumps: Clumps v19.0.0.1
+		collective: Collective v8.13
+		colorwheel: Colorwheel v1.2.1+mc1.21.1
+		commonnetworking: Common Networking v1.0.18-1.21.1
+		conditional_mixin: conditional mixin v0.6.3
+		connector: Sinytra Connector v2.0.0-beta.8+1.21.1
+		connectorextras: Connector Extras v1.12.1+1.21.1
+		connectorextras_emi_bridge: Connector Extras EMI Bridge v1.12.1+1.21.1
+		connectorextras_energy_bridge: Connector Extras Energy Bridge v1.12.1+1.21.1
+		connectorextras_jei_bridge: Connector Extras JEI Bridge v1.12.1+1.21.1
+		connectorextras_kubejs_bridge: Connector Extras KubeJS Bridge v1.12.1+1.21.1
+		connectorextras_modmenu_bridge: Connector Extras ModMenu Bridge v1.12.1+1.21.1
+		connectorextras_pehkui_bridge: Connector Extras Pehkui Bridge v1.12.1+1.21.1
+		connectorextras_rei_bridge: Connector Extras REI Bridge v1.12.1+1.21.1
+		connectorextras_terrablender_bridge: Connector Extras Terrablender Bridge v1.12.1+1.21.1
+		continuity: NeoContinuity v3.0.0+0.0.1+1.21.1.neoforge
+		controllable: Controllable v0.25.4
+		corgilib: CorgiLib v5.0.0.7
+		creativecore: CreativeCore v2.13.24
+		creeperoverhaul: Creeper Overhaul v4.0.6
+		crittersandcompanions: Critters and Companions v1.21.1-2.3.4
+		curios: Curios API v9.5.1+1.21.1
+		dataanchor: Data Anchor v2.0.0.14
+		deimos: Deimos v2.5
+		despawntweaks: Despawn Tweaks v1.0.0
+		destructive_moon: Destructive Moon v1.1.1-1.21.1
+		drippyloadingscreen: Drippy Loading Screen v3.1.0
+		e4mc_minecraft: e4mc v5.4.1
+		effectivearmors: EffectiveArmors v1.2.0
+		eliteholograms: Elite Holograms v1.21.1-1.0.5
+		endermanoverhaul: Enderman Overhaul v2.0.2
+		endermoon: Ender Moon v1.21.1
+		enhancedblockentities: Enhanced Block Entities v0.10.2+1.21
+		enhancedcelestials: Enhanced Celestials v6.0.2.5
+		entity_model_features: Entity Model Features v3.0.10
+		entity_sound_features: Entity Sound Features v0.7.1
+		entity_texture_features: Entity Texture Features v7.0.8
+		entityculling: EntityCulling v1.9.5
+		fabric_api: Forgified Fabric API v0.115.6+2.1.4+1.21.1
+		fabric_api_base: Forgified Fabric API Base v0.4.42+d1308dedd1
+		fabric_api_lookup_api_v1: Forgified Fabric API Lookup API (v1) v1.6.70+c290471319
+		fabric_biome_api_v1: Forgified Fabric Biome API (v1) v13.0.31+1e62d33c19
+		fabric_block_api_v1: Forgified Fabric Block API (v1) v1.0.22+a6e994cd19
+		fabric_block_view_api_v2: Forgified Fabric BlockView API (v2) v1.0.11+e9036fd419
+		fabric_blockrenderlayer_v1: Forgified Fabric BlockRenderLayer Registration (v1) v1.1.52+c290471319
+		fabric_client_tags_api_v1: Forgified Fabric Client Tags v1.1.15+e053909619
+		fabric_command_api_v2: Forgified Fabric Command API (v2) v2.2.28+36d727be19
+		fabric_content_registries_v0: Forgified Fabric Content Registries (v0) v8.0.18+c290471319
+		fabric_convention_tags_v1: Forgified Fabric Convention Tags v2.1.4+7f945d5b19
+		fabric_convention_tags_v2: Forgified Fabric Convention Tags (v2) v2.11.0+87e5848019
+		fabric_data_attachment_api_v1: Forgified Fabric Data Attachment API (v1) v1.4.3+c290471319
+		fabric_data_generation_api_v1: Forgified Fabric Data Generation API (v1) v20.2.28+2d91a6db19
+		fabric_entity_events_v1: Forgified Fabric Entity Events (v1) v1.7.0+1af6e62419
+		fabric_events_interaction_v0: Forgified Fabric Events Interaction (v0) v0.7.13+7b71cc1619
+		fabric_game_rule_api_v1: Forgified Fabric Game Rule API (v1) v1.0.53+36d727be19
+		fabric_gametest_api_v1: Forgified Fabric Game Test API (v1) v2.0.5+29f188ce19
+		fabric_item_api_v1: Forgified Fabric Item API (v1) v11.1.1+57cdfa8219
+		fabric_item_group_api_v1: Forgified Fabric Item Group API (v1) v4.1.7+e324903319
+		fabric_key_binding_api_v1: Forgified Fabric Key Binding API (v1) v1.0.47+62cc7ce119
+		fabric_language_kotlin: Fabric Language Kotlin v1.13.7+kotlin.2.2.21
+		fabric_lifecycle_events_v1: Forgified Fabric Lifecycle Events (v1) v2.5.0+a2ee258a19
+		fabric_loot_api_v2: Forgified Fabric Loot API (v2) v3.0.15+a3ee712d19
+		fabric_loot_api_v3: Forgified Fabric Loot API (v3) v1.0.3+333dfad919
+		fabric_message_api_v1: Forgified Fabric Message API (v1) v6.0.13+e053909619
+		fabric_model_loading_api_v1: Forgified Fabric Model Loading API (v1) v2.0.0+986ae77219
+		fabric_networking_api_v1: Forgified Fabric Networking API (v1) v4.3.0+30a980d919
+		fabric_object_builder_api_v1: Forgified Fabric Object Builder API (v1) v15.2.1+cc242efd19
+		fabric_particles_v1: Forgified Fabric Particles (v1) v4.0.2+824f924c19
+		fabric_recipe_api_v1: Forgified Fabric Recipe API (v1) v5.0.14+59440bcc19
+		fabric_registry_sync_v0: Forgified Fabric Registry Sync (v0) v5.2.0+867470b919
+		fabric_renderer_api_v1: Forgified Fabric Renderer API (v1) v3.4.0+acb05a3919
+		fabric_renderer_indigo: Forgified Fabric Renderer - Indigo v1.7.0-slim+4198af7119
+		fabric_rendering_data_attachment_v1: Forgified Fabric Rendering Data Attachment (v1) v0.3.49+73761d2e19
+		fabric_rendering_fluids_v1: Forgified Fabric Rendering Fluids (v1) v3.1.6+857185bc19
+		fabric_rendering_v1: Forgified Fabric Rendering (v1) v5.0.5+c290471319
+		fabric_resource_conditions_api_v1: Forgified Fabric Resource Conditions API (v1) v4.3.0+5bdd099819
+		fabric_resource_loader_v0: Forgified Fabric Resource Loader (v0) v1.3.1+4ea8954419
+		fabric_screen_api_v1: Forgified Fabric Screen API (v1) v2.0.25+4228281319
+		fabric_screen_handler_api_v1: Forgified Fabric Screen Handler API (v1) v1.3.88+8dbc56dd19
+		fabric_sound_api_v1: Forgified Fabric Sound API (v1) v1.0.23+10b84f8419
+		fabric_transfer_api_v1: Forgified Fabric Transfer API (v1) v5.4.2+a25cb45619
+		fabric_transitive_access_wideners_v1: Forgified Fabric Transitive Access Wideners (v1) v6.2.0+6c854b6f19
+		fancymenu: FancyMenu v3.8.1
+		fastitems: Fast Items v1.1.0-neoforge+1.21
+		fastquit: FastQuit v3.0.0+1.20.6
+		ferritecore: Ferrite Core v7.0.2
+		feytweaks: FeyTweaks v1.21-1.2.8
+		fixsodiumshaderloader: Fix sodium ShaderLoader v1.0.0
+		flywheel: Flywheel v1.0.4
+		fokusapi: FokusAPI v3.3
+		forgified_fabric_api: Forgified Fabric API (dummy) v0.115.6+2.1.4+1.21.1
+		framework: Framework v0.13.9
+		fusion: Fusion v1.2.11+b
+		fzzy_config: Fzzy Config v0.7.3+1.21+neoforge
+		geckolib: GeckoLib 4 v4.8.2
+		goop: Goop Technology v0.4.3-1.21.1
+		gpu_tape: GPUTape v1.0.2
+		gunsmithlib: GunsmithLib v1.21.1-5.1.2-neoforge
+		horror_element_mod: Horror Element Mod v1.6.2
+		iceberg: Iceberg v1.3.2
+		immediatelyfast: ImmediatelyFast v1.6.9+1.21.1
+		immersive_furniture: Immersive Furniture v0.1.2+1.21.1
+		immersive_melodies: Immersive Melodies v0.6.2+1.21.1
+		immersive_paintings: Immersive Paintings v0.7.4
+		incendium: Incendium v5.4.3
+		infiniverse: Infiniverse v2.0.1.0
+		invhigh: Inventory Highlight v1.0.0
+		iris: Iris v1.8.12-snapshot+mc1.21.1-local
+		iris_uniforms: Iris Uniforms v1.1.1-1.21.1
+		iteminteractions: Item Interactions v21.1.4
+		journeymap: Journeymap v1.21.1-6.0.0-beta.52
+		journeymap_api: JourneyMap API v2.0.0
+		konkrete: Konkrete v1.9.9
+		kotlinforforge: Kotlin For Forge v5.10.0
+		kuma_api: KumaAPI v21.0.7
+		kuroutils: Kuro Utils v2101.2.1.0
+		lambdynlights: LambDynamicLights v4.8.7+1.21.1
+		lambdynlights_api: LambDynamicLights (API) v4.8.7+1.21.1
+		lambdynlights_runtime: LambDynamicLights (Runtime) v4.8.7+1.21.1
+		lazy_chunks: LazyChunks v2.0+mc1.21-1.21.4
+		lightmanscurrency: Lightman's Currency v1.21-2.3.0.4c
+		lithium: Lithium v0.15.1+mc1.21.1
+		locksmith: Locksmith v1.2.1
+		lodestone: Lodestone v1.7.1
+		lootbeams: LootBeams v3.6.1-mc1.21-.1
+		lootbundles: Loot Bundles v1.21.0-1.1.0
+		luckperms: LuckPerms v5.4.150
+		matrixcraft: MatrixCraft v1.0.0
+		melody: Melody v1.0.10
+		metalbundles: Metal Bundles v21.1.1
+		midnightlib: MidnightLib v1.6.9
+		militaristic_armor: Militaristic Armor v1.0.0
+		minecraft: Minecraft v1.21.1
+		minersmoon: Miner's Moon v1.21.1
+		mixintracereforged: Mixin Trace Reforged v1.0.0
+		modernfix: ModernFix v5.25.1+mc1.21.1
+		modmenu: ModMenu (Connector Extras) v11.0.1
+		moreculling: More Culling v1.0.6
+		mr_immersive_sound: Immersive Sounds v0.2
+		mr_loot_bags: Loot Bags v3.1
+		mr_mo_variants: Mo-Variants v7.6.9.3
+		mr_nightmare_mode: Nightmare Mode v1-V1.2.3-data
+		mr_rpg_skilltree: RPG skill tree v1.3.0
+		neoforge: NeoForge v21.1.217
+		nochatreports: No Chat Reports v1.21.1-v2.9.1
+		noisium: Noisium v2.3.0+mc1.21-1.21.1
+		not_enough_glyphs: Not Enough Glyphs v4.2.3.4
+		nuggets: Nuggets v1.0.10.41
+		num_flux: NumFlux v1.0.1
+		obsidianui: ObsidianUI v0.2.9+mc1.21.1
+		overflowingbars: Overflowing Bars v21.1.1
+		owo: oωo v0.12.15.5-beta.1+1.21
+		packetfixer: PacketFixer v3.3.1
+		patchouli: Patchouli v1.21.1-92-NEOFORGE
+		paxi: Paxi v1.21.1-NeoForge-5.1.3
+		peacefulmoon: Peaceful Moon v1.21.1
+		playeranimator: Player Animator v2.0.4+1.21.1
+		playerrevive: PlayerRevive v2.0.37
+		polymer_registry_sync_manipulator: Polymer (Registry Sync Manipulator) v0.9.9+1.21
+		prickle: PrickleMC v21.1.11
+		pride: Pride Lib v1.2.4+1.21.1
+		prism: Prism v1.0.11
+		puffish_attributes: Pufferfish's Attributes v0.8.0
+		puffish_skills: Pufferfish's Skills v0.17.1
+		puzzleslib: Puzzles Lib v21.1.39
+		reactify: reactify v1.0
+		redirected: Redirected v1.0.0
+		reeses_sodium_options: Reese's Sodium Options v1.8.3+mc1.21.4
+		resourcefulconfig: Resourcefulconfig v3.0.11
+		resourcefullib: Resourceful Lib v3.0.12
+		rocks: This Rocks! (Forge) v1.8.0
+		rrc_horde_nights: Horde Nights v1.3.13
+		safermoons: Safe Moons v1.21.1
+		sanguine: sanguine v1.2.0-1.21-x
+		sauce: Sauce Library v0.0.16.46
+		serversidehorror: Server-Side Horror v4
+		shouldersurfing: Shoulder Surfing Reloaded v1.21.1-4.16.1
+		sittingplus: sittingplus v2.0.6
+		skinlayers3d: 3d-Skin-Layers v1.9.2
+		skinrestorer: SkinRestorer v2.4.3+1.21-neoforge
+		skinshuffle: SkinShuffle v2.9.1+1.21
+		sodium: Sodium v0.6.13+mc1.21.1
+		sodium_extra: Sodium Extra v0.6.0+mc1.21.1
+		sodiumleafculling: Sodium Leaf Culling v1.0.1
+		sodiumoptionsapi: Sodium Options API v1.0.10
+		sodiumoptionsmodcompat: Sodium Options Mod Compat v1.0.0
+		sophisticatedbackpacks: Sophisticated Backpacks v3.25.24
+		sophisticatedcore: Sophisticated Core v1.3.104
+		sound_physics_remastered: Sound Physics Remastered v1.21.1-1.5.1
+		spark: spark v1.10.124
+		spookydoors: Spooky Doors v21.1.5
+		spruceui: SpruceUI v6.2.5+1.21.1
+		sspb: Sodium Shadowy Path Blocks v4.0.0
+		staaaaaaaaaaaack: Staaaaaaaaaaaack v1.21-1.5-75
+		starterkit: Starter Kit v7.4
+		stronger_skill_tree_for_pufferfishs_skills: Stronger skill tree for PUfferfish's skills v1.0
+		superbwarfare: Superb Warfare v0.8.8
+		supermartijn642configlib: SuperMartijn642's Config Library v1.1.8
+		supermartijn642corelib: SuperMartijn642's Core Lib v1.1.18+b
+		tacz: Timeless & Classics Guns: Zero v1.1.7-hotfix-r3
+		taczpackupgrader: TaCZ Pack Upgrader v2.0.0
+		tclayer: tclayer v0.1.10
+			cclayer: cclayer v0.1.10
+				tclayer: tclayer v0.1.10
+		tenseambience: Tense Ambience v2.0.0
+		terrablender: TerraBlender v4.1.0.8
+		tidybinds: Tidy Binds v1.2.0
+		toadlib: ToadLib v1.4.1
+		transition: TRansition v1.0.11
+		trender: TRender v1.0.10
+		txnilib: TxniLib v1.0.24
+		vcinteraction: Voice Chat Interaction v1.21.1-1.0.8
+		vivecraft: Vivecraft v1.21.1-1.3.5
+		voicechat: Simple Voice Chat v1.21.1-2.6.11
+		voicechat_api: Simple Voice Chat API v2.6.0
+		vr_throwing_extensions: VR Throwing Extensions v1.21.1-1.2.6
+		vrapi: mc-vr-api v3.0.12
+		worldedit: WorldEdit v7.3.8+6939-7d32b45
+		worldeditcui: WorldEditCUI v1.21.1+01-SNAPSHOT
+		yayconfig: YayConfig v1.1.2+1.21.1
+		yet_another_config_lib_v3: YetAnotherConfigLib v3.8.2+1.21.1-neoforge
+		yumi_mc_core: Yumi Minecraft Libraries: Foundation v1.0.0-beta.1+1.21.1
+		yungsapi: YUNG's API v1.21.1-NeoForge-5.1.6
+		zombiemod: Zombie Mode v1.0.0
+		zombiemoon: Horde Moon v1.21
+		zoniex: Zombie Nightmare Expansions v1.2.1
+	Launched Version: 1.21.1
+	Launcher name: PrismLauncher
+	Backend library: LWJGL version 3.3.3+5
+	Backend API: NVIDIA GeForce RTX 4070 Ti/PCIe/SSE2 GL version 4.6.0 NVIDIA 566.14, NVIDIA Corporation
+	Window size: 1366x768
+	GFLW Platform: win32
+	GL Caps: Using framebuffer using OpenGL 3.2
+	GL debug messages: 
+	Is Modded: Definitely; Client brand changed to 'neoforge'; Server brand changed to 'neoforge'
+	Universe: 400921fb54442d18
+	Type: Integrated Server (map_client.txt)
+	Graphics mode: fancy
+	Render Distance: 8/8 chunks
+	Resource Packs: tacz_resources, vanilla, fabric, mod_resources, mod/sodium, mod/c2me_fixes_worldgen_threading_issues, mod/accessorify, mod/fabric_language_kotlin, mod/supermartijn642configlib, mod/sodium_extra, mod/gunsmithlib, mod/playeranimator, mod/c2me_rewrites_chunk_serializer, mod/connectorextras_kubejs_bridge, mod/locksmith (incompatible), mod/fabric_rendering_fluids_v1, mod/tidybinds, mod/fastitems, mod/safermoons (incompatible), mod/c2me_fixes_general_threading_issues, mod/fabric_convention_tags_v1, mod/neoforge, mod/modernfix (incompatible), mod/fabric_block_view_api_v2, mod/fabric_command_api_v2, mod/fabric_convention_tags_v2, mod/yungsapi, mod/iris, mod/connectorextras_rei_bridge, mod/eliteholograms (incompatible), mod/mr_mo_variants, mod/lootbeams (incompatible), mod/c2me, mod/arsnumerichud, mod/balm (incompatible), mod/fabric_screen_api_v1, mod/prickle (incompatible), mod/c2me_base, mod/cloth_config (incompatible), mod/staaaaaaaaaaaack (incompatible), mod/connectorextras_terrablender_bridge, mod/fabric_game_rule_api_v1, mod/yayconfig, mod/peacefulmoon (incompatible), mod/rrc_horde_nights, mod/supermartijn642corelib, mod/resourcefulconfig, mod/metalbundles, mod/spark (incompatible), mod/reeses_sodium_options, mod/c2me_opts_dfc, mod/curios (incompatible), mod/noisium (incompatible), mod/sspb, mod/fabric_entity_events_v1, mod/accessories (incompatible), mod/worldedit (incompatible), mod/sodiumoptionsmodcompat (incompatible), mod/deimos (incompatible), mod/conditional_mixin (incompatible), mod/transition, mod/fabric_rendering_data_attachment_v1, mod/infiniverse, mod/despawntweaks (incompatible), mod/journeymap_api (incompatible), mod/playerrevive, mod/lazy_chunks, mod/fabric_client_tags_api_v1, mod/puffish_skills (incompatible), mod/c2me_threading_lighting, mod/lootbundles (incompatible), mod/sodiumleafculling (incompatible), mod/fabric_model_loading_api_v1, mod/lithium, mod/attributefix (incompatible), mod/fabric_screen_handler_api_v1, mod/polymer_registry_sync_manipulator, mod/serversidehorror (incompatible), mod/paxi, mod/fabric_rendering_v1, mod/arcwise, mod/fabric_renderer_indigo, mod/lightmanscurrency (incompatible), mod/toadlib, mod/midnightlib, mod/bagofholding, mod/sanguine, mod/c2me_rewrites_chunk_system, mod/tenseambience, mod/fusion, mod/moreculling, mod/luckperms (incompatible), mod/fabric_particles_v1, mod/c2me_opts_worldgen_vanilla, mod/zombiemoon (incompatible), mod/c2me_opts_scheduling, mod/feytweaks, mod/drippyloadingscreen (incompatible), mod/butchery (incompatible), mod/zoniex (incompatible), mod/horror_element_mod (incompatible), mod/militaristic_armor (incompatible), mod/voicechat,voicechat_api, mod/sound_physics_remastered, mod/terrablender (incompatible), mod/fabric_api_base, mod/nochatreports, mod/shouldersurfing, mod/iteminteractions, mod/fabric_block_api_v1, mod/corgilib, mod/connectorextras_jei_bridge, mod/fabric_resource_conditions_api_v1, mod/e4mc_minecraft (incompatible), mod/kotlinforforge (incompatible), mod/effectivearmors, mod/fabric_item_group_api_v1, mod/c2me_notickvd, mod/entityculling, mod/yumi_mc_core, mod/mr_loot_bags (incompatible), mod/fabric_registry_sync_v0, mod/immediatelyfast (incompatible), mod/continuity, mod/lambdynlights_api, mod/fabric_recipe_api_v1, mod/fabric_object_builder_api_v1, mod/puzzleslib, mod/kuroutils (incompatible), mod/fabric_sound_api_v1, mod/immersive_melodies (incompatible), mod/fabric_message_api_v1, mod/goop, mod/kuma_api (incompatible), mod/fabric_renderer_api_v1, mod/geckolib, mod/ars_nouveau (incompatible), mod/sauce (incompatible), mod/crittersandcompanions, mod/fabric_item_api_v1, mod/c2me_opts_natives_math, mod/obsidianui (incompatible), mod/incendium (incompatible), mod/sophisticatedcore (incompatible), mod/skinshuffle, mod/prism, mod/cerulean (incompatible), mod/fabric_data_attachment_api_v1, mod/lambdynlights, mod/redirected (incompatible), mod/bookshelf (incompatible), mod/sophisticatedbackpacks (incompatible), mod/c2me_opts_math, mod/minersmoon (incompatible), mod/superbwarfare, mod/nuggets (incompatible), mod/sodiumoptionsapi (incompatible), mod/melody (incompatible), mod/connector, mod/iris_uniforms, mod/fzzy_config, mod/fabric_api,forgified_fabric_api, mod/connectorextras_modmenu_bridge,modmenu, mod/c2me_fixes_worldgen_vanilla_bugs, mod/pride, mod/fabric_content_registries_v0, mod/konkrete (incompatible), mod/taczpackupgrader, mod/entity_model_features (incompatible), mod/entity_texture_features (incompatible), mod/destructive_moon, mod/fabric_api_lookup_api_v1, mod/vcinteraction, mod/c2me_fixes_chunkio_threading_issues, mod/endermoon (incompatible), mod/c2me_client_uncapvd, mod/mixintracereforged (incompatible), mod/mr_rpg_skilltree, mod/brutalnightmarecci, mod/reactify (incompatible), mod/patchouli (incompatible), mod/ars_additions (incompatible), mod/ars_controle (incompatible), mod/collective (incompatible), mod/cerbons_api (incompatible), mod/fastquit, mod/zombiemod, mod/resourcefullib, mod/starterkit (incompatible), mod/backpackplus (incompatible), mod/vrapi (incompatible), mod/architectury (incompatible), mod/num_flux, mod/achiopt, mod/fabric_loot_api_v2, mod/lambdynlights_runtime, mod/enhancedblockentities, mod/connectorextras, mod/fabric_loot_api_v3, mod/fixsodiumshaderloader, mod/chunkloaders, mod/fabric_networking_api_v1, mod/framework (incompatible), mod/c2me_rewrites_chunkio, mod/puffish_attributes (incompatible), mod/controllable (incompatible), mod/dataanchor, mod/c2me_opts_allocs, mod/fabric_lifecycle_events_v1, mod/fabric_key_binding_api_v1, mod/betteradvancements (incompatible), mod/fabric_transfer_api_v1, mod/owo, mod/sittingplus, mod/commonnetworking (incompatible), mod/connectorextras_pehkui_bridge, mod/tacz (incompatible), mod/accessories_compat_layer,tclayer,cclayer, mod/fabric_resource_loader_v0, mod/trender, mod/chloride, mod/clumps (incompatible), mod/journeymap (incompatible), mod/entity_sound_features (incompatible), mod/worldeditcui, mod/matrixcraft, mod/spookydoors (incompatible), mod/mr_immersive_sound (incompatible), mod/txnilib (incompatible), mod/connectorextras_energy_bridge, mod/skinlayers3d, mod/vivecraft, mod/vr_throwing_extensions, mod/fabric_transitive_access_wideners_v1, mod/stronger_skill_tree_for_pufferfishs_skills, mod/gpu_tape (incompatible), mod/invhigh, mod/endermanoverhaul, mod/chunkyborder (incompatible), mod/chunky (incompatible), mod/fabric_blockrenderlayer_v1, mod/creativecore, mod/c2me_server_utils, mod/beltborne_lanterns, mod/rocks, mod/immersive_furniture (incompatible), mod/iceberg, mod/fabric_gametest_api_v1, mod/spruceui, mod/ars_elemental (incompatible), mod/not_enough_glyphs (incompatible), mod/ars_unification, mod/immersive_paintings (incompatible), mod/armoroftheages (incompatible), mod/bnbloodparticles, mod/fabric_biome_api_v1, mod/c2me_opts_worldgen_general, mod/c2me_opts_chunkio, mod/fancymenu (incompatible), mod/creeperoverhaul, mod/ferritecore (incompatible), mod/yet_another_config_lib_v3 (incompatible), mod/enhancedcelestials, mod/async (incompatible), mod/fokusapi (incompatible), mod/brutalnightmare (incompatible), mod/colorwheel, mod/flywheel, mod/lodestone (incompatible), mod/mr_nightmare_mode (incompatible), mod/packetfixer (incompatible), mod/badoptimizations (incompatible), mod/connectorextras_emi_bridge, mod/skinrestorer (incompatible), mod/overflowingbars, mod/fabric_data_generation_api_v1, mod/fabric_events_interaction_v0, mod/camp_fires_cook_mobs, mod/bl_accessories_layer, mod/accessorify:resourcepacks/1_21_1/rp
+	Current Language: en_us
+	Locale: en_US
+	System encoding: Cp1252
+	File encoding: UTF-8
+	CPU: 32x Intel(R) Core(TM) i9-14900K
+	Server Running: true
+	Player Count: 1 / 8; [ServerPlayer['RaeYNCraft'/293, l='ServerLevel[RaeYNy NightZ]', x=-45.51, y=43.00, z=-99.57]]
+	Active Data Packs: tacz_resources, vanilla, mod_data, mod/sodium, mod/c2me_fixes_worldgen_threading_issues, mod/accessorify, mod/fabric_language_kotlin, mod/supermartijn642configlib (incompatible), mod/sodium_extra, mod/gunsmithlib, mod/playeranimator, mod/c2me_rewrites_chunk_serializer, mod/connectorextras_kubejs_bridge, mod/locksmith (incompatible), mod/fabric_rendering_fluids_v1, mod/tidybinds, mod/fastitems, mod/safermoons, mod/c2me_fixes_general_threading_issues, mod/fabric_convention_tags_v1, mod/neoforge, mod/modernfix (incompatible), mod/fabric_block_view_api_v2, mod/fabric_command_api_v2, mod/fabric_convention_tags_v2, mod/yungsapi (incompatible), mod/iris, mod/connectorextras_rei_bridge, mod/eliteholograms (incompatible), mod/mr_mo_variants, mod/lootbeams (incompatible), mod/c2me, mod/arsnumerichud, mod/balm (incompatible), mod/fabric_screen_api_v1, mod/prickle (incompatible), mod/c2me_base, mod/cloth_config (incompatible), mod/staaaaaaaaaaaack (incompatible), mod/connectorextras_terrablender_bridge, mod/fabric_game_rule_api_v1, mod/yayconfig, mod/peacefulmoon, mod/rrc_horde_nights (incompatible), mod/supermartijn642corelib, mod/resourcefulconfig, mod/metalbundles (incompatible), mod/spark (incompatible), mod/reeses_sodium_options, mod/c2me_opts_dfc, mod/curios (incompatible), mod/noisium (incompatible), mod/sspb, mod/fabric_entity_events_v1, mod/accessories (incompatible), mod/worldedit (incompatible), mod/sodiumoptionsmodcompat (incompatible), mod/deimos (incompatible), mod/conditional_mixin (incompatible), mod/transition (incompatible), mod/fabric_rendering_data_attachment_v1, mod/infiniverse, mod/despawntweaks (incompatible), mod/journeymap_api (incompatible), mod/playerrevive (incompatible), mod/lazy_chunks, mod/fabric_client_tags_api_v1, mod/puffish_skills (incompatible), mod/c2me_threading_lighting, mod/lootbundles (incompatible), mod/sodiumleafculling (incompatible), mod/fabric_model_loading_api_v1, mod/lithium, mod/attributefix (incompatible), mod/fabric_screen_handler_api_v1, mod/polymer_registry_sync_manipulator, mod/serversidehorror (incompatible), mod/paxi (incompatible), mod/fabric_rendering_v1, mod/arcwise, mod/fabric_renderer_indigo, mod/lightmanscurrency, mod/toadlib, mod/midnightlib, mod/bagofholding (incompatible), mod/sanguine, mod/c2me_rewrites_chunk_system, mod/tenseambience, mod/fusion, mod/moreculling, mod/luckperms (incompatible), mod/fabric_particles_v1, mod/c2me_opts_worldgen_vanilla, mod/zombiemoon (incompatible), mod/c2me_opts_scheduling, mod/feytweaks, mod/drippyloadingscreen (incompatible), mod/butchery, mod/zoniex, mod/horror_element_mod, mod/militaristic_armor, mod/voicechat,voicechat_api (incompatible), mod/sound_physics_remastered (incompatible), mod/terrablender (incompatible), mod/fabric_api_base, mod/nochatreports, mod/shouldersurfing (incompatible), mod/iteminteractions (incompatible), mod/fabric_block_api_v1, mod/corgilib (incompatible), mod/connectorextras_jei_bridge, mod/fabric_resource_conditions_api_v1, mod/e4mc_minecraft (incompatible), mod/kotlinforforge (incompatible), mod/effectivearmors, mod/fabric_item_group_api_v1, mod/c2me_notickvd, mod/entityculling (incompatible), mod/yumi_mc_core, mod/mr_loot_bags, mod/fabric_registry_sync_v0, mod/immediatelyfast (incompatible), mod/continuity, mod/lambdynlights_api, mod/fabric_recipe_api_v1, mod/fabric_object_builder_api_v1, mod/puzzleslib (incompatible), mod/kuroutils (incompatible), mod/fabric_sound_api_v1, mod/immersive_melodies (incompatible), mod/fabric_message_api_v1, mod/goop, mod/kuma_api (incompatible), mod/fabric_renderer_api_v1, mod/geckolib, mod/ars_nouveau (incompatible), mod/sauce (incompatible), mod/crittersandcompanions (incompatible), mod/fabric_item_api_v1, mod/c2me_opts_natives_math, mod/obsidianui (incompatible), mod/incendium, mod/sophisticatedcore (incompatible), mod/skinshuffle, mod/prism, mod/cerulean (incompatible), mod/fabric_data_attachment_api_v1, mod/lambdynlights, mod/redirected (incompatible), mod/bookshelf (incompatible), mod/sophisticatedbackpacks (incompatible), mod/c2me_opts_math, mod/minersmoon (incompatible), mod/superbwarfare, mod/nuggets (incompatible), mod/sodiumoptionsapi (incompatible), mod/melody (incompatible), mod/connector, mod/iris_uniforms, mod/fzzy_config, mod/fabric_api,forgified_fabric_api, mod/connectorextras_modmenu_bridge,modmenu, mod/c2me_fixes_worldgen_vanilla_bugs, mod/pride, mod/fabric_content_registries_v0, mod/konkrete (incompatible), mod/taczpackupgrader, mod/entity_model_features (incompatible), mod/entity_texture_features (incompatible), mod/destructive_moon, mod/fabric_api_lookup_api_v1, mod/vcinteraction, mod/c2me_fixes_chunkio_threading_issues, mod/endermoon, mod/c2me_client_uncapvd, mod/mixintracereforged (incompatible), mod/mr_rpg_skilltree, mod/brutalnightmarecci, mod/reactify, mod/patchouli (incompatible), mod/ars_additions (incompatible), mod/ars_controle (incompatible), mod/collective, mod/cerbons_api (incompatible), mod/fastquit, mod/zombiemod, mod/resourcefullib, mod/starterkit, mod/backpackplus (incompatible), mod/vrapi (incompatible), mod/architectury (incompatible), mod/num_flux, mod/achiopt, mod/fabric_loot_api_v2, mod/lambdynlights_runtime, mod/enhancedblockentities, mod/connectorextras, mod/fabric_loot_api_v3, mod/fixsodiumshaderloader, mod/chunkloaders, mod/fabric_networking_api_v1, mod/framework (incompatible), mod/c2me_rewrites_chunkio, mod/puffish_attributes (incompatible), mod/controllable (incompatible), mod/dataanchor (incompatible), mod/c2me_opts_allocs, mod/fabric_lifecycle_events_v1, mod/fabric_key_binding_api_v1, mod/betteradvancements (incompatible), mod/fabric_transfer_api_v1, mod/owo, mod/sittingplus, mod/commonnetworking (incompatible), mod/connectorextras_pehkui_bridge, mod/tacz, mod/accessories_compat_layer,tclayer,cclayer, mod/fabric_resource_loader_v0, mod/trender (incompatible), mod/chloride (incompatible), mod/clumps (incompatible), mod/journeymap (incompatible), mod/entity_sound_features (incompatible), mod/worldeditcui, mod/matrixcraft, mod/spookydoors (incompatible), mod/mr_immersive_sound (incompatible), mod/txnilib (incompatible), mod/connectorextras_energy_bridge, mod/skinlayers3d (incompatible), mod/vivecraft (incompatible), mod/vr_throwing_extensions, mod/fabric_transitive_access_wideners_v1, mod/stronger_skill_tree_for_pufferfishs_skills, mod/gpu_tape (incompatible), mod/invhigh, mod/endermanoverhaul, mod/chunkyborder (incompatible), mod/chunky (incompatible), mod/fabric_blockrenderlayer_v1, mod/creativecore (incompatible), mod/c2me_server_utils, mod/beltborne_lanterns, mod/rocks, mod/immersive_furniture (incompatible), mod/iceberg, mod/fabric_gametest_api_v1, mod/spruceui, mod/ars_elemental (incompatible), mod/not_enough_glyphs (incompatible), mod/ars_unification, mod/immersive_paintings (incompatible), mod/armoroftheages (incompatible), mod/bnbloodparticles, mod/fabric_biome_api_v1, mod/c2me_opts_worldgen_general, mod/c2me_opts_chunkio, mod/fancymenu (incompatible), mod/creeperoverhaul, mod/ferritecore (incompatible), mod/yet_another_config_lib_v3 (incompatible), mod/enhancedcelestials (incompatible), mod/async (incompatible), mod/fokusapi (incompatible), mod/brutalnightmare, mod/colorwheel, mod/flywheel (incompatible), mod/lodestone (incompatible), mod/mr_nightmare_mode, mod/packetfixer (incompatible), mod/badoptimizations (incompatible), mod/connectorextras_emi_bridge, mod/skinrestorer (incompatible), mod/overflowingbars (incompatible), mod/fabric_data_generation_api_v1, mod/fabric_events_interaction_v0, mod/camp_fires_cook_mobs, mod/bl_accessories_layer, fabric, file/beltborne_lanterns_generated, file/2BlazeandCave's Advancements Pack 1.17.2.zip, file/3BACAP_Enhanced_Discoveries_2.4.zip, file/4BlazeandCave's Advancements Pack Incendium.zip, file/5advancement_overload-1.3-datapack-1.21.X.zip, file/6Spacial Spud's Advancements.zip, file/Gorify_FREE.zip, 2BlazeandCave's Advancements Pack 1.17.2.zip, 3BACAP_Enhanced_Discoveries_2.4.zip, 4BlazeandCave's Advancements Pack Incendium.zip, 5advancement_overload-1.3-datapack-1.21.X.zip, 6Spacial Spud's Advancements.zip, Gorify_FREE.zip, mod/accessorify:resourcepacks/1_21_1/dp, mod/accessorify:resourcepacks/1_21_1/default/compass, mod/accessorify:resourcepacks/1_21_1/default/clock, mod/accessorify:resourcepacks/1_21_1/default/elytra, mod/accessorify:resourcepacks/1_21_1/default/spyglass, mod/accessorify:resourcepacks/1_21_1/default/lantern, mod/accessorify:resourcepacks/1_21_1/default/totem, mod/accessorify:resourcepacks/1_21_1/default/recoverycompass, mod/accessorify:resourcepacks/1_21_1/default/enderchest, mod/accessorify:resourcepacks/1_21_1/default/shulkerbox, mod/accessorify:resourcepacks/1_21_1/default/arrow
+	Available Data Packs: bundle, trade_rebalance, vanilla, file/2BlazeandCave's Advancements Pack 1.17.2.zip, file/3BACAP_Enhanced_Discoveries_2.4.zip, file/4BlazeandCave's Advancements Pack Incendium.zip, file/5advancement_overload-1.3-datapack-1.21.X.zip, file/6Spacial Spud's Advancements.zip, file/Gorify_FREE.zip, file/beltborne_lanterns_generated, fabric, mod/accessories (incompatible), mod/accessories_compat_layer,tclayer,cclayer, mod/accessorify, mod/achiopt, mod/architectury (incompatible), mod/arcwise, mod/armoroftheages (incompatible), mod/ars_additions (incompatible), mod/ars_controle (incompatible), mod/ars_elemental (incompatible), mod/ars_nouveau (incompatible), mod/ars_unification, mod/arsnumerichud, mod/async (incompatible), mod/attributefix (incompatible), mod/backpackplus (incompatible), mod/badoptimizations (incompatible), mod/bagofholding (incompatible), mod/balm (incompatible), mod/beltborne_lanterns, mod/betteradvancements (incompatible), mod/bl_accessories_layer, mod/bnbloodparticles, mod/bookshelf (incompatible), mod/brutalnightmare, mod/brutalnightmarecci, mod/butchery, mod/c2me, mod/c2me_base, mod/c2me_client_uncapvd, mod/c2me_fixes_chunkio_threading_issues, mod/c2me_fixes_general_threading_issues, mod/c2me_fixes_worldgen_threading_issues, mod/c2me_fixes_worldgen_vanilla_bugs, mod/c2me_notickvd, mod/c2me_opts_allocs, mod/c2me_opts_chunkio, mod/c2me_opts_dfc, mod/c2me_opts_math, mod/c2me_opts_natives_math, mod/c2me_opts_scheduling, mod/c2me_opts_worldgen_general, mod/c2me_opts_worldgen_vanilla, mod/c2me_rewrites_chunk_serializer, mod/c2me_rewrites_chunk_system, mod/c2me_rewrites_chunkio, mod/c2me_server_utils, mod/c2me_threading_lighting, mod/camp_fires_cook_mobs, mod/cerbons_api (incompatible), mod/cerulean (incompatible), mod/chloride (incompatible), mod/chunkloaders, mod/chunky (incompatible), mod/chunkyborder (incompatible), mod/cloth_config (incompatible), mod/clumps (incompatible), mod/collective, mod/colorwheel, mod/commonnetworking (incompatible), mod/conditional_mixin (incompatible), mod/connector, mod/connectorextras, mod/connectorextras_emi_bridge, mod/connectorextras_energy_bridge, mod/connectorextras_jei_bridge, mod/connectorextras_kubejs_bridge, mod/connectorextras_modmenu_bridge,modmenu, mod/connectorextras_pehkui_bridge, mod/connectorextras_rei_bridge, mod/connectorextras_terrablender_bridge, mod/continuity, mod/controllable (incompatible), mod/corgilib (incompatible), mod/creativecore (incompatible), mod/creeperoverhaul, mod/crittersandcompanions (incompatible), mod/curios (incompatible), mod/dataanchor (incompatible), mod/deimos (incompatible), mod/despawntweaks (incompatible), mod/destructive_moon, mod/drippyloadingscreen (incompatible), mod/e4mc_minecraft (incompatible), mod/effectivearmors, mod/eliteholograms (incompatible), mod/endermanoverhaul, mod/endermoon, mod/enhancedblockentities, mod/enhancedcelestials (incompatible), mod/entity_model_features (incompatible), mod/entity_sound_features (incompatible), mod/entity_texture_features (incompatible), mod/entityculling (incompatible), mod/fabric_api,forgified_fabric_api, mod/fabric_api_base, mod/fabric_api_lookup_api_v1, mod/fabric_biome_api_v1, mod/fabric_block_api_v1, mod/fabric_block_view_api_v2, mod/fabric_blockrenderlayer_v1, mod/fabric_client_tags_api_v1, mod/fabric_command_api_v2, mod/fabric_content_registries_v0, mod/fabric_convention_tags_v1, mod/fabric_convention_tags_v2, mod/fabric_data_attachment_api_v1, mod/fabric_data_generation_api_v1, mod/fabric_entity_events_v1, mod/fabric_events_interaction_v0, mod/fabric_game_rule_api_v1, mod/fabric_gametest_api_v1, mod/fabric_item_api_v1, mod/fabric_item_group_api_v1, mod/fabric_key_binding_api_v1, mod/fabric_language_kotlin, mod/fabric_lifecycle_events_v1, mod/fabric_loot_api_v2, mod/fabric_loot_api_v3, mod/fabric_message_api_v1, mod/fabric_model_loading_api_v1, mod/fabric_networking_api_v1, mod/fabric_object_builder_api_v1, mod/fabric_particles_v1, mod/fabric_recipe_api_v1, mod/fabric_registry_sync_v0, mod/fabric_renderer_api_v1, mod/fabric_renderer_indigo, mod/fabric_rendering_data_attachment_v1, mod/fabric_rendering_fluids_v1, mod/fabric_rendering_v1, mod/fabric_resource_conditions_api_v1, mod/fabric_resource_loader_v0, mod/fabric_screen_api_v1, mod/fabric_screen_handler_api_v1, mod/fabric_sound_api_v1, mod/fabric_transfer_api_v1, mod/fabric_transitive_access_wideners_v1, mod/fancymenu (incompatible), mod/fastitems, mod/fastquit, mod/ferritecore (incompatible), mod/feytweaks, mod/fixsodiumshaderloader, mod/flywheel (incompatible), mod/fokusapi (incompatible), mod/framework (incompatible), mod/fusion, mod/fzzy_config, mod/geckolib, mod/goop, mod/gpu_tape (incompatible), mod/gunsmithlib, mod/horror_element_mod, mod/iceberg, mod/immediatelyfast (incompatible), mod/immersive_furniture (incompatible), mod/immersive_melodies (incompatible), mod/immersive_paintings (incompatible), mod/incendium, mod/infiniverse, mod/invhigh, mod/iris, mod/iris_uniforms, mod/iteminteractions (incompatible), mod/journeymap (incompatible), mod/journeymap_api (incompatible), mod/konkrete (incompatible), mod/kotlinforforge (incompatible), mod/kuma_api (incompatible), mod/kuroutils (incompatible), mod/lambdynlights, mod/lambdynlights_api, mod/lambdynlights_runtime, mod/lazy_chunks, mod/lightmanscurrency, mod/lithium, mod/locksmith (incompatible), mod/lodestone (incompatible), mod/lootbeams (incompatible), mod/lootbundles (incompatible), mod/luckperms (incompatible), mod/matrixcraft, mod/melody (incompatible), mod/metalbundles (incompatible), mod/midnightlib, mod/militaristic_armor, mod/minersmoon (incompatible), mod/mixintracereforged (incompatible), mod/modernfix (incompatible), mod/moreculling, mod/mr_immersive_sound (incompatible), mod/mr_loot_bags, mod/mr_mo_variants, mod/mr_nightmare_mode, mod/mr_rpg_skilltree, mod/neoforge, mod/nochatreports, mod/noisium (incompatible), mod/not_enough_glyphs (incompatible), mod/nuggets (incompatible), mod/num_flux, mod/obsidianui (incompatible), mod/overflowingbars (incompatible), mod/owo, mod/packetfixer (incompatible), mod/patchouli (incompatible), mod/paxi (incompatible), mod/peacefulmoon, mod/playeranimator, mod/playerrevive (incompatible), mod/polymer_registry_sync_manipulator, mod/prickle (incompatible), mod/pride, mod/prism, mod/puffish_attributes (incompatible), mod/puffish_skills (incompatible), mod/puzzleslib (incompatible), mod/reactify, mod/redirected (incompatible), mod/reeses_sodium_options, mod/resourcefulconfig, mod/resourcefullib, mod/rocks, mod/rrc_horde_nights (incompatible), mod/safermoons, mod/sanguine, mod/sauce (incompatible), mod/serversidehorror (incompatible), mod/shouldersurfing (incompatible), mod/sittingplus, mod/skinlayers3d (incompatible), mod/skinrestorer (incompatible), mod/skinshuffle, mod/sodium, mod/sodium_extra, mod/sodiumleafculling (incompatible), mod/sodiumoptionsapi (incompatible), mod/sodiumoptionsmodcompat (incompatible), mod/sophisticatedbackpacks (incompatible), mod/sophisticatedcore (incompatible), mod/sound_physics_remastered (incompatible), mod/spark (incompatible), mod/spookydoors (incompatible), mod/spruceui, mod/sspb, mod/staaaaaaaaaaaack (incompatible), mod/starterkit, mod/stronger_skill_tree_for_pufferfishs_skills, mod/superbwarfare, mod/supermartijn642configlib (incompatible), mod/supermartijn642corelib, mod/tacz, mod/taczpackupgrader, mod/tenseambience, mod/terrablender (incompatible), mod/tidybinds, mod/toadlib, mod/transition (incompatible), mod/trender (incompatible), mod/txnilib (incompatible), mod/vcinteraction, mod/vivecraft (incompatible), mod/voicechat,voicechat_api (incompatible), mod/vr_throwing_extensions, mod/vrapi (incompatible), mod/worldedit (incompatible), mod/worldeditcui, mod/yayconfig, mod/yet_another_config_lib_v3 (incompatible), mod/yumi_mc_core, mod/yungsapi (incompatible), mod/zombiemod, mod/zombiemoon (incompatible), mod/zoniex, mod_data, mod/accessorify:resourcepacks/1_21_1/dp, mod/accessorify:resourcepacks/1_21_1/default/compass, mod/accessorify:resourcepacks/1_21_1/default/clock, mod/accessorify:resourcepacks/1_21_1/default/elytra, mod/accessorify:resourcepacks/1_21_1/default/spyglass, mod/accessorify:resourcepacks/1_21_1/default/lantern, mod/accessorify:resourcepacks/1_21_1/default/totem, mod/accessorify:resourcepacks/1_21_1/default/recoverycompass, mod/accessorify:resourcepacks/1_21_1/default/enderchest, mod/accessorify:resourcepacks/1_21_1/default/shulkerbox, mod/accessorify:resourcepacks/1_21_1/default/arrow, 2BlazeandCave's Advancements Pack 1.17.2.zip, 3BACAP_Enhanced_Discoveries_2.4.zip, 4BlazeandCave's Advancements Pack Incendium.zip, 5advancement_overload-1.3-datapack-1.21.X.zip, 6Spacial Spud's Advancements.zip, Gorify_FREE.zip, tacz_resources
+	Enabled Feature Flags: minecraft:vanilla
+	World Generation: Stable
+	World Seed: 1793005215326041179
+	Sinytra Connector: 2.0.0-beta.8+1.21.1
+		SINYTRA CONNECTOR IS PRESENT!
+		Please verify issues are not caused by Connector before reporting them to mod authors. If you're unsure, file a report on Connector's issue tracker.
+		Connector's issue tracker can be found at https://github.com/Sinytra/Connector/issues.
+		Installed Fabric mods:
+		| ================================================== | ============================== | ============================== | ==================== |
+		| fabric-language-kotlin-1.13.7+kotlin.2.2.21_mapped | Fabric Language Kotlin         | fabric_language_kotlin         | 1.13.7kotlin.2.2.21  |
+		| player-animation-lib-fabric-2.0.4+1.21.1_mapped_mo | Player Animator                | playeranimator                 | 2.0.41.21.1          |
+		| lootbeams-3.6.1-mc1.21-.1_mapped_moj_1.21.1.jar    | LootBeams                      | lootbeams                      | 3.6.1-mc1.21-.1      |
+		| goop-0.4.3-1.21.1$YayConfig-v1.1.2-1.21.1_mapped_m | YayConfig                      | yayconfig                      | 1.1.21.21.1          |
+		| lazy_chunks-2.0+mc1.21-1.21.4_mapped_moj_1.21.1.ja | LazyChunks                     | lazy_chunks                    | 2.0mc1.21-1.21.4     |
+		| vcinteraction-fabric-1.21.1-1.0.8$polymer-reg-sync | Polymer (Registry Sync Manipul | polymer_registry_sync_manipula | 0.9.91.21            |
+		| ToadLib-1.4.1-1.21-1.21.1_mapped_moj_1.21.1.jar    | ToadLib                        | toadlib                        | 1.4.1                |
+		| sanguine-1.2.0-1.21-x_mapped_moj_1.21.1.jar        | sanguine                       | sanguine                       | 1.2.0-1.21-x         |
+		| tenseambience-1.18.2-1.21.8-FABRIC-2.0.0_mapped_mo | Tense Ambience                 | tenseambience                  | 2.0.0                |
+		| FeyTweaks-1.21-1.2.8_mapped_moj_1.21.1.jar         | FeyTweaks                      | feytweaks                      | 1.21-1.2.8           |
+		| goop-0.4.3-1.21.1_mapped_moj_1.21.1.jar            | Goop Technology                | goop                           | 0.4.3-1.21.1         |
+		| SkinShuffle-2.9.1+1.21_mapped_moj_1.21.1.jar       | SkinShuffle                    | skinshuffle                    | 2.9.11.21            |
+		| iris-uniforms-1.1.1-1.21.1_mapped_moj_1.21.1.jar   | Iris Uniforms                  | iris_uniforms                  | 1.1.1-1.21.1         |
+		| vcinteraction-fabric-1.21.1-1.0.8_mapped_moj_1.21. | Voice Chat Interaction         | vcinteraction                  | 1.21.1-1.0.8         |
+		| fastquit-3.0.0+1.20.6_mapped_moj_1.21.1.jar        | FastQuit                       | fastquit                       | 3.0.01.20.6          |
+		| enhancedblockentities-0.10.2+1.21_mapped_moj_1.21. | Enhanced Block Entities        | enhancedblockentities          | 0.10.21.21           |
+		| sittingplus-2.0.6-1.21.1-FABRIC_mapped_moj_1.21.1. | sittingplus                    | sittingplus                    | 2.0.6                |
+		| camp-fires-cook-mobs-1.3.1+MC1.21-1.21.1_mapped_mo | Camp Fires Cook Mobs           | camp_fires_cook_mobs           | 1.3.1                |
+	ModLauncher: 11.0.5+main.901c6ea8
+	ModLauncher launch target: forgeclient
+	ModLauncher services: 
+		sponge-mixin-0.15.2+mixin.0.8.7.jar mixin PLUGINSERVICE 
+		loader-4.0.42.jar slf4jfixer PLUGINSERVICE 
+		loader-4.0.42.jar runtime_enum_extender PLUGINSERVICE 
+		at-modlauncher-10.0.1.jar accesstransformer PLUGINSERVICE 
+		loader-4.0.42.jar runtimedistcleaner PLUGINSERVICE 
+		modlauncher-11.0.5.jar mixin TRANSFORMATIONSERVICE 
+		modlauncher-11.0.5.jar fml TRANSFORMATIONSERVICE 
+		modlauncher-11.0.5.jar connector_loader TRANSFORMATIONSERVICE 
+	FML Language Providers: 
+		klf@2.6.0
+		kotlinforforge@5.10.0
+		javafml@4.0
+		lowcodefml@4.0
+		minecraft@4.0
+	Mod List: 
+		skinlayers3d-neoforge-1.9.2-mc1.21.1.jar          |3d-Skin-Layers                |skinlayers3d                  |1.9.2               |Manifest: NOSIGNATURE
+		accessories-neoforge-1.1.0-beta.53+1.21.1.jar     |Accessories                   |accessories                   |1.1.0-beta.53+1.21.1|Manifest: NOSIGNATURE
+		accessories_compat_layer-neoforge-0.1.10+1.21.1.ja|Accessories Compatibility Laye|accessories_compat_layer      |0.1.10              |Manifest: NOSIGNATURE
+		accessorify-2.4.0-beta.5+1.21.1-neoforge.jar      |Accessorify                   |accessorify                   |2.4.0-beta.5        |Manifest: NOSIGNATURE
+		AchievementOptimizer-neoforge-1.21.1-2.1.0.jar    |AchievementOptimizer          |achiopt                       |2.1.0               |Manifest: NOSIGNATURE
+		architectury-13.0.8-neoforge.jar                  |Architectury                  |architectury                  |13.0.8              |Manifest: NOSIGNATURE
+		arcwise-1.21-1.21.1-forge.jar                     |Arcwise                       |arcwise                       |1.1                 |Manifest: NOSIGNATURE
+		armoroftheages-neoforge-1.21.1-1.5.7.jar          |Armor of the Ages             |armoroftheages                |1.5.7               |Manifest: NOSIGNATURE
+		ars_additions-1.21.1-21.2.3.jar                   |Ars Additions                 |ars_additions                 |1.21.1-21.2.3       |Manifest: NOSIGNATURE
+		ars_controle-1.21.1-1.6.14.jar                    |Ars Controle                  |ars_controle                  |1.21.1-1.6.14       |Manifest: NOSIGNATURE
+		ars_elemental-1.21.1-0.7.6.12.jar                 |Ars Elemental                 |ars_elemental                 |0.7.6.12            |Manifest: NOSIGNATURE
+		ars_nouveau-1.21.1-5.11.1.jar                     |Ars Nouveau                   |ars_nouveau                   |5.11.1              |Manifest: NOSIGNATURE
+		arsnumerichud-1.0.2.jar                           |Ars NumericHUD                |arsnumerichud                 |1.0.2               |Manifest: NOSIGNATURE
+		ars_unification-1.2.18.jar                        |Ars Unification               |ars_unification               |1.2.18              |Manifest: NOSIGNATURE
+		async-neoforge-0.1.8+alpha.1-1.21.1.jar           |Async                         |async                         |0.1.8+alpha.1-1.21.1|Manifest: NOSIGNATURE
+		attributefix-neoforge-1.21.1-21.1.3.jar           |AttributeFix                  |attributefix                  |21.1.3              |Manifest: NOSIGNATURE
+		backpackplus-neoforge-1.21.1-1.0.0.jar            |Backpack Plus                 |backpackplus                  |1.21.1-1.0.0        |Manifest: NOSIGNATURE
+		BadOptimizations-2.2.3-1.21.1.jar                 |BadOptimizations              |badoptimizations              |2.2.3               |Manifest: NOSIGNATURE
+		BagOfHolding-v21.1.2-1.21.1-NeoForge.jar          |Bag Of Holding                |bagofholding                  |21.1.2              |Manifest: NOSIGNATURE
+		balm-neoforge-1.21.1-21.0.56.jar                  |Balm                          |balm                          |21.0.56             |Manifest: NOSIGNATURE
+		beltborne_lanterns-1.2.4-neoforge+1.21.1.jar      |Beltborne Lanterns            |beltborne_lanterns            |1.2.4               |Manifest: NOSIGNATURE
+		bl_accessories_layer-1.2.0-neoforge+1.21.1.jar    |Beltborne Lanterns: Accessorie|bl_accessories_layer          |1.2.0               |Manifest: NOSIGNATURE
+		BetterAdvancements-NeoForge-1.21.1-0.4.3.21.jar   |Better Advancements           |betteradvancements            |0.4.3.21            |Manifest: NOSIGNATURE
+		BN-Blood-Particles-NeoForge-1.21.1-2.0.0.jar      |BN Blood Particles            |bnbloodparticles              |2.0.0               |Manifest: NOSIGNATURE
+		bookshelf-neoforge-1.21.1-21.1.81.jar             |Bookshelf                     |bookshelf                     |21.1.81             |Manifest: NOSIGNATURE
+		BrutalNightmare-v5.0_MOD.jar                      |Brutal Nightmare : Insane Diff|brutalnightmare               |5.0                 |Manifest: NOSIGNATURE
+		brutalnightmarecci-3.0.0.jar                      |BrutalNightmareCCI            |brutalnightmarecci            |1.0.0               |Manifest: NOSIGNATURE
+		butchery-4.6-neoforge-1.21.1.jar                  |Butchery                      |butchery                      |4.6                 |Manifest: NOSIGNATURE
+		camp-fires-cook-mobs-1.3.1+MC1.21-1.21.1_mapped_mo|Camp Fires Cook Mobs          |camp_fires_cook_mobs          |1.3.1               |Manifest: NOSIGNATURE
+		CerbonsAPI-NeoForge-1.21-1.3.0.jar                |Cerbons API                   |cerbons_api                   |1.3.0               |Manifest: NOSIGNATURE
+		cerulean-neoforge-1.0.0-1.21.1.jar                |Cerulean                      |cerulean                      |1.0.0               |Manifest: NOSIGNATURE
+		chloride-NEOFORGE-mc1.21.1-v1.7.5.jar             |Chloride                      |chloride                      |1.7.5               |Manifest: NOSIGNATURE
+		chunkloaders-1.2.9-neoforge-mc1.21.jar            |Chunk Loaders                 |chunkloaders                  |1.2.9               |Manifest: NOSIGNATURE
+		Chunky-NeoForge-1.4.23.jar                        |Chunky                        |chunky                        |1.4.23              |Manifest: NOSIGNATURE
+		ChunkyBorder-1.2.18.jar                           |ChunkyBorder                  |chunkyborder                  |1.2.18              |Manifest: NOSIGNATURE
+		cloth-config-15.0.140-neoforge.jar                |Cloth Config v15 API          |cloth_config                  |15.0.140            |Manifest: NOSIGNATURE
+		Clumps-neoforge-1.21.1-19.0.0.1.jar               |Clumps                        |clumps                        |19.0.0.1            |Manifest: NOSIGNATURE
+		collective-1.21.1-8.13.jar                        |Collective                    |collective                    |8.13                |Manifest: NOSIGNATURE
+		colorwheel-neoforge-1.2.1+mc1.21.1.jar            |Colorwheel                    |colorwheel                    |1.2.1+mc1.21.1      |Manifest: NOSIGNATURE
+		common-networking-neoforge-1.0.18-1.21.1.jar      |Common Networking             |commonnetworking              |1.0.18-1.21.1       |Manifest: NOSIGNATURE
+		c2me-neoforge-mc1.21.1-0.3.0+alpha.0.71.jar       |Concurrent Chunk Management En|c2me                          |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-base-mc1.21.1-0.3.0+alpha.0.71-all.jar       |Concurrent Chunk Management En|c2me_base                     |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-client-uncapvd-mc1.21.1-0.3.0+alpha.0.71.jar |Concurrent Chunk Management En|c2me_client_uncapvd           |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-fixes-chunkio-threading-issues-mc1.21.1-0.3.0|Concurrent Chunk Management En|c2me_fixes_chunkio_threading_i|0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-fixes-general-threading-issues-mc1.21.1-0.3.0|Concurrent Chunk Management En|c2me_fixes_general_threading_i|0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-fixes-worldgen-threading-issues-mc1.21.1-0.3.|Concurrent Chunk Management En|c2me_fixes_worldgen_threading_|0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-fixes-worldgen-vanilla-bugs-mc1.21.1-0.3.0+al|Concurrent Chunk Management En|c2me_fixes_worldgen_vanilla_bu|0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-notickvd-mc1.21.1-0.3.0+alpha.0.71.jar       |Concurrent Chunk Management En|c2me_notickvd                 |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-chunkio-mc1.21.1-0.3.0+alpha.0.71.jar   |Concurrent Chunk Management En|c2me_opts_chunkio             |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-dfc-mc1.21.1-0.3.0+alpha.0.71.jar       |Concurrent Chunk Management En|c2me_opts_dfc                 |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-worldgen-general-mc1.21.1-0.3.0+alpha.0.|Concurrent Chunk Management En|c2me_opts_worldgen_general    |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-math-mc1.21.1-0.3.0+alpha.0.71.jar      |Concurrent Chunk Management En|c2me_opts_math                |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-allocs-mc1.21.1-0.3.0+alpha.0.71.jar    |Concurrent Chunk Management En|c2me_opts_allocs              |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-natives-math-mc1.21.1-0.3.0+alpha.0.71.j|Concurrent Chunk Management En|c2me_opts_natives_math        |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-scheduling-mc1.21.1-0.3.0+alpha.0.71.jar|Concurrent Chunk Management En|c2me_opts_scheduling          |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-opts-worldgen-vanilla-mc1.21.1-0.3.0+alpha.0.|Concurrent Chunk Management En|c2me_opts_worldgen_vanilla    |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-rewrites-chunkio-mc1.21.1-0.3.0+alpha.0.71.ja|Concurrent Chunk Management En|c2me_rewrites_chunkio         |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-rewrites-chunk-serializer-mc1.21.1-0.3.0+alph|Concurrent Chunk Management En|c2me_rewrites_chunk_serializer|0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-rewrites-chunk-system-mc1.21.1-0.3.0+alpha.0.|Concurrent Chunk Management En|c2me_rewrites_chunk_system    |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-server-utils-mc1.21.1-0.3.0+alpha.0.71.jar   |Concurrent Chunk Management En|c2me_server_utils             |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		c2me-threading-lighting-mc1.21.1-0.3.0+alpha.0.71.|Concurrent Chunk Management En|c2me_threading_lighting       |0.3.0+alpha.0.71+1.2|Manifest: NOSIGNATURE
+		conditional-mixin-neoforge-0.6.3.jar              |conditional mixin             |conditional_mixin             |0.6.3               |Manifest: NOSIGNATURE
+		ConnectorExtras-1.12.1+1.21.1.jar                 |Connector Extras              |connectorextras               |1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		emi-bridge-1.12.1+1.21.1.jar                      |Connector Extras EMI Bridge   |connectorextras_emi_bridge    |1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		energy-bridge-1.12.1+1.21.1.jar                   |Connector Extras Energy Bridge|connectorextras_energy_bridge |1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		jei-bridge-1.12.1+1.21.1.jar                      |Connector Extras JEI Bridge   |connectorextras_jei_bridge    |1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		kubejs-bridge-1.12.1+1.21.1.jar                   |Connector Extras KubeJS Bridge|connectorextras_kubejs_bridge |1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		modmenu-bridge-1.12.1+1.21.1.jar                  |Connector Extras ModMenu Bridg|connectorextras_modmenu_bridge|1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		pehkui-bridge-1.12.1+1.21.1.jar                   |Connector Extras Pehkui Bridge|connectorextras_pehkui_bridge |1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		rei-bridge-1.12.1+1.21.1.jar                      |Connector Extras REI Bridge   |connectorextras_rei_bridge    |1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		terrablender-bridge-1.12.1+1.21.1.jar             |Connector Extras Terrablender |connectorextras_terrablender_b|1.12.1+1.21.1       |Manifest: NOSIGNATURE
+		controllable-neoforge-1.21.1-0.25.4-release.jar   |Controllable                  |controllable                  |0.25.4              |Manifest: NOSIGNATURE
+		Corgilib-NeoForge-1.21.1-5.0.0.7.jar              |CorgiLib                      |corgilib                      |5.0.0.7             |Manifest: NOSIGNATURE
+		CreativeCore_NEOFORGE_v2.13.24_mc1.21.1.jar       |CreativeCore                  |creativecore                  |2.13.24             |Manifest: NOSIGNATURE
+		CreeperOverhaul-neoforge-1.21.1-4.0.6.jar         |Creeper Overhaul              |creeperoverhaul               |4.0.6               |Manifest: NOSIGNATURE
+		crittersandcompanions-neoforge-1.21.1-2.3.4.jar   |Critters and Companions       |crittersandcompanions         |1.21.1-2.3.4        |Manifest: NOSIGNATURE
+		curios-neoforge-9.5.1+1.21.1.jar                  |Curios API                    |curios                        |9.5.1+1.21.1        |Manifest: NOSIGNATURE
+		Data_Anchor-neoforge-1.21.1-2.0.0.14.jar          |Data Anchor                   |dataanchor                    |2.0.0.14            |Manifest: NOSIGNATURE
+		deimos-1.21.1-neoforge-2.5.jar                    |Deimos                        |deimos                        |2.5                 |Manifest: NOSIGNATURE
+		despawntweaks-neoforge-1.0.0-1.21.1.jar           |Despawn Tweaks                |despawntweaks                 |1.0.0               |Manifest: NOSIGNATURE
+		destructive_moon-1.1.1-1.21.1.jar                 |Destructive Moon              |destructive_moon              |1.1.1-1.21.1        |Manifest: NOSIGNATURE
+		drippyloadingscreen_neoforge_3.1.0_MC_1.21.1.jar  |Drippy Loading Screen         |drippyloadingscreen           |3.1.0               |Manifest: NOSIGNATURE
+		e4mc_minecraft-neoforge-5.4.1.jar                 |e4mc                          |e4mc_minecraft                |5.4.1               |Manifest: NOSIGNATURE
+		effectivearmors-1.2.0.jar                         |EffectiveArmors               |effectivearmors               |1.2.0               |Manifest: NOSIGNATURE
+		EliteHolograms-NeoForge-1.21.1-1.0.7.jar          |Elite Holograms               |eliteholograms                |1.21.1-1.0.5        |Manifest: NOSIGNATURE
+		EnderMoon-1.21.1-NeoForge-fabric-1.0.2.jar        |Ender Moon                    |endermoon                     |1.21.1              |Manifest: NOSIGNATURE
+		endermanoverhaul-neoforge-1.21.1-2.0.2.jar        |Enderman Overhaul             |endermanoverhaul              |2.0.2               |Manifest: NOSIGNATURE
+		enhancedblockentities-0.10.2+1.21_mapped_moj_1.21.|Enhanced Block Entities       |enhancedblockentities         |0.10.21.21          |Manifest: NOSIGNATURE
+		Enhanced-Celestials-NeoForge-1.21.1-6.0.2.5.jar   |Enhanced Celestials           |enhancedcelestials            |6.0.2.5             |Manifest: NOSIGNATURE
+		entity_model_features_1.21-neoforge-3.0.10.jar    |Entity Model Features         |entity_model_features         |3.0.10              |Manifest: NOSIGNATURE
+		entity_sound_features_1.21-neoforge-0.7.1.jar     |Entity Sound Features         |entity_sound_features         |0.7.1               |Manifest: NOSIGNATURE
+		entity_texture_features_1.21-neoforge-7.0.8.jar   |Entity Texture Features       |entity_texture_features       |7.0.8               |Manifest: NOSIGNATURE
+		entityculling-neoforge-1.9.5-mc1.21.1.jar         |EntityCulling                 |entityculling                 |1.9.5               |Manifest: NOSIGNATURE
+		fabric-language-kotlin-1.13.7+kotlin.2.2.21_mapped|Fabric Language Kotlin        |fabric_language_kotlin        |1.13.7kotlin.2.2.21 |Manifest: NOSIGNATURE
+		fancymenu_neoforge_3.8.1_MC_1.21.1.jar            |FancyMenu                     |fancymenu                     |3.8.1               |Manifest: NOSIGNATURE
+		fastitems-neoforge-1.1.0-neoforge+1.21.jar        |Fast Items                    |fastitems                     |1.1.0-neoforge+1.21 |Manifest: NOSIGNATURE
+		fastquit-3.0.0+1.20.6_mapped_moj_1.21.1.jar       |FastQuit                      |fastquit                      |3.0.01.20.6         |Manifest: NOSIGNATURE
+		ferritecore-7.0.2-neoforge.jar                    |Ferrite Core                  |ferritecore                   |7.0.2               |Manifest: 41:ce:50:66:d1:a0:05:ce:a1:0e:02:85:9b:46:64:e0:bf:2e:cf:60:30:9a:fe:0c:27:e0:63:66:9a:84:ce:8a
+		FeyTweaks-1.21-1.2.8_mapped_moj_1.21.1.jar        |FeyTweaks                     |feytweaks                     |1.21-1.2.8          |Manifest: NOSIGNATURE
+		fixsodiumshaderloader-1.0.0.jar                   |Fix sodium ShaderLoader       |fixsodiumshaderloader         |1.0.0               |Manifest: NOSIGNATURE
+		Flywheel-Mod-NeoForge-1.21.1.jar                  |Flywheel                      |flywheel                      |1.0.4               |Manifest: NOSIGNATURE
+		FokusAPI-v3.3_MOD.jar                             |FokusAPI                      |fokusapi                      |3.3                 |Manifest: NOSIGNATURE
+		forgified-fabric-api-0.115.6+2.1.4+1.21.1.jar     |Forgified Fabric API          |fabric_api                    |0.115.6+2.1.4+1.21.1|Manifest: NOSIGNATURE
+		fabric-api-base-0.4.42+d1308dedd1.jar             |Forgified Fabric API Base     |fabric_api_base               |0.4.42+d1308dedd1   |Manifest: NOSIGNATURE
+		fabric-api-lookup-api-v1-1.6.70+c290471319.jar    |Forgified Fabric API Lookup AP|fabric_api_lookup_api_v1      |1.6.70+c290471319   |Manifest: NOSIGNATURE
+		fabric-biome-api-v1-13.0.31+1e62d33c19.jar        |Forgified Fabric Biome API (v1|fabric_biome_api_v1           |13.0.31+1e62d33c19  |Manifest: NOSIGNATURE
+		fabric-block-api-v1-1.0.22+a6e994cd19.jar         |Forgified Fabric Block API (v1|fabric_block_api_v1           |1.0.22+a6e994cd19   |Manifest: NOSIGNATURE
+		fabric-blockrenderlayer-v1-1.1.52+c290471319.jar  |Forgified Fabric BlockRenderLa|fabric_blockrenderlayer_v1    |1.1.52+c290471319   |Manifest: NOSIGNATURE
+		fabric-block-view-api-v2-1.0.11+e9036fd419.jar    |Forgified Fabric BlockView API|fabric_block_view_api_v2      |1.0.11+e9036fd419   |Manifest: NOSIGNATURE
+		fabric-client-tags-api-v1-1.1.15+e053909619.jar   |Forgified Fabric Client Tags  |fabric_client_tags_api_v1     |1.1.15+e053909619   |Manifest: NOSIGNATURE
+		fabric-command-api-v2-2.2.28+36d727be19.jar       |Forgified Fabric Command API (|fabric_command_api_v2         |2.2.28+36d727be19   |Manifest: NOSIGNATURE
+		fabric-content-registries-v0-8.0.18+c290471319.jar|Forgified Fabric Content Regis|fabric_content_registries_v0  |8.0.18+c290471319   |Manifest: NOSIGNATURE
+		fabric-convention-tags-v1-2.1.4+7f945d5b19.jar    |Forgified Fabric Convention Ta|fabric_convention_tags_v1     |2.1.4+7f945d5b19    |Manifest: NOSIGNATURE
+		fabric-convention-tags-v2-2.11.0+87e5848019.jar   |Forgified Fabric Convention Ta|fabric_convention_tags_v2     |2.11.0+87e5848019   |Manifest: NOSIGNATURE
+		fabric-data-attachment-api-v1-1.4.3+c290471319.jar|Forgified Fabric Data Attachme|fabric_data_attachment_api_v1 |1.4.3+c290471319    |Manifest: NOSIGNATURE
+		fabric-data-generation-api-v1-20.2.28+2d91a6db19.j|Forgified Fabric Data Generati|fabric_data_generation_api_v1 |20.2.28+2d91a6db19  |Manifest: NOSIGNATURE
+		fabric-entity-events-v1-1.7.0+1af6e62419.jar      |Forgified Fabric Entity Events|fabric_entity_events_v1       |1.7.0+1af6e62419    |Manifest: NOSIGNATURE
+		fabric-events-interaction-v0-0.7.13+7b71cc1619.jar|Forgified Fabric Events Intera|fabric_events_interaction_v0  |0.7.13+7b71cc1619   |Manifest: NOSIGNATURE
+		fabric-game-rule-api-v1-1.0.53+36d727be19.jar     |Forgified Fabric Game Rule API|fabric_game_rule_api_v1       |1.0.53+36d727be19   |Manifest: NOSIGNATURE
+		fabric-gametest-api-v1-2.0.5+29f188ce19.jar       |Forgified Fabric Game Test API|fabric_gametest_api_v1        |2.0.5+29f188ce19    |Manifest: NOSIGNATURE
+		fabric-item-api-v1-11.1.1+57cdfa8219.jar          |Forgified Fabric Item API (v1)|fabric_item_api_v1            |11.1.1+57cdfa8219   |Manifest: NOSIGNATURE
+		fabric-item-group-api-v1-4.1.7+e324903319.jar     |Forgified Fabric Item Group AP|fabric_item_group_api_v1      |4.1.7+e324903319    |Manifest: NOSIGNATURE
+		fabric-key-binding-api-v1-1.0.47+62cc7ce119.jar   |Forgified Fabric Key Binding A|fabric_key_binding_api_v1     |1.0.47+62cc7ce119   |Manifest: NOSIGNATURE
+		fabric-lifecycle-events-v1-2.5.0+a2ee258a19.jar   |Forgified Fabric Lifecycle Eve|fabric_lifecycle_events_v1    |2.5.0+a2ee258a19    |Manifest: NOSIGNATURE
+		fabric-loot-api-v2-3.0.15+a3ee712d19.jar          |Forgified Fabric Loot API (v2)|fabric_loot_api_v2            |3.0.15+a3ee712d19   |Manifest: NOSIGNATURE
+		fabric-loot-api-v3-1.0.3+333dfad919.jar           |Forgified Fabric Loot API (v3)|fabric_loot_api_v3            |1.0.3+333dfad919    |Manifest: NOSIGNATURE
+		fabric-message-api-v1-6.0.13+e053909619.jar       |Forgified Fabric Message API (|fabric_message_api_v1         |6.0.13+e053909619   |Manifest: NOSIGNATURE
+		fabric-model-loading-api-v1-2.0.0+986ae77219.jar  |Forgified Fabric Model Loading|fabric_model_loading_api_v1   |2.0.0+986ae77219    |Manifest: NOSIGNATURE
+		fabric-networking-api-v1-4.3.0+30a980d919.jar     |Forgified Fabric Networking AP|fabric_networking_api_v1      |4.3.0+30a980d919    |Manifest: NOSIGNATURE
+		fabric-object-builder-api-v1-15.2.1+cc242efd19.jar|Forgified Fabric Object Builde|fabric_object_builder_api_v1  |15.2.1+cc242efd19   |Manifest: NOSIGNATURE
+		fabric-particles-v1-4.0.2+824f924c19.jar          |Forgified Fabric Particles (v1|fabric_particles_v1           |4.0.2+824f924c19    |Manifest: NOSIGNATURE
+		fabric-recipe-api-v1-5.0.14+59440bcc19.jar        |Forgified Fabric Recipe API (v|fabric_recipe_api_v1          |5.0.14+59440bcc19   |Manifest: NOSIGNATURE
+		fabric-registry-sync-v0-5.2.0+867470b919.jar      |Forgified Fabric Registry Sync|fabric_registry_sync_v0       |5.2.0+867470b919    |Manifest: NOSIGNATURE
+		fabric-renderer-indigo-1.7.0-slim+4198af7119.jar  |Forgified Fabric Renderer - In|fabric_renderer_indigo        |1.7.0-slim+4198af711|Manifest: NOSIGNATURE
+		fabric-renderer-api-v1-3.4.0+acb05a3919.jar       |Forgified Fabric Renderer API |fabric_renderer_api_v1        |3.4.0+acb05a3919    |Manifest: NOSIGNATURE
+		fabric-rendering-v1-5.0.5+c290471319.jar          |Forgified Fabric Rendering (v1|fabric_rendering_v1           |5.0.5+c290471319    |Manifest: NOSIGNATURE
+		fabric-rendering-data-attachment-v1-0.3.49+73761d2|Forgified Fabric Rendering Dat|fabric_rendering_data_attachme|0.3.49+73761d2e19   |Manifest: NOSIGNATURE
+		fabric-rendering-fluids-v1-3.1.6+857185bc19.jar   |Forgified Fabric Rendering Flu|fabric_rendering_fluids_v1    |3.1.6+857185bc19    |Manifest: NOSIGNATURE
+		fabric-resource-conditions-api-v1-4.3.0+5bdd099819|Forgified Fabric Resource Cond|fabric_resource_conditions_api|4.3.0+5bdd099819    |Manifest: NOSIGNATURE
+		fabric-resource-loader-v0-1.3.1+4ea8954419.jar    |Forgified Fabric Resource Load|fabric_resource_loader_v0     |1.3.1+4ea8954419    |Manifest: NOSIGNATURE
+		fabric-screen-api-v1-2.0.25+4228281319.jar        |Forgified Fabric Screen API (v|fabric_screen_api_v1          |2.0.25+4228281319   |Manifest: NOSIGNATURE
+		fabric-screen-handler-api-v1-1.3.88+8dbc56dd19.jar|Forgified Fabric Screen Handle|fabric_screen_handler_api_v1  |1.3.88+8dbc56dd19   |Manifest: NOSIGNATURE
+		fabric-sound-api-v1-1.0.23+10b84f8419.jar         |Forgified Fabric Sound API (v1|fabric_sound_api_v1           |1.0.23+10b84f8419   |Manifest: NOSIGNATURE
+		fabric-transfer-api-v1-5.4.2+a25cb45619.jar       |Forgified Fabric Transfer API |fabric_transfer_api_v1        |5.4.2+a25cb45619    |Manifest: NOSIGNATURE
+		fabric-transitive-access-wideners-v1-6.2.0+6c854b6|Forgified Fabric Transitive Ac|fabric_transitive_access_widen|6.2.0+6c854b6f19    |Manifest: NOSIGNATURE
+		framework-neoforge-1.21.1-0.13.9.jar              |Framework                     |framework                     |0.13.9              |Manifest: NOSIGNATURE
+		fusion-1.2.11b-neoforge-mc1.21.jar                |Fusion                        |fusion                        |1.2.11+b            |Manifest: NOSIGNATURE
+		fzzy_config-0.7.3+1.21+neoforge.jar               |Fzzy Config                   |fzzy_config                   |0.7.3+1.21+neoforge |Manifest: NOSIGNATURE
+		geckolib-neoforge-1.21.1-4.8.2.jar                |GeckoLib 4                    |geckolib                      |4.8.2               |Manifest: NOSIGNATURE
+		goop-0.4.3-1.21.1_mapped_moj_1.21.1.jar           |Goop Technology               |goop                          |0.4.3-1.21.1        |Manifest: NOSIGNATURE
+		GPUTape-1.20.6-1.21x-1.0.3.jar                    |GPUTape                       |gpu_tape                      |1.0.2               |Manifest: NOSIGNATURE
+		gunsmithlib-1.21.1-5.1.2-neoforge-modular.jar     |GunsmithLib                   |gunsmithlib                   |1.21.1-5.1.2-neoforg|Manifest: NOSIGNATURE
+		ZombieMoon-1.21-2.0.1.jar                         |Horde Moon                    |zombiemoon                    |1.21                |Manifest: NOSIGNATURE
+		[1.21.x] Horde Nights v1.3.13.jar                 |Horde Nights                  |rrc_horde_nights              |1.3.13              |Manifest: NOSIGNATURE
+		horror_element_mod-1.6.2-neoforge-1.21.1.jar      |Horror Element Mod            |horror_element_mod            |1.6.2               |Manifest: NOSIGNATURE
+		Iceberg-1.21.1-neoforge-1.3.2.jar                 |Iceberg                       |iceberg                       |1.3.2               |Manifest: NOSIGNATURE
+		ImmediatelyFast-NeoForge-1.6.9+1.21.1.jar         |ImmediatelyFast               |immediatelyfast               |1.6.9+1.21.1        |Manifest: NOSIGNATURE
+		immersive_furniture-neoforge-0.1.2+1.21.1.jar     |Immersive Furniture           |immersive_furniture           |0.1.2+1.21.1        |Manifest: NOSIGNATURE
+		immersive_melodies-neoforge-0.6.2+1.21.1.jar      |Immersive Melodies            |immersive_melodies            |0.6.2+1.21.1        |Manifest: NOSIGNATURE
+		immersive_paintings-neoforge-1.21.1-0.7.4.jar     |Immersive Paintings           |immersive_paintings           |0.7.4               |Manifest: NOSIGNATURE
+		immersive-sound-0.2.jar                           |Immersive Sounds              |mr_immersive_sound            |0.2                 |Manifest: NOSIGNATURE
+		Incendium_1.21.x_v5.4.4.jar                       |Incendium                     |incendium                     |5.4.3               |Manifest: NOSIGNATURE
+		infiniverse-568341-5486311.jar                    |Infiniverse                   |infiniverse                   |2.0.1.0             |Manifest: NOSIGNATURE
+		invhigh-1.0.0.jar                                 |Inventory Highlight           |invhigh                       |1.0.0               |Manifest: NOSIGNATURE
+		iris-neoforge-1.8.12+mc1.21.1.jar                 |Iris                          |iris                          |1.8.12-snapshot+mc1.|Manifest: NOSIGNATURE
+		iris-uniforms-1.1.1-1.21.1_mapped_moj_1.21.1.jar  |Iris Uniforms                 |iris_uniforms                 |1.1.1-1.21.1        |Manifest: NOSIGNATURE
+		iteminteractions-neoforge-21.1.4.jar              |Item Interactions             |iteminteractions              |21.1.4              |Manifest: NOSIGNATURE
+		journeymap-neoforge-1.21.1-6.0.0-beta.52.jar      |Journeymap                    |journeymap                    |1.21.1-6.0.0-beta.52|Manifest: NOSIGNATURE
+		journeymap-api-neoforge-2.0.0-1.21.1-SNAPSHOT.jar |JourneyMap API                |journeymap_api                |2.0.0               |Manifest: NOSIGNATURE
+		konkrete_neoforge_1.9.9_MC_1.21.jar               |Konkrete                      |konkrete                      |1.9.9               |Manifest: NOSIGNATURE
+		thedarkcolour.kffmod-5.10.0.jar                   |Kotlin For Forge              |kotlinforforge                |5.10.0              |Manifest: NOSIGNATURE
+		kuma-api-neoforge-21.0.7+1.21.jar                 |KumaAPI                       |kuma_api                      |21.0.7              |Manifest: NOSIGNATURE
+		kuroutils2-2101.2.1.0.jar                         |Kuro Utils                    |kuroutils                     |2101.2.1.0          |Manifest: NOSIGNATURE
+		lambdynamiclights-4.8.7+1.21.1.jar                |LambDynamicLights             |lambdynlights                 |4.8.7+1.21.1        |Manifest: NOSIGNATURE
+		lambdynamiclights-api-4.8.7+1.21.1-mojmap.jar     |LambDynamicLights (API)       |lambdynlights_api             |4.8.7+1.21.1        |Manifest: NOSIGNATURE
+		lambdynamiclights-4.8.7+1.21.1-neoforge.jar       |LambDynamicLights (Runtime)   |lambdynlights_runtime         |4.8.7+1.21.1        |Manifest: NOSIGNATURE
+		lazy_chunks-2.0+mc1.21-1.21.4_mapped_moj_1.21.1.ja|LazyChunks                    |lazy_chunks                   |2.0mc1.21-1.21.4    |Manifest: NOSIGNATURE
+		lightmanscurrency-1.21-2.3.0.4c.jar               |Lightman's Currency           |lightmanscurrency             |1.21-2.3.0.4c       |Manifest: NOSIGNATURE
+		lithium-neoforge-0.15.1+mc1.21.1.jar              |Lithium                       |lithium                       |0.15.1+mc1.21.1     |Manifest: NOSIGNATURE
+		locksmith-neoforge-1.21.1-1.2.1.jar               |Locksmith                     |locksmith                     |1.2.1               |Manifest: NOSIGNATURE
+		lodestone-1.21.1-1.7.1.jar                        |Lodestone                     |lodestone                     |1.7.1               |Manifest: NOSIGNATURE
+		loot-bags-3.1.jar                                 |Loot Bags                     |mr_loot_bags                  |3.1                 |Manifest: NOSIGNATURE
+		lootbundles-1.21.0-1.1.0.jar                      |Loot Bundles                  |lootbundles                   |1.21.0-1.1.0        |Manifest: NOSIGNATURE
+		lootbeams-3.6.1-mc1.21-.1_mapped_moj_1.21.1.jar   |LootBeams                     |lootbeams                     |3.6.1-mc1.21-.1     |Manifest: NOSIGNATURE
+		LuckPerms-NeoForge-5.4.150.jar                    |LuckPerms                     |luckperms                     |5.4.150             |Manifest: NOSIGNATURE
+		matrixcraft-1.0.0.jar                             |MatrixCraft                   |matrixcraft                   |1.0.0               |Manifest: NOSIGNATURE
+		vrapi-3.0.12-1.21.1-neoforge.jar                  |mc-vr-api                     |vrapi                         |3.0.12              |Manifest: NOSIGNATURE
+		melody_neoforge_1.0.10_MC_1.21.jar                |Melody                        |melody                        |1.0.10              |Manifest: NOSIGNATURE
+		MetalBundles-v21.1.1-1.21.1-NeoForge.jar          |Metal Bundles                 |metalbundles                  |21.1.1              |Manifest: NOSIGNATURE
+		midnightlib-1.6.9-neoforge+1.21.jar               |MidnightLib                   |midnightlib                   |1.6.9               |Manifest: NOSIGNATURE
+		militaristic_armor-1.0.0-neoforge-1.21.1.jar      |Militaristic Armor            |militaristic_armor            |1.0.0               |Manifest: NOSIGNATURE
+		client-1.21.1-20240808.144430-srg.jar             |Minecraft                     |minecraft                     |1.21.1              |Manifest: a1:d4:5e:04:4f:d3:d6:e0:7b:37:97:cf:77:b0:de:ad:4a:47:ce:8c:96:49:5f:0a:cf:8c:ae:b2:6d:4b:8a:3f
+		MinersMoon1.21.1-NeoForge-Fabric-1.0.3.jar        |Miner's Moon                  |minersmoon                    |1.21.1              |Manifest: NOSIGNATURE
+		mixintracereforged-neoforge-1.0.0-1.21.1.jar      |Mixin Trace Reforged          |mixintracereforged            |1.0.0               |Manifest: NOSIGNATURE
+		mo-variants-7.6.9.3.jar                           |Mo-Variants                   |mr_mo_variants                |7.6.9.3             |Manifest: NOSIGNATURE
+		modernfix-neoforge-5.25.1+mc1.21.1.jar            |ModernFix                     |modernfix                     |5.25.1+mc1.21.1     |Manifest: NOSIGNATURE
+		moreculling-neoforge-1.21.1-1.0.6.jar             |More Culling                  |moreculling                   |1.0.6               |Manifest: NOSIGNATURE
+		continuity-3.0.0+0.0.1+1.21.1.neoforge-all.jar    |NeoContinuity                 |continuity                    |3.0.0+0.0.1+1.21.1.n|Manifest: NOSIGNATURE
+		neoforge-21.1.217-universal.jar                   |NeoForge                      |neoforge                      |21.1.217            |Manifest: NOSIGNATURE
+		nightmare-mode-V1.2.3-data.jar                    |Nightmare Mode                |mr_nightmare_mode             |1-V1.2.3-data       |Manifest: NOSIGNATURE
+		NoChatReports-NEOFORGE-1.21.1-v2.9.1.jar          |No Chat Reports               |nochatreports                 |1.21.1-v2.9.1       |Manifest: NOSIGNATURE
+		noisium-neoforge-2.3.0+mc1.21-1.21.1.jar          |Noisium                       |noisium                       |2.3.0+mc1.21-1.21.1 |Manifest: NOSIGNATURE
+		not_enough_glyphs-1.21.1-4.2.3.4.jar              |Not Enough Glyphs             |not_enough_glyphs             |4.2.3.4             |Manifest: NOSIGNATURE
+		nuggets-neoforge-1.21-1.0.10.41.jar               |Nuggets                       |nuggets                       |1.0.10.41           |Manifest: NOSIGNATURE
+		NumFlux-1.0.1-1.20.5-1.21.8-neo.jar               |NumFlux                       |num_flux                      |1.0.1               |Manifest: NOSIGNATURE
+		ObsidianUI-neoforge-0.2.9+mc1.21.1.jar            |ObsidianUI                    |obsidianui                    |0.2.9+mc1.21.1      |Manifest: NOSIGNATURE
+		OverflowingBars-v21.1.1-1.21.1-NeoForge.jar       |Overflowing Bars              |overflowingbars               |21.1.1              |Manifest: NOSIGNATURE
+		owo-lib-neoforge-0.12.15.5-beta.1+1.21.jar        |oωo                           |owo                           |0.12.15.5-beta.1+1.2|Manifest: NOSIGNATURE
+		packetfixer-3.3.1-1.20.5-1.21.X-merged.jar        |PacketFixer                   |packetfixer                   |3.3.1               |Manifest: NOSIGNATURE
+		Patchouli-1.21.1-92-NEOFORGE.jar                  |Patchouli                     |patchouli                     |1.21.1-92-NEOFORGE  |Manifest: NOSIGNATURE
+		Paxi-1.21.1-NeoForge-5.1.3.jar                    |Paxi                          |paxi                          |1.21.1-NeoForge-5.1.|Manifest: NOSIGNATURE
+		PeacefulMoon-1.21.1-Neoforge-Fabric-1.0.4.jar     |Peaceful Moon                 |peacefulmoon                  |1.21.1              |Manifest: NOSIGNATURE
+		player-animation-lib-fabric-2.0.4+1.21.1_mapped_mo|Player Animator               |playeranimator                |2.0.41.21.1         |Manifest: NOSIGNATURE
+		PlayerRevive_NEOFORGE_v2.0.37_mc1.21.1.jar        |PlayerRevive                  |playerrevive                  |2.0.37              |Manifest: NOSIGNATURE
+		vcinteraction-fabric-1.21.1-1.0.8$polymer-reg-sync|Polymer (Registry Sync Manipul|polymer_registry_sync_manipula|0.9.91.21           |Manifest: NOSIGNATURE
+		prickle-neoforge-1.21.1-21.1.11.jar               |PrickleMC                     |prickle                       |21.1.11             |Manifest: NOSIGNATURE
+		pridelib-1.2.4+1.21.1-mojmap.jar                  |Pride Lib                     |pride                         |1.2.4+1.21.1        |Manifest: NOSIGNATURE
+		Prism-1.21.1-neoforge-1.0.11.jar                  |Prism                         |prism                         |1.0.11              |Manifest: NOSIGNATURE
+		puffish_attributes-0.8.0-1.21-neoforge.jar        |Pufferfish's Attributes       |puffish_attributes            |0.8.0               |Manifest: NOSIGNATURE
+		puffish_skills-0.17.1-1.21-neoforge.jar           |Pufferfish's Skills           |puffish_skills                |0.17.1              |Manifest: NOSIGNATURE
+		PuzzlesLib-v21.1.39-1.21.1-NeoForge.jar           |Puzzles Lib                   |puzzleslib                    |21.1.39             |Manifest: NOSIGNATURE
+		reactify-1.0.b0_MOD.jar                           |reactify                      |reactify                      |1.0                 |Manifest: NOSIGNATURE
+		redirected-neoforge-1.0.0-1.21.1.jar              |Redirected                    |redirected                    |1.0.0               |Manifest: NOSIGNATURE
+		reeses-sodium-options-neoforge-1.8.3+mc1.21.4.jar |Reese's Sodium Options        |reeses_sodium_options         |1.8.3+mc1.21.4      |Manifest: NOSIGNATURE
+		resourcefullib-neoforge-1.21-3.0.12.jar           |Resourceful Lib               |resourcefullib                |3.0.12              |Manifest: NOSIGNATURE
+		resourcefulconfig-neoforge-1.21-3.0.11.jar        |Resourcefulconfig             |resourcefulconfig             |3.0.11              |Manifest: NOSIGNATURE
+		rpg-skill-tree-1.3.0.jar                          |RPG skill tree                |mr_rpg_skilltree              |1.3.0               |Manifest: NOSIGNATURE
+		Safe-Moons-Replace-1.21.1-1.0.4.jar               |Safe Moons                    |safermoons                    |1.21.1              |Manifest: NOSIGNATURE
+		sanguine-1.2.0-1.21-x_mapped_moj_1.21.1.jar       |sanguine                      |sanguine                      |1.2.0-1.21-x        |Manifest: NOSIGNATURE
+		sauce-1.21.1-0.0.16.46.jar                        |Sauce Library                 |sauce                         |0.0.16.46           |Manifest: NOSIGNATURE
+		serversidehorror-1.21.1-neoforge-4.jar            |Server-Side Horror            |serversidehorror              |4                   |Manifest: NOSIGNATURE
+		ShoulderSurfing-NeoForge-1.21.1-4.16.1.jar        |Shoulder Surfing Reloaded     |shouldersurfing               |1.21.1-4.16.1       |Manifest: NOSIGNATURE
+		voicechat-neoforge-1.21.1-2.6.11.jar              |Simple Voice Chat             |voicechat                     |1.21.1-2.6.11       |Manifest: NOSIGNATURE
+		org.sinytra.connector-2.0.0-beta.8+1.21.1-mod.jar |Sinytra Connector             |connector                     |2.0.0-beta.8+1.21.1 |Manifest: NOSIGNATURE
+		sittingplus-2.0.6-1.21.1-FABRIC_mapped_moj_1.21.1.|sittingplus                   |sittingplus                   |2.0.6               |Manifest: NOSIGNATURE
+		skinrestorer-2.4.3+1.21-neoforge.jar              |SkinRestorer                  |skinrestorer                  |2.4.3+1.21-neoforge |Manifest: NOSIGNATURE
+		SkinShuffle-2.9.1+1.21_mapped_moj_1.21.1.jar      |SkinShuffle                   |skinshuffle                   |2.9.11.21           |Manifest: NOSIGNATURE
+		sodium-neoforge-0.6.13+mc1.21.1.jar               |Sodium                        |sodium                        |0.6.13+mc1.21.1     |Manifest: NOSIGNATURE
+		sodium-extra-neoforge-0.6.0+mc1.21.1.jar          |Sodium Extra                  |sodium_extra                  |0.6.0+mc1.21.1      |Manifest: NOSIGNATURE
+		sodiumleafculling-neoforge-1.0.1-1.21.1.jar       |Sodium Leaf Culling           |sodiumleafculling             |1.0.1               |Manifest: NOSIGNATURE
+		sodiumoptionsapi-neoforge-1.0.10-1.21.1.jar       |Sodium Options API            |sodiumoptionsapi              |1.0.10              |Manifest: NOSIGNATURE
+		sodiumoptionsmodcompat-neoforge-1.0.0-1.21.1.jar  |Sodium Options Mod Compat     |sodiumoptionsmodcompat        |1.0.0               |Manifest: NOSIGNATURE
+		sodium-shadowy-path-blocks-neoforge-4.0.0.jar     |Sodium Shadowy Path Blocks    |sspb                          |4.0.0               |Manifest: NOSIGNATURE
+		sophisticatedbackpacks-1.21.1-3.25.24.1499.jar    |Sophisticated Backpacks       |sophisticatedbackpacks        |3.25.24             |Manifest: NOSIGNATURE
+		sophisticatedcore-1.21.1-1.3.104.1407.jar         |Sophisticated Core            |sophisticatedcore             |1.3.104             |Manifest: NOSIGNATURE
+		sound-physics-remastered-neoforge-1.21.1-1.5.1.jar|Sound Physics Remastered      |sound_physics_remastered      |1.21.1-1.5.1        |Manifest: NOSIGNATURE
+		spark-1.10.124-neoforge.jar                       |spark                         |spark                         |1.10.124            |Manifest: NOSIGNATURE
+		spookydoors-neoforge-1.21.1-21.1.5.jar            |Spooky Doors                  |spookydoors                   |21.1.5              |Manifest: NOSIGNATURE
+		spruceui-6.2.5+1.21.1-mojmap.jar                  |SpruceUI                      |spruceui                      |6.2.5+1.21.1        |Manifest: NOSIGNATURE
+		staaaaaaaaaaaack-neoforge-1.21-1.5-75.jar         |Staaaaaaaaaaaack              |staaaaaaaaaaaack              |1.21-1.5-75         |Manifest: NOSIGNATURE
+		starterkit-1.21.1-7.4.jar                         |Starter Kit                   |starterkit                    |7.4                 |Manifest: NOSIGNATURE
+		Stronger Skill Tree unlock all 1.18.2-1.21.1.jar  |Stronger skill tree for PUffer|stronger_skill_tree_for_puffer|1.0                 |Manifest: NOSIGNATURE
+		superbwarfare-1.21.1-0.8.8-final-0cfd00d5.jar     |Superb Warfare                |superbwarfare                 |0.8.8               |Manifest: NOSIGNATURE
+		supermartijn642configlib-1.1.8-neoforge-mc1.21.jar|SuperMartijn642's Config Libra|supermartijn642configlib      |1.1.8               |Manifest: NOSIGNATURE
+		supermartijn642corelib-1.1.18b-neoforge-mc1.21.jar|SuperMartijn642's Core Lib    |supermartijn642corelib        |1.1.18+b            |Manifest: NOSIGNATURE
+		tacz-pack-upgrader-2.0.0.jar                      |TaCZ Pack Upgrader            |taczpackupgrader              |2.0.0               |Manifest: NOSIGNATURE
+		tenseambience-1.18.2-1.21.8-FABRIC-2.0.0_mapped_mo|Tense Ambience                |tenseambience                 |2.0.0               |Manifest: NOSIGNATURE
+		TerraBlender-neoforge-1.21.1-4.1.0.8.jar          |TerraBlender                  |terrablender                  |4.1.0.8             |Manifest: NOSIGNATURE
+		ThisRocks-1.21-1.8.0.jar                          |This Rocks! (Forge)           |rocks                         |1.8.0               |Manifest: NOSIGNATURE
+		tidybinds-1.2.0.jar                               |Tidy Binds                    |tidybinds                     |1.2.0               |Manifest: NOSIGNATURE
+		tacz-neoforge-1.21.1-1.1.7-hotfix-r3.jar          |Timeless & Classics Guns: Zero|tacz                          |1.1.7-hotfix-r3     |Manifest: NOSIGNATURE
+		ToadLib-1.4.1-1.21-1.21.1_mapped_moj_1.21.1.jar   |ToadLib                       |toadlib                       |1.4.1               |Manifest: NOSIGNATURE
+		TRansition-1.0.11-1.21.1-neoforge-SNAPSHOT.jar    |TRansition                    |transition                    |1.0.11              |Manifest: NOSIGNATURE
+		TRender-1.0.10-1.21.1-neoforge-SNAPSHOT.jar       |TRender                       |trender                       |1.0.10              |Manifest: NOSIGNATURE
+		txnilib-neoforge-1.0.24-1.21.1.jar                |TxniLib                       |txnilib                       |1.0.24              |Manifest: NOSIGNATURE
+		vivecraft-1.21.1-1.3.5-neoforge.jar               |Vivecraft                     |vivecraft                     |1.21.1-1.3.5        |Manifest: NOSIGNATURE
+		vcinteraction-fabric-1.21.1-1.0.8_mapped_moj_1.21.|Voice Chat Interaction        |vcinteraction                 |1.21.1-1.0.8        |Manifest: NOSIGNATURE
+		vte-neoforge-1.21.1-1.2.6.jar                     |VR Throwing Extensions        |vr_throwing_extensions        |1.21.1-1.2.6        |Manifest: NOSIGNATURE
+		worldedit-mod-7.3.8.jar                           |WorldEdit                     |worldedit                     |7.3.8+6939-7d32b45  |Manifest: NOSIGNATURE
+		WorldEditCUI-NeoForge-1.21.1+01-SNAPSHOT.jar      |WorldEditCUI                  |worldeditcui                  |1.21.1+01-SNAPSHOT  |Manifest: NOSIGNATURE
+		goop-0.4.3-1.21.1$YayConfig-v1.1.2-1.21.1_mapped_m|YayConfig                     |yayconfig                     |1.1.21.21.1         |Manifest: NOSIGNATURE
+		yet_another_config_lib_v3-3.8.2+1.21.1-neoforge.ja|YetAnotherConfigLib           |yet_another_config_lib_v3     |3.8.2+1.21.1-neoforg|Manifest: NOSIGNATURE
+		yumi-mc-foundation-1.0.0-beta.1+1.21.1-mojmap.jar |Yumi Minecraft Libraries: Foun|yumi_mc_core                  |1.0.0-beta.1+1.21.1 |Manifest: NOSIGNATURE
+		YungsApi-1.21.1-NeoForge-5.1.6.jar                |YUNG's API                    |yungsapi                      |1.21.1-NeoForge-5.1.|Manifest: NOSIGNATURE
+		zombiemod-2.0.0.jar                               |Zombie Mode                   |zombiemod                     |1.0.0               |Manifest: NOSIGNATURE
+		ZoNiEx-1.2.1-neoforge-1.21.1.jar                  |Zombie Nightmare Expansions   |zoniex                        |1.2.1               |Manifest: NOSIGNATURE
+	Crash Report UUID: a95621aa-cfe1-438b-9f4d-bfa7be2ddc60
+	FML: 4.0.42
+	NeoForge: 21.1.217
+	Flywheel Backend: colorwheel:instancing
