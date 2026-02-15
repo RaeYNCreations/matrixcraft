@@ -60,6 +60,9 @@ public class FocusServerEvents {
     public static void onEffectRemoved(MobEffectEvent.Remove event) {
         if (event.getEffect() == null) return;
         
+        // Additional null safety check
+        if (event.getEffect().value() == null) return;
+        
         // Check if it's our effect
         if (event.getEffect().value() instanceof com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect) {
             LivingEntity entity = event.getEntity();
@@ -75,6 +78,10 @@ public class FocusServerEvents {
     @SubscribeEvent
     public static void onEffectExpired(MobEffectEvent.Expired event) {
         if (event.getEffectInstance() == null) return;
+        
+        // Additional null safety checks
+        if (event.getEffectInstance().getEffect() == null) return;
+        if (event.getEffectInstance().getEffect().value() == null) return;
         
         // Check if it's our effect
         if (event.getEffectInstance().getEffect().value() instanceof com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect) {

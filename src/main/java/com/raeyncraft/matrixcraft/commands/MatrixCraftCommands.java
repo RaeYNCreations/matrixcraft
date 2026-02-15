@@ -647,7 +647,9 @@ public class MatrixCraftCommands {
                                     com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.ensureInit();
                                     com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.forceUpdateAll();
                                     MatrixCraftMod.LOGGER.info("[MatrixCraftCommands] Requested dynamic-lights updateAll after color change.");
-                                } catch (Throwable ignored) {}
+                                } catch (Throwable e) {
+                                    MatrixCraftMod.LOGGER.debug("[MatrixCraftCommands] Failed to update dynamic lights: " + e.getMessage());
+                                }
                                 context.getSource().sendSuccess(() -> 
                                     Component.literal("§6[Bullet Trails] §7Color: §cR:" + r + " §aG:" + g + " §9B:" + b), true);
                                 return 1;
