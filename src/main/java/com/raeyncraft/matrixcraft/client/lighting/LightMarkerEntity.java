@@ -4,6 +4,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 
 /**
  * Light Marker Entity - An invisible entity that emits dynamic light
@@ -17,9 +19,10 @@ import net.minecraft.world.phys.Vec3;
  * 
  * LambDynLights will automatically detect this entity and create dynamic lights!
  * 
- * NOTE: This entity is CLIENT-ONLY but not annotated @OnlyIn to avoid server crashes.
- * It's only ever spawned on the client side in SimpleDynamicLightManager.
+ * NOTE: This entity is CLIENT-ONLY. It's only ever spawned on the client side
+ * in SimpleDynamicLightManager.
  */
+@OnlyIn(Dist.CLIENT)
 public class LightMarkerEntity extends Entity {
     
     private int targetEntityId = -1;
@@ -64,9 +67,18 @@ public class LightMarkerEntity extends Entity {
     
     /**
      * Get light level - called by LambDynLights
+     * Fades out as the entity ages for realistic decay
      */
     public int getLuminance() {
-        return lightLevel;
+        if (maxTicks <= 0) return lightLevel;
+        
+        // Calculate fade: full brightness at start, fade to 0 at end
+        float progress = (float) ticksAlive / (float) maxTicks;
+        float fade = 1.0f - progress;
+        
+        // Apply fade to light level
+        int fadedLevel = Math.max(0, (int)(lightLevel * fade));
+        return fadedLevel;
     }
     
     /**

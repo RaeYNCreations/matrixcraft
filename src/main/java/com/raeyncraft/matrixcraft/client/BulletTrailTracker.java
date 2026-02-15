@@ -71,7 +71,8 @@ public class BulletTrailTracker {
 
         tickCounter++;
 
-        BulletTrailLighting.tick();
+        // NOTE: BulletTrailLighting.tick() is called in SimpleDynamicLightManager
+        // to avoid double-ticking which causes lights to expire twice as fast
         
         // Update hit entity lighting
         HitEntityLightingHandler.tick(mc.level);
