@@ -644,12 +644,10 @@ public class MatrixCraftCommands {
                                 MatrixCraftConfig.saveClientConfig();
                                 // Force dynamic lights to refresh colors (throttled inside manager)
                                 try {
-                                    com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.ensureInit();
-                                    com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager.forceUpdateAll();
+                                    com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager.ensureInit();
+                                    com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager.forceUpdateAll();
                                     MatrixCraftMod.LOGGER.info("[MatrixCraftCommands] Requested dynamic-lights updateAll after color change.");
-                                } catch (Throwable e) {
-                                    MatrixCraftMod.LOGGER.debug("[MatrixCraftCommands] Failed to update dynamic lights: " + e.getMessage());
-                                }
+                                } catch (Throwable ignored) {}
                                 context.getSource().sendSuccess(() -> 
                                     Component.literal("§6[Bullet Trails] §7Color: §cR:" + r + " §aG:" + g + " §9B:" + b), true);
                                 return 1;
@@ -758,11 +756,6 @@ public class MatrixCraftCommands {
                     int maxPerTick = MatrixCraftConfig.MAX_TRAILS_PER_TICK.get();
                     boolean dynLight = MatrixCraftConfig.TRAIL_DYNAMIC_LIGHTING.get();
                     int lightLevel = MatrixCraftConfig.TRAIL_LIGHT_LEVEL.get();
-                    int lightSpacing = MatrixCraftConfig.TRAIL_LIGHT_SPACING.get();
-                    int lightDuration = MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS.get();
-                    boolean chainEnabled = MatrixCraftConfig.TRAIL_CHAIN_ENABLED.get();
-                    int chainCount = MatrixCraftConfig.TRAIL_CHAIN_COUNT.get();
-                    double chainSpacing = MatrixCraftConfig.TRAIL_CHAIN_SPACING.get();
                     
                     context.getSource().sendSuccess(() -> 
                         Component.literal("§6=== Bullet Trail Settings ===\n" +
@@ -776,12 +769,7 @@ public class MatrixCraftCommands {
                             "§7Max Distance: §e" + String.format("%.0f", maxDist) + " blocks\n" +
                             "§7Max Trails/Tick: §e" + maxPerTick + "\n" +
                             "§7Dynamic Lighting: " + (dynLight ? "§atrue" : "§cfalse") + "\n" +
-                            "§7Light Level: §e" + lightLevel + "\n" +
-                            "§7Light Spacing: §e" + lightSpacing + "\n" +
-                            "§7Light Duration: §e" + lightDuration + " ticks\n" +
-                            "§7Chain Enabled: " + (chainEnabled ? "§atrue" : "§cfalse") + "\n" +
-                            "§7Chain Count: §e" + chainCount + "\n" +
-                            "§7Chain Spacing: §e" + String.format("%.2f", chainSpacing)), false);
+                            "§7Light Level: §e" + lightLevel), false);
                     return 1;
                 })
             )
@@ -1200,42 +1188,84 @@ public class MatrixCraftCommands {
                 })
             )
             
-            .then(Commands.literal("status")
+            .then(Commands.literal("safehaven")
+                .then(Commands.literal("radius")
+                    .then(Commands.argument("value", IntegerArgumentType.integer(8, 128))
+                        .executes(context -> {
+                            int value = IntegerArgumentType.getInteger(context, "value");
+                            MatrixCraftConfig.SAFE_HAVEN_RADIUS.set(value);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Safe Haven] §7Radius set to §e" + value + " blocks")
+                                    .append(Component.literal("\n§7New obelisks will use this radius.").withStyle(ChatFormatting.GRAY)), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        int value = MatrixCraftConfig.SAFE_HAVEN_RADIUS.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Safe Haven] §7Current radius: §e" + value + " blocks"), false);
+                        return 1;
+                    })
+                )
+                .then(Commands.literal("despawn")
+                    .then(Commands.literal("on")
+                        .executes(context -> {
+                            MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.set(true);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Safe Haven] §7Despawn: ")
+                                    .append(Component.literal("ENABLED").withStyle(ChatFormatting.GREEN))
+                                    .append(Component.literal(" - Hostile mobs entering zones will be removed").withStyle(ChatFormatting.GRAY)), true);
+                            return 1;
+                        })
+                    )
+                    .then(Commands.literal("off")
+                        .executes(context -> {
+                            MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.set(false);
+                            MatrixCraftConfig.saveCommonConfig();
+                            context.getSource().sendSuccess(() -> 
+                                Component.literal("§6[Safe Haven] §7Despawn: ")
+                                    .append(Component.literal("DISABLED").withStyle(ChatFormatting.RED))
+                                    .append(Component.literal(" - Hostile mobs can enter zones").withStyle(ChatFormatting.GRAY)), true);
+                            return 1;
+                        })
+                    )
+                    .executes(context -> {
+                        boolean enabled = MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get();
+                        context.getSource().sendSuccess(() -> 
+                            Component.literal("§6[Safe Haven] §7Despawn is currently ")
+                                .append(Component.literal(enabled ? "ENABLED" : "DISABLED")
+                                    .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED)), false);
+                        return 1;
+                    })
+                )
                 .executes(context -> {
-                    boolean cobwebs = MatrixSettings.areCobwebsEnabled();
-                    boolean lava = MatrixSettings.isLavaEnabled();
-                    boolean water = MatrixSettings.isWaterEnabled();
-                    boolean lavaBypass = MatrixCraftConfig.FOCUS_LAVA_IMMUNITY.get();
-                    boolean cobwebBypass = MatrixCraftConfig.FOCUS_COBWEB_BYPASS.get();
-                    boolean waterBypass = MatrixCraftConfig.FOCUS_WATER_BYPASS.get();
-                    boolean glassEnabled = GlassRepairSystem.isEnabled();
-                    int glassDelay = GlassRepairSystem.getRepairDelaySeconds();
-                    
+                    int radius = MatrixCraftConfig.SAFE_HAVEN_RADIUS.get();
+                    boolean despawn = MatrixCraftConfig.SAFE_HAVEN_DESPAWN_ENABLED.get();
                     context.getSource().sendSuccess(() -> 
-                        Component.literal("§6=== Utilities Status ===\n" +
-                            "§7Cobwebs: " + (cobwebs ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Lava Damage: " + (lava ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Water Slowdown: " + (water ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Lava Bypass (Focus): " + (lavaBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Cobweb Bypass (Focus): " + (cobwebBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Water Bypass (Focus): " + (waterBypass ? "§aENABLED" : "§cDISABLED") + "\n" +
-                            "§7Glass Repair: " + (glassEnabled ? "§aENABLED" : "§cDISABLED") + " (Delay: §e" + glassDelay + "s)"), false);
+                        Component.literal("§6=== Safe Haven Obelisk ===\n" +
+                            "§7Radius: §e" + radius + " blocks\n" +
+                            "§7Despawn: " + (despawn ? "§aENABLED" : "§cDISABLED") + "\n" +
+                            "§7\n" +
+                            "§e/matrix utilities safehaven radius <8-128>\n" +
+                            "§e/matrix utilities safehaven despawn <on|off>"), false);
                     return 1;
                 })
             )
-
-        .executes(context -> {
-            context.getSource().sendSuccess(() -> 
-                Component.literal("§6=== Utilities Commands ===\n" +
-                    "§e/matrix utilities cobwebs [on|off] §7- Toggle cobweb slowdown\n" +
-                    "§e/matrix utilities lava [on|off] §7- Toggle lava/fire damage\n" +
-                    "§e/matrix utilities water [on|off] §7- Toggle water slowdown\n" +
-                    "§e/matrix utilities lavabypass [on|off] §7- Lava immunity during Focus\n" +
-                    "§e/matrix utilities cobwebbypass [on|off] §7- Cobweb bypass during Focus\n" +
-                    "§e/matrix utilities waterbypass [on|off] §7- Water bypass during Focus\n" +
-                    "§e/matrix utilities glassrepair §7- Glass repair system\n" +
-                    "§e/matrix utilities status §7- Show all utility settings"), false);
-            return 1;
-        });
+            
+            .executes(context -> {
+                context.getSource().sendSuccess(() -> 
+                    Component.literal("§6=== Utilities Commands ===\n" +
+                        "§e/matrix utilities cobwebs [on|off] §7- Toggle cobweb slowdown\n" +
+                        "§e/matrix utilities lava [on|off] §7- Toggle lava/fire damage\n" +
+                        "§e/matrix utilities water [on|off] §7- Toggle water slowdown\n" +
+                        "§e/matrix utilities lavabypass [on|off] §7- Lava immunity during Focus\n" +
+                        "§e/matrix utilities cobwebbypass [on|off] §7- Cobweb bypass during Focus\n" +
+                        "§e/matrix utilities waterbypass [on|off] §7- Water bypass during Focus\n" +
+                        "§e/matrix utilities glassrepair §7- Glass repair system\n" +
+                        "§e/matrix utilities safehaven §7- Safe Haven Obelisk settings"), false);
+                return 1;
+            });
     }
 }

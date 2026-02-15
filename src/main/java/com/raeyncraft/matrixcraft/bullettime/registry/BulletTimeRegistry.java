@@ -3,6 +3,7 @@ package com.raeyncraft.matrixcraft.bullettime.registry;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect;
 import com.raeyncraft.matrixcraft.bullettime.item.RedPillItem;
+import com.raeyncraft.matrixcraft.item.SafeHavenObeliskItem;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.effect.MobEffect;
@@ -27,6 +28,11 @@ public class BulletTimeRegistry {
     public static final DeferredHolder<Item, RedPillItem> RED_PILL = ITEMS.register("red_pill",
         () -> new RedPillItem(new Item.Properties()
             .stacksTo(16)
+        ));
+    
+    public static final DeferredHolder<Item, SafeHavenObeliskItem> SAFE_HAVEN_OBELISK = ITEMS.register("safe_haven_obelisk",
+        () -> new SafeHavenObeliskItem(new Item.Properties()
+            .stacksTo(1)
         ));
     
     // ==================== MOB EFFECTS ====================
@@ -55,6 +61,16 @@ public class BulletTimeRegistry {
         // Also add to Food & Drinks since it's consumable
         if (event.getTabKey() == CreativeModeTabs.FOOD_AND_DRINKS) {
             event.accept(RED_PILL.get());
+        }
+        
+        // Add Safe Haven Obelisk to Operator Utilities (or Redstone tab as alternative)
+        if (event.getTabKey() == CreativeModeTabs.OP_BLOCKS) {
+            event.accept(SAFE_HAVEN_OBELISK.get());
+        }
+        
+        // Also add to Functional Blocks
+        if (event.getTabKey() == CreativeModeTabs.FUNCTIONAL_BLOCKS) {
+            event.accept(SAFE_HAVEN_OBELISK.get());
         }
     }
 }

@@ -20,13 +20,7 @@ public class FocusBulletTrailEnhancer {
      * Get the effective trail width, enhanced during Focus
      */
     public static float getEffectiveTrailWidth() {
-        float baseWidth;
-        try {
-            Number widthConfig = MatrixCraftConfig.TRAIL_WIDTH.get();
-            baseWidth = widthConfig != null ? widthConfig.floatValue() : 0.5f;
-        } catch (Exception e) {
-            baseWidth = 0.5f; // Default
-        }
+        float baseWidth = MatrixCraftConfig.TRAIL_WIDTH.get().floatValue();
         
         if (ClientFocusState.isInFocus()) {
             return baseWidth * TRAIL_SIZE_MULTIPLIER;
@@ -39,13 +33,7 @@ public class FocusBulletTrailEnhancer {
      * Get the effective trail density, enhanced during Focus
      */
     public static int getEffectiveTrailDensity() {
-        int baseDensity;
-        try {
-            Integer densityConfig = MatrixCraftConfig.TRAIL_DENSITY.get();
-            baseDensity = densityConfig != null ? densityConfig : 5;
-        } catch (Exception e) {
-            baseDensity = 5; // Default
-        }
+        int baseDensity = MatrixCraftConfig.TRAIL_DENSITY.get();
         
         if (ClientFocusState.isInFocus()) {
             return (int)(baseDensity * TRAIL_DENSITY_MULTIPLIER);
@@ -58,13 +46,7 @@ public class FocusBulletTrailEnhancer {
      * Get the effective trail length, enhanced during Focus
      */
     public static int getEffectiveTrailLength() {
-        int baseLength;
-        try {
-            Integer lengthConfig = MatrixCraftConfig.TRAIL_LENGTH.get();
-            baseLength = lengthConfig != null ? lengthConfig : 20;
-        } catch (Exception e) {
-            baseLength = 20; // Default
-        }
+        int baseLength = MatrixCraftConfig.TRAIL_LENGTH.get();
         
         if (ClientFocusState.isInFocus()) {
             return (int)(baseLength * TRAIL_LENGTH_MULTIPLIER);

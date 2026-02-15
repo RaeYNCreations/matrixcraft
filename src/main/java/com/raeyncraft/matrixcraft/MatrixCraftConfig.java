@@ -17,6 +17,8 @@ public class MatrixCraftConfig {
     public static final ModConfigSpec SPEC;
 
     public static ModConfigSpec.BooleanValue FOCUS_WATER_BYPASS;
+    public static ModConfigSpec.IntValue SAFE_HAVEN_RADIUS;
+    public static ModConfigSpec.BooleanValue SAFE_HAVEN_DESPAWN_ENABLED;
     
     static {
         Pair<Common, ModConfigSpec> commonPair = new ModConfigSpec.Builder().configure(Common::new);
@@ -152,6 +154,16 @@ public class MatrixCraftConfig {
             FOCUS_WATER_BYPASS = builder
                 .comment("Water doesn't slow you during Focus Mode")
                 .define("water_bypass", false);
+            builder.pop();
+            
+            // Safe Haven Settings
+            builder.comment("Safe Haven Settings").push("safehaven");
+            SAFE_HAVEN_RADIUS = builder
+                .comment("Radius of Safe Haven protection")
+                .defineInRange("radius", 32, 1, 128);
+            SAFE_HAVEN_DESPAWN_ENABLED = builder
+                .comment("Enable mob despawning in Safe Haven")
+                .define("despawn_enabled", true);
             builder.pop();
             
             builder.pop();

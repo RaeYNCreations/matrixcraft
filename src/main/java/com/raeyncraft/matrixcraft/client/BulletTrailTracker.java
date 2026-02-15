@@ -3,7 +3,7 @@ package com.raeyncraft.matrixcraft.client;
 import com.raeyncraft.matrixcraft.MatrixCraftConfig;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.particle.MatrixParticles;
-import com.raeyncraft.matrixcraft.client.lighting.SimpleDynamicLightManager;
+import com.raeyncraft.matrixcraft.client.lighting.DynamicLightManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.world.entity.Entity;
@@ -15,49 +15,29 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Bullet Trail Tracker - working copy adjusted to use config-driven lighting parameters.
  *
- * RGB Dynamic Lighting System:
- * - Bullets emit colored dynamic lights matching trail color
- * - Uses TRAIL_COLOR_R/G/B config (0-255 each component)
- * - Supports both single light and chained light modes
- * - Color automatically syncs with bullet trail particles
- * 
- * Configuration Options:
- *  - MatrixCraftConfig.TRAIL_LIGHT_SPACING: Distance between lights
- *  - MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS: How long lights last
- *  - MatrixCraftConfig.TRAIL_CHAIN_ENABLED: Enable light chains
- *  - MatrixCraftConfig.TRAIL_CHAIN_COUNT: Number of lights in chain
- *  - MatrixCraftConfig.TRAIL_CHAIN_SPACING: Spacing between chain lights
- *  - MatrixCraftConfig.TRAIL_COLOR_R/G/B: RGB color components (0-255)
+ * Uses config keys:
+ *  - MatrixCraftConfig.TRAIL_LIGHT_SPACING
+ *  - MatrixCraftConfig.TRAIL_LIGHT_DURATION_TICKS
+ *  - MatrixCraftConfig.TRAIL_CHAIN_ENABLED
+ *  - MatrixCraftConfig.TRAIL_CHAIN_COUNT
+ *  - MatrixCraftConfig.TRAIL_CHAIN_SPACING
  */
 @EventBusSubscriber(value = Dist.CLIENT)
 public class BulletTrailTracker {
-    
-    // Trail rendering constants
-    private static final double PLAYER_TRAIL_LENGTH = 100.0;
-    private static final int PLAYER_TRAIL_PARTICLE_COUNT = 150;
-    private static final double BULLET_TRAIL_LENGTH = 80.0;
-    private static final int BULLET_TRAIL_PARTICLE_COUNT = 120;
-    private static final double TRAIL_PARTICLE_OFFSET_LARGE = 0.04;
-    private static final double TRAIL_PARTICLE_OFFSET_SMALL = 0.03;
-    private static final int TRAIL_SEGMENT_MULTIPLIER = 3;
-    private static final int TRAIL_SEGMENT_MAX_COUNT = 20;
-    private static final int TRAIL_SEGMENT_MIN_COUNT = 3;
-    private static final double TRAIL_SEGMENT_MIN_DISTANCE = 0.1;
 
     private static long lastTrailTime = 0;
     private static final long TRAIL_COOLDOWN_MS = 30;
 
-    // Use thread-safe collections for client-side rendering
-    private static final Set<Integer> processedBullets = ConcurrentHashMap.newKeySet();
-    private static final Map<Integer, Vec3> bulletLastPos = new ConcurrentHashMap<>();
+    private static final Set<Integer> processedBullets = new HashSet<>();
+    private static final Map<Integer, Vec3> bulletLastPos = new HashMap<>();
 
     private static int tickCounter = 0;
 
@@ -71,11 +51,7 @@ public class BulletTrailTracker {
 
         tickCounter++;
 
-        // NOTE: BulletTrailLighting.tick() is called in SimpleDynamicLightManager
-        // to avoid double-ticking which causes lights to expire twice as fast
-        
-        // Update hit entity lighting
-        HitEntityLightingHandler.tick(mc.level);
+        BulletTrailLighting.tick();
 
         scanBulletEntities(mc);
 
@@ -85,27 +61,19 @@ public class BulletTrailTracker {
     }
 
     private static void scanBulletEntities(Minecraft mc) {
-        if (mc == null || mc.level == null || mc.player == null) {
-            return;
-        }
-        
         for (Entity entity : mc.level.entitiesForRendering()) {
-            if (entity == null || !isTaczBullet(entity)) continue;
+            if (!isTaczBullet(entity)) continue;
 
             int entityId = entity.getId();
             Vec3 currentPos = entity.position();
             Vec3 velocity = entity.getDeltaMovement();
-            
-            if (currentPos == null || velocity == null) {
-                continue;
-            }
 
             double distSq = mc.player.distanceToSqr(entity);
             double maxDist = MatrixCraftConfig.MAX_RENDER_DISTANCE.get();
             if (distSq > maxDist * maxDist) continue;
 
-            // Use atomic add operation - only executes if bullet wasn't already processed
-            if (processedBullets.add(entityId)) {
+            if (!processedBullets.contains(entityId)) {
+                processedBullets.add(entityId);
 
                 long now = System.currentTimeMillis();
                 if (now - lastTrailTime > 100 && velocity.lengthSqr() > 1.0) {
@@ -115,33 +83,27 @@ public class BulletTrailTracker {
                 bulletLastPos.put(entityId, currentPos);
 
                 // register lights (single or chain depending on config)
-                // Uses RGB color from TRAIL_COLOR_R/G/B configuration
                 try {
                     int brightness = BulletTrailLighting.getConfiguredLightLevel();
-                    float[] color = BulletTrailLighting.getTrailColor(); // RGB normalized 0-1
+                    float[] color = BulletTrailLighting.getTrailColor();
 
-                    SimpleDynamicLightManager.ensureInit();
+                    DynamicLightManager.ensureInit();
 
                     if (MatrixCraftConfig.TRAIL_CHAIN_ENABLED.get()) {
                         int chainCount = MatrixCraftConfig.TRAIL_CHAIN_COUNT.get();
                         double chainSpacing = MatrixCraftConfig.TRAIL_CHAIN_SPACING.get();
-                        // Create chain of RGB lights trailing the bullet
-                        SimpleDynamicLightManager.trackEntityLightChain(entity, chainCount, chainSpacing, brightness, color[0], color[1], color[2]);
+                        DynamicLightManager.trackEntityLightChain(entity, chainCount, chainSpacing, brightness, color[0], color[1], color[2]);
                     } else {
-                        // Create single RGB light at bullet position
-                        SimpleDynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
+                        DynamicLightManager.trackEntityLight(entity, brightness, color[0], color[1], color[2]);
                     }
+                    MatrixCraftMod.LOGGER.info("[BulletTrailTracker] Registered entity-backed dynamic light for entity id=" + entityId);
                 } catch (Throwable ex) {
-                    MatrixCraftMod.LOGGER.warn("[BulletTrailTracker] Failed to register entity dynamic light for id=" + entityId + ": " + ex.getMessage());
+                    MatrixCraftMod.LOGGER.info("[BulletTrailTracker] Failed to register entity dynamic light for id=" + entityId + ": " + ex.getMessage());
                 }
             }
 
             // ping so TTL doesn't remove the light
-            try { 
-                SimpleDynamicLightManager.pingEntity(entityId); 
-            } catch (Throwable e) {
-                MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Ping entity failed for id=" + entityId + ": " + e.getMessage());
-            }
+            try { DynamicLightManager.pingEntity(entityId); } catch (Throwable ignored) {}
 
             Vec3 lastPos = bulletLastPos.get(entityId);
             if (lastPos != null && currentPos.distanceToSqr(lastPos) > 0.01) {
@@ -156,17 +118,20 @@ public class BulletTrailTracker {
         Vec3 lookDir = player.getLookAngle();
         Vec3 muzzle = eyePos.add(lookDir.scale(0.5));
 
+        double trailLength = 100.0;
+        int particleCount = 150;
+
         boolean addLights = isGlowEnabled();
 
         int spacing = MatrixCraftConfig.TRAIL_LIGHT_SPACING.get();
 
-        for (int i = 0; i < PLAYER_TRAIL_PARTICLE_COUNT; i++) {
-            double t = (double) i / PLAYER_TRAIL_PARTICLE_COUNT;
-            Vec3 pos = muzzle.add(lookDir.scale(t * PLAYER_TRAIL_LENGTH));
+        for (int i = 0; i < particleCount; i++) {
+            double t = (double) i / particleCount;
+            Vec3 pos = muzzle.add(lookDir.scale(t * trailLength));
 
-            double ox = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
-            double oy = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
-            double oz = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
+            double ox = (Math.random() - 0.5) * 0.04;
+            double oy = (Math.random() - 0.5) * 0.04;
+            double oz = (Math.random() - 0.5) * 0.04;
 
             level.addAlwaysVisibleParticle(
                     MatrixParticles.BULLET_TRAIL.get(),
@@ -184,17 +149,20 @@ public class BulletTrailTracker {
     private static void spawnTrailFromBullet(Vec3 bulletPos, Vec3 velocity, ClientLevel level) {
         Vec3 direction = velocity.normalize();
 
+        double trailLength = 80.0;
+        int particleCount = 120;
+
         boolean addLights = isGlowEnabled();
 
         int spacing = MatrixCraftConfig.TRAIL_LIGHT_SPACING.get();
 
-        for (int i = 0; i < BULLET_TRAIL_PARTICLE_COUNT; i++) {
-            double t = (double) i / BULLET_TRAIL_PARTICLE_COUNT;
-            Vec3 pos = bulletPos.subtract(direction.scale(t * BULLET_TRAIL_LENGTH));
+        for (int i = 0; i < particleCount; i++) {
+            double t = (double) i / particleCount;
+            Vec3 pos = bulletPos.subtract(direction.scale(t * trailLength));
 
-            double ox = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
-            double oy = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
-            double oz = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_LARGE;
+            double ox = (Math.random() - 0.5) * 0.04;
+            double oy = (Math.random() - 0.5) * 0.04;
+            double oz = (Math.random() - 0.5) * 0.04;
 
             level.addAlwaysVisibleParticle(
                     MatrixParticles.BULLET_TRAIL.get(),
@@ -211,10 +179,10 @@ public class BulletTrailTracker {
 
     private static void spawnTrailSegment(Vec3 from, Vec3 to, ClientLevel level) {
         double distance = from.distanceTo(to);
-        if (distance < TRAIL_SEGMENT_MIN_DISTANCE) return;
+        if (distance < 0.1) return;
 
-        int count = Math.max(TRAIL_SEGMENT_MIN_COUNT, (int)(distance * TRAIL_SEGMENT_MULTIPLIER));
-        count = Math.min(count, TRAIL_SEGMENT_MAX_COUNT);
+        int count = Math.max(3, (int)(distance * 3));
+        count = Math.min(count, 20);
 
         boolean addLights = isGlowEnabled();
         int spacing = MatrixCraftConfig.TRAIL_LIGHT_SPACING.get();
@@ -223,9 +191,9 @@ public class BulletTrailTracker {
             double t = (double) i / count;
             Vec3 pos = from.lerp(to, t);
 
-            double ox = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_SMALL;
-            double oy = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_SMALL;
-            double oz = (Math.random() - 0.5) * TRAIL_PARTICLE_OFFSET_SMALL;
+            double ox = (Math.random() - 0.5) * 0.03;
+            double oy = (Math.random() - 0.5) * 0.03;
+            double oz = (Math.random() - 0.5) * 0.03;
 
             level.addAlwaysVisibleParticle(
                     MatrixParticles.BULLET_TRAIL.get(),
@@ -240,88 +208,34 @@ public class BulletTrailTracker {
         }
     }
 
-    /**
-     * Clean up old bullet tracking entries
-     * 
-     * Thread Safety Note:
-     * This method uses removeIf() on ConcurrentHashMap which is thread-safe for the
-     * map structure itself. However, there's a theoretical race condition where
-     * mc.level could become null between the check and access. This is acceptable
-     * because:
-     * 1. The check happens inside the atomic removeIf() operation
-     * 2. If level becomes null, we return false and keep the entry (safe)
-     * 3. The entry will be cleaned up on the next tick when level is available
-     * 4. This prevents crashes at the cost of delayed cleanup (acceptable trade-off)
-     */
     private static void cleanupOldEntries(Minecraft mc) {
-        // Add null checks to prevent crashes during world changes
-        if (mc == null || mc.level == null) {
-            return;
-        }
-        
         processedBullets.removeIf(id -> {
-            // Re-check mc.level in case world changed during iteration
-            if (mc.level == null) {
-                return false; // Don't remove if we can't verify
-            }
-            
             Entity e = mc.level.getEntity(id);
             boolean removed = (e == null || e.isRemoved());
             if (removed) {
                 try {
-                    SimpleDynamicLightManager.untrackEntityLightById(id);
-                } catch (Throwable ex) {
-                    MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in processedBullets cleanup for id=" + id + ": " + ex.getMessage());
-                }
+                    DynamicLightManager.untrackEntityLightById(id);
+                } catch (Throwable ignored) {}
             }
             return removed;
         });
 
         bulletLastPos.entrySet().removeIf(entry -> {
-            // Re-check mc.level in case world changed during iteration
-            if (mc.level == null) {
-                return false; // Don't remove if we can't verify
-            }
-            
             int id = entry.getKey();
             Entity e = mc.level.getEntity(id);
             boolean removed = (e == null || e.isRemoved());
             if (removed) {
                 try {
-                    SimpleDynamicLightManager.untrackEntityLightById(id);
-                } catch (Throwable ex) {
-                    MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Untrack entity failed in bulletLastPos cleanup for id=" + id + ": " + ex.getMessage());
-                }
+                    DynamicLightManager.untrackEntityLightById(id);
+                } catch (Throwable ignored) {}
             }
             return removed;
         });
     }
 
     private static boolean isTaczBullet(Entity entity) {
-        if (entity == null) {
-            return false;
-        }
-        
-        try {
-            String className = entity.getClass().getName();
-            if (className == null) {
-                return false;
-            }
-            
-            if ("com.tacz.guns.entity.EntityKineticBullet".equals(className)) {
-                return true;
-            }
-            
-            String typeString = String.valueOf(entity.getType());
-            if (typeString == null) {
-                return false;
-            }
-            
-            return typeString.toLowerCase().contains("tacz");
-        } catch (Exception e) {
-            MatrixCraftMod.LOGGER.debug("[BulletTrailTracker] Error checking entity type: " + e.getMessage());
-            return false;
-        }
+        return entity.getClass().getName().equals("com.tacz.guns.entity.EntityKineticBullet")
+                || String.valueOf(entity.getType()).toLowerCase().contains("tacz");
     }
 
     private static boolean isGlowEnabled() {

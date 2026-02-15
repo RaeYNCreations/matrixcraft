@@ -15,8 +15,6 @@ import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Tracks glass blocks near players and repairs them when destroyed.
@@ -25,27 +23,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @EventBusSubscriber(modid = MatrixCraftMod.MODID)
 public class GlassRepairSystem {
     
-    // Configuration constants
-    private static final int DEFAULT_REPAIR_DELAY_TICKS = 60; // 3 seconds at 20 TPS
-    private static final int DEFAULT_SCAN_RADIUS = 64;
-    private static final int MAX_EFFECTIVE_RADIUS = 32;
-    private static final int MAX_CHECKS_PER_TICK = 1000;
-    private static final int SCAN_FREQUENCY_TICKS = 20; // Scan every second
-    private static final int LOG_FREQUENCY_TICKS = 100; // Log every 5 seconds
-    
-    private static final Map<ServerLevel, GlassTracker> trackers = new ConcurrentHashMap<>();
-    private static int repairDelayTicks = DEFAULT_REPAIR_DELAY_TICKS;
+    private static final Map<ServerLevel, GlassTracker> trackers = new HashMap<>();
+    private static int repairDelayTicks = 60; // Default 3 seconds
     private static boolean enabled = true;
-    private static int scanRadius = DEFAULT_SCAN_RADIUS;
+    private static int scanRadius = 64;
     private static int tickCounter = 0;
     
     private static class GlassTracker {
-        // Thread-safe maps and lists - events can fire concurrently
-        Map<BlockPos, BlockState> knownGlass = new ConcurrentHashMap<>();
-        // Use CopyOnWriteArrayList for thread-safety during iteration
-        List<BrokenGlass> brokenGlass = new CopyOnWriteArrayList<>();
+        // Maps position -> original block state
+        Map<BlockPos, BlockState> knownGlass = new HashMap<>();
+        // Glass waiting to be repaired
+        List<BrokenGlass> brokenGlass = new ArrayList<>();
         // Snapshot of glass states from last tick for change detection
-        Map<BlockPos, BlockState> lastTickSnapshot = new ConcurrentHashMap<>();
+        Map<BlockPos, BlockState> lastTickSnapshot = new HashMap<>();
     }
     
     private static class BrokenGlass {
@@ -118,10 +108,6 @@ public class GlassRepairSystem {
         // Check if any known glass was at this position
         BlockState knownState = tracker.knownGlass.get(changedPos);
         if (knownState != null) {
-            // Check if chunk is loaded before accessing block state
-            if (!serverLevel.isLoaded(changedPos)) {
-                return;
-            }
             BlockState currentState = serverLevel.getBlockState(changedPos);
             if (!isGlassBlock(currentState.getBlock())) {
                 // Glass was here, now it's gone!
@@ -142,7 +128,7 @@ public class GlassRepairSystem {
         checkForDirectBlockChanges();
         
         // Every 20 ticks: Full scan for new glass
-        if (tickCounter % SCAN_FREQUENCY_TICKS == 0) {
+        if (tickCounter % 20 == 0) {
             scanForGlassNearPlayers();
         }
         
@@ -153,22 +139,6 @@ public class GlassRepairSystem {
     /**
      * DIRECT CHANGE DETECTION: Compares current block states to our snapshot
      * This catches TacZ bullets and anything else that bypasses events!
-     * 
-     * Algorithm:
-     * 1. Iterate through all known glass positions
-     * 2. For each position, check if chunk is loaded (prevents crash)
-     * 3. Get current block state and compare to expected
-     * 4. If glass is gone (replaced with air), schedule repair
-     * 5. If replaced with something else, just remove from tracking
-     * 6. Use iterator for safe concurrent removal during iteration
-     * 
-     * Why this works:
-     * - Event-based detection misses TacZ bullets (they bypass BlockBreakEvent)
-     * - Direct state comparison catches ALL block changes
-     * - Runs every tick but only checks tracked glass (fast)
-     * 
-     * Performance: O(n) where n = number of tracked glass blocks
-     * Typical: 100-500 blocks, completes in <0.1ms per tick
      */
     private static void checkForDirectBlockChanges() {
         for (Map.Entry<ServerLevel, GlassTracker> entry : trackers.entrySet()) {
@@ -183,11 +153,6 @@ public class GlassRepairSystem {
                 Map.Entry<BlockPos, BlockState> glassEntry = iterator.next();
                 BlockPos pos = glassEntry.getKey();
                 BlockState expectedState = glassEntry.getValue();
-                
-                // Check if chunk is loaded before accessing block state
-                if (!level.isLoaded(pos)) {
-                    continue;
-                }
                 
                 // Check the actual block
                 BlockState currentState = level.getBlockState(pos);
@@ -218,27 +183,7 @@ public class GlassRepairSystem {
     
     /**
      * Scan for new glass near players - only adds NEW glass, doesn't remove
-     * 
      * OPTIMIZED: Only scans a subset of blocks per tick to reduce lag
-     * 
-     * Algorithm:
-     * 1. For each player, scan spherical area around them (not cubic - fewer checks)
-     * 2. Skip positions outside spherical radius (x²+y²+z² > r²)
-     * 3. Check if chunk is loaded before accessing blocks
-     * 4. Only track glass if not already tracked and not pending repair
-     * 5. Throttle to MAX_CHECKS_PER_TICK (1000) to prevent lag spikes
-     * 
-     * Optimization Details:
-     * - Spherical scan: ~42% fewer checks than cubic (4/3πr³ vs (2r)³)
-     * - Max radius clamped to 32 blocks (prevents excessive checks)
-     * - Early exit when check limit reached (distributes work across ticks)
-     * - Only runs every SCAN_FREQUENCY_TICKS (20 ticks = 1 second)
-     * 
-     * Performance:
-     * - Cubic 32³ = 32,768 checks per player
-     * - Spherical 32³ = ~18,000 checks per player (45% reduction)
-     * - Throttled to 1000/tick = ~18 ticks to complete full scan
-     * - Typical: completes in <1ms per tick
      */
     private static void scanForGlassNearPlayers() {
         for (Map.Entry<ServerLevel, GlassTracker> entry : trackers.entrySet()) {
@@ -252,36 +197,17 @@ public class GlassRepairSystem {
             
             // Scan around each player - use a smaller area with complete coverage
             // 32 blocks = reasonable for most builds, and much faster
-            int effectiveRadius = Math.min(scanRadius, MAX_EFFECTIVE_RADIUS);
-            int maxChecksPerTick = MAX_CHECKS_PER_TICK;
-            int checksThisTick = 0;
+            int effectiveRadius = Math.min(scanRadius, 32);
             
             for (ServerPlayer player : level.players()) {
-                if (checksThisTick >= maxChecksPerTick) break; // Stop if we've done enough
-                
                 BlockPos playerPos = player.blockPosition();
                 
-                // Use spherical scanning instead of cubic to reduce checks
-                // Only scan in reasonable radius around player
+                // Full scan but with reasonable radius
                 for (int x = -effectiveRadius; x <= effectiveRadius; x++) {
                     for (int y = -effectiveRadius; y <= effectiveRadius; y++) {
                         for (int z = -effectiveRadius; z <= effectiveRadius; z++) {
-                            if (checksThisTick >= maxChecksPerTick) break;
-                            
-                            // Skip if outside spherical radius (reduces checks significantly)
-                            if (x*x + y*y + z*z > effectiveRadius * effectiveRadius) {
-                                continue;
-                            }
-                            
                             BlockPos checkPos = playerPos.offset(x, y, z);
-                            
-                            // Check if chunk is loaded before accessing block state
-                            if (!level.isLoaded(checkPos)) {
-                                continue;
-                            }
-                            
                             blocksChecked++;
-                            checksThisTick++;
                             
                             // Skip if already tracked
                             BlockPos immutablePos = checkPos.immutable();
@@ -307,7 +233,7 @@ public class GlassRepairSystem {
             }
             
             // Log status every 5 seconds
-            if (tickCounter % LOG_FREQUENCY_TICKS == 0) {
+            if (tickCounter % 100 == 0) {
                 MatrixCraftMod.LOGGER.info("[GlassRepair] Status: " + 
                     tracker.knownGlass.size() + " glass tracked, " + 
                     tracker.brokenGlass.size() + " pending repair" +
@@ -327,12 +253,6 @@ public class GlassRepairSystem {
                 glass.ticksUntilRepair--;
                 
                 if (glass.ticksUntilRepair <= 0) {
-                    // Check if chunk is loaded before accessing block state
-                    if (!level.isLoaded(glass.position)) {
-                        // Keep in queue if chunk unloaded
-                        continue;
-                    }
-                    
                     BlockState currentState = level.getBlockState(glass.position);
                     
                     // Only repair if still air (don't replace player-placed blocks)
@@ -402,27 +322,15 @@ public class GlassRepairSystem {
     
     // ========== Command Methods ==========
     
-    /**
-     * Sets the repair delay for broken glass
-     * @param seconds Number of seconds to wait before repairing glass (converted to ticks internally)
-     */
     public static void setRepairDelay(int seconds) {
         repairDelayTicks = seconds * 20;
         MatrixCraftMod.LOGGER.info("[GlassRepair] Delay set to " + seconds + " seconds (" + repairDelayTicks + " ticks)");
     }
     
-    /**
-     * Gets the current repair delay in seconds
-     * @return Repair delay in seconds
-     */
     public static int getRepairDelaySeconds() {
         return repairDelayTicks / 20;
     }
     
-    /**
-     * Enables or disables the glass repair system
-     * @param enable True to enable, false to disable. Disabling clears all pending repairs.
-     */
     public static void setEnabled(boolean enable) {
         enabled = enable;
         if (!enabled) {
@@ -434,28 +342,15 @@ public class GlassRepairSystem {
         MatrixCraftMod.LOGGER.info("[GlassRepair] System " + (enabled ? "enabled" : "disabled"));
     }
     
-    /**
-     * Checks if the glass repair system is currently enabled
-     * @return True if enabled, false otherwise
-     */
     public static boolean isEnabled() {
         return enabled;
     }
     
-    /**
-     * Gets the number of glass blocks pending repair in a level
-     * @param level The server level to check
-     * @return Number of broken glass blocks awaiting repair
-     */
     public static int getPendingRepairCount(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         return tracker == null ? 0 : tracker.brokenGlass.size();
     }
     
-    /**
-     * Clears all pending repairs for a level without repairing them
-     * @param level The server level to clear pending repairs for
-     */
     public static void clearPendingRepairs(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         if (tracker != null) {
@@ -465,10 +360,6 @@ public class GlassRepairSystem {
         }
     }
     
-    /**
-     * Immediately repairs all broken glass in a level, bypassing the delay timer
-     * @param level The server level to repair glass in
-     */
     public static void repairAllNow(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         if (tracker == null || tracker.brokenGlass.isEmpty()) {
@@ -478,10 +369,6 @@ public class GlassRepairSystem {
         
         int repaired = 0;
         for (BrokenGlass g : tracker.brokenGlass) {
-            // Check if chunk is loaded before accessing block state
-            if (!level.isLoaded(g.position)) {
-                continue;
-            }
             if (level.getBlockState(g.position).isAir()) {
                 level.setBlock(g.position, g.originalState, 3);
                 tracker.knownGlass.put(g.position, g.originalState);
@@ -493,11 +380,6 @@ public class GlassRepairSystem {
         MatrixCraftMod.LOGGER.info("[GlassRepair] Instantly repaired " + repaired + " glass blocks");
     }
     
-    /**
-     * Gets the total number of glass blocks being tracked in a level
-     * @param level The server level to check
-     * @return Number of intact glass blocks currently tracked
-     */
     public static int getTrackedGlassCount(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);
         return tracker == null ? 0 : tracker.knownGlass.size();
@@ -505,7 +387,6 @@ public class GlassRepairSystem {
     
     /**
      * Force re-scan and re-track all glass (useful for debugging)
-     * @param level The server level to rescan
      */
     public static void rescan(ServerLevel level) {
         GlassTracker tracker = trackers.get(level);

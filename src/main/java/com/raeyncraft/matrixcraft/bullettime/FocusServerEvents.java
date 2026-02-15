@@ -3,14 +3,12 @@ package com.raeyncraft.matrixcraft.bullettime;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.damagesource.DamageTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
@@ -27,7 +25,6 @@ public class FocusServerEvents {
     
     /**
      * Apply damage resistance when in Focus mode
-     * Also provides fall damage protection during Focus mode
      */
     @SubscribeEvent
     public static void onLivingDamage(LivingDamageEvent.Pre event) {
@@ -38,19 +35,10 @@ public class FocusServerEvents {
         }
         
         if (FocusManager.isInFocus(player)) {
-            // Check if this is fall damage
-            boolean isFallDamage = event.getSource().is(DamageTypes.FALL);
-            
-            if (isFallDamage) {
-                // Cancel fall damage entirely during Focus mode
-                event.setNewDamage(0);
-                player.fallDistance = 0; // Reset fall distance to prevent accumulated damage
-            } else {
-                // Apply normal damage resistance for other damage types
-                float multiplier = FocusManager.getDamageResistanceMultiplier(player);
-                float newDamage = event.getOriginalDamage() * multiplier;
-                event.setNewDamage(newDamage);
-            }
+            // Apply damage resistance
+            float multiplier = FocusManager.getDamageResistanceMultiplier(player);
+            float newDamage = event.getOriginalDamage() * multiplier;
+            event.setNewDamage(newDamage);
         }
     }
     
@@ -60,9 +48,6 @@ public class FocusServerEvents {
     @SubscribeEvent
     public static void onEffectRemoved(MobEffectEvent.Remove event) {
         if (event.getEffect() == null) return;
-        
-        // Additional null safety check
-        if (event.getEffect().value() == null) return;
         
         // Check if it's our effect
         if (event.getEffect().value() instanceof com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect) {
@@ -80,10 +65,6 @@ public class FocusServerEvents {
     public static void onEffectExpired(MobEffectEvent.Expired event) {
         if (event.getEffectInstance() == null) return;
         
-        // Additional null safety checks
-        if (event.getEffectInstance().getEffect() == null) return;
-        if (event.getEffectInstance().getEffect().value() == null) return;
-        
         // Check if it's our effect
         if (event.getEffectInstance().getEffect().value() instanceof com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect) {
             LivingEntity entity = event.getEntity();
@@ -91,22 +72,6 @@ public class FocusServerEvents {
                 // Clean up
                 com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect.onEffectRemoved(player);
                 MatrixCraftMod.LOGGER.info("[MatrixFocus] Focus expired for " + player.getName().getString());
-            }
-        }
-    }
-    
-    /**
-     * Handle player logout - clean up focus state
-     * Prevents memory leak from disconnected players remaining in activeFocusStates
-     */
-    @SubscribeEvent
-    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (event.getEntity() instanceof ServerPlayer player) {
-            // Deactivate focus if active
-            if (FocusManager.isInFocus(player)) {
-                FocusManager.deactivateFocus(player);
-                MatrixCraftMod.LOGGER.info("[MatrixFocus] Cleaned up focus state for disconnected player " + 
-                    player.getName().getString());
             }
         }
     }

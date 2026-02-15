@@ -85,7 +85,7 @@ public class FocusClientEffects {
         MatrixCraftMod.LOGGER.info("[MatrixFocus] Client: Focus activated!");
         
         // Play activation sound
-        if (mc.player != null && mc.level != null) {
+        if (mc.player != null) {
             mc.level.playLocalSound(
                 mc.player.getX(), mc.player.getY(), mc.player.getZ(),
                 SoundEvents.BEACON_ACTIVATE,
