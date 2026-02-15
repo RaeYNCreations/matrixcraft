@@ -15,10 +15,10 @@ import net.neoforged.fml.LogicalSide;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Bullet Trail Tracker - working copy adjusted to use config-driven lighting parameters.
@@ -55,8 +55,9 @@ public class BulletTrailTracker {
     private static long lastTrailTime = 0;
     private static final long TRAIL_COOLDOWN_MS = 30;
 
-    private static final Set<Integer> processedBullets = new HashSet<>();
-    private static final Map<Integer, Vec3> bulletLastPos = new HashMap<>();
+    // Use thread-safe collections for client-side rendering
+    private static final Set<Integer> processedBullets = ConcurrentHashMap.newKeySet();
+    private static final Map<Integer, Vec3> bulletLastPos = new ConcurrentHashMap<>();
 
     private static int tickCounter = 0;
 
@@ -70,7 +71,8 @@ public class BulletTrailTracker {
 
         tickCounter++;
 
-        BulletTrailLighting.tick();
+        // NOTE: BulletTrailLighting.tick() is called in SimpleDynamicLightManager
+        // to avoid double-ticking which causes lights to expire twice as fast
         
         // Update hit entity lighting
         HitEntityLightingHandler.tick(mc.level);
@@ -238,8 +240,31 @@ public class BulletTrailTracker {
         }
     }
 
+    /**
+     * Clean up old bullet tracking entries
+     * 
+     * Thread Safety Note:
+     * This method uses removeIf() on ConcurrentHashMap which is thread-safe for the
+     * map structure itself. However, there's a theoretical race condition where
+     * mc.level could become null between the check and access. This is acceptable
+     * because:
+     * 1. The check happens inside the atomic removeIf() operation
+     * 2. If level becomes null, we return false and keep the entry (safe)
+     * 3. The entry will be cleaned up on the next tick when level is available
+     * 4. This prevents crashes at the cost of delayed cleanup (acceptable trade-off)
+     */
     private static void cleanupOldEntries(Minecraft mc) {
+        // Add null checks to prevent crashes during world changes
+        if (mc == null || mc.level == null) {
+            return;
+        }
+        
         processedBullets.removeIf(id -> {
+            // Re-check mc.level in case world changed during iteration
+            if (mc.level == null) {
+                return false; // Don't remove if we can't verify
+            }
+            
             Entity e = mc.level.getEntity(id);
             boolean removed = (e == null || e.isRemoved());
             if (removed) {
@@ -253,6 +278,11 @@ public class BulletTrailTracker {
         });
 
         bulletLastPos.entrySet().removeIf(entry -> {
+            // Re-check mc.level in case world changed during iteration
+            if (mc.level == null) {
+                return false; // Don't remove if we can't verify
+            }
+            
             int id = entry.getKey();
             Entity e = mc.level.getEntity(id);
             boolean removed = (e == null || e.isRemoved());

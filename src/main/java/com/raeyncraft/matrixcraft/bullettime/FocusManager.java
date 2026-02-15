@@ -67,6 +67,7 @@ public class FocusManager {
     
     /**
      * Activate Focus mode for a player (called from server)
+     * Also activates TACZ Adrenaline Mode if available
      */
     public static void activateFocus(ServerPlayer player) {
         UUID playerId = player.getUUID();
@@ -95,10 +96,14 @@ public class FocusManager {
             true  // Show icon
         );
         player.addEffect(effect);
+        
+        // Activate TACZ Adrenaline Mode if available
+        tryActivateTaczAdrenaline(player, duration);
     }
     
     /**
      * Deactivate Focus mode for a player
+     * Also deactivates TACZ Adrenaline Mode if it was activated by focus
      */
     public static void deactivateFocus(ServerPlayer player) {
         UUID playerId = player.getUUID();
@@ -116,6 +121,9 @@ public class FocusManager {
 
         // STOP WALL RUNNING
         MatrixWallRunManager.stopWallRun(player);
+        
+        // Deactivate TACZ Adrenaline Mode if available
+        tryDeactivateTaczAdrenaline(player);
     }
     
     /**
@@ -235,5 +243,172 @@ public class FocusManager {
      */
     public static int getClientFocusTicksRemaining() {
         return FocusClientState.getTicksRemaining();
+    }
+    
+    // ==================== TACZ ADRENALINE MODE INTEGRATION ====================
+    
+    // Cache TACZ availability to avoid repeated reflection lookups
+    // Volatile ensures visibility across threads during lazy initialization
+    private static volatile Boolean taczAvailable = null;
+    
+    /**
+     * Check if TACZ is available (cached result)
+     */
+    private static boolean isTaczAvailable() {
+        if (taczAvailable == null) {
+            try {
+                Class.forName("com.tacz.guns.adrenaline.AdrenalineManager");
+                taczAvailable = true;
+                MatrixCraftMod.LOGGER.info("[FocusManager] TACZ detected - adrenaline integration enabled");
+            } catch (ClassNotFoundException e) {
+                taczAvailable = false;
+                MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ not found - adrenaline integration disabled");
+            }
+        }
+        return taczAvailable;
+    }
+    
+    /**
+     * Try to activate TACZ Adrenaline Mode using reflection
+     * This allows integration without requiring TACZ as a dependency
+     */
+    private static void tryActivateTaczAdrenaline(ServerPlayer player, int durationTicks) {
+        if (!isTaczAvailable()) {
+            return;
+        }
+        
+        try {
+            // Access AdrenalineManager and related classes
+            Class<?> adrenalineManagerClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager");
+            Class<?> playerDataClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager$PlayerAdrenalineData");
+            
+            // Get the playerData map
+            java.lang.reflect.Field playerDataField = adrenalineManagerClass.getDeclaredField("playerData");
+            playerDataField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<UUID, Object> playerDataMap = (java.util.Map<UUID, Object>) playerDataField.get(null);
+            
+            // Get or create player data
+            UUID playerId = player.getUUID();
+            Object playerData = playerDataMap.computeIfAbsent(playerId, k -> {
+                try {
+                    return playerDataClass.getDeclaredConstructor().newInstance();
+                } catch (Exception e) {
+                    MatrixCraftMod.LOGGER.warn("[FocusManager] Failed to create TACZ PlayerAdrenalineData: " + e.getMessage());
+                    return null;
+                }
+            });
+            
+            if (playerData == null) {
+                return;
+            }
+            
+            // Call activate method with matching duration
+            // Duration is in ticks, need to convert to seconds for TACZ
+            long currentTime = System.currentTimeMillis();
+            double currentMaxHealth = player.getMaxHealth();
+            int durationSeconds = durationTicks / 20; // Convert ticks to seconds
+            
+            java.lang.reflect.Method activateMethod = playerDataClass.getDeclaredMethod("activate", long.class, double.class);
+            activateMethod.setAccessible(true);
+            activateMethod.invoke(playerData, currentTime, currentMaxHealth);
+            
+            // Override the active end time to match focus duration
+            java.lang.reflect.Field activeEndTimeField = playerDataClass.getDeclaredField("activeEndTime");
+            activeEndTimeField.setAccessible(true);
+            activeEndTimeField.set(playerData, currentTime + (durationSeconds * 1000L));
+            
+            // Apply health modifier
+            java.lang.reflect.Method applyHealthMethod = adrenalineManagerClass.getDeclaredMethod("applyHealthModifier", ServerPlayer.class, double.class);
+            applyHealthMethod.setAccessible(true);
+            
+            // Get health multiplier from config (default 1.5)
+            Class<?> configClass = Class.forName("com.tacz.guns.config.common.AdrenalineConfig");
+            java.lang.reflect.Field healthMultiplierField = configClass.getDeclaredField("HEALTH_MULTIPLIER");
+            healthMultiplierField.setAccessible(true);
+            Object configValue = healthMultiplierField.get(null);
+            java.lang.reflect.Method getMethod = configValue.getClass().getMethod("get");
+            double healthMultiplier = (double) getMethod.invoke(configValue);
+            
+            applyHealthMethod.invoke(null, player, healthMultiplier);
+            
+            MatrixCraftMod.LOGGER.info("[FocusManager] Activated TACZ Adrenaline Mode for " + player.getName().getString() + 
+                " (Duration: " + durationSeconds + "s, Health: " + healthMultiplier + "x)");
+            
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.warn("[FocusManager] Failed to activate TACZ adrenaline mode: " + e.getMessage());
+            MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ integration error details", e);
+        }
+    }
+    
+    /**
+     * Try to deactivate TACZ Adrenaline Mode using reflection
+     */
+    private static void tryDeactivateTaczAdrenaline(ServerPlayer player) {
+        if (!isTaczAvailable()) {
+            return;
+        }
+        
+        try {
+            Class<?> adrenalineManagerClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager");
+            Class<?> playerDataClass = Class.forName("com.tacz.guns.adrenaline.AdrenalineManager$PlayerAdrenalineData");
+            
+            // Get the playerData map
+            java.lang.reflect.Field playerDataField = adrenalineManagerClass.getDeclaredField("playerData");
+            playerDataField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<UUID, Object> playerDataMap = (java.util.Map<UUID, Object>) playerDataField.get(null);
+            
+            UUID playerId = player.getUUID();
+            Object playerData = playerDataMap.get(playerId);
+            
+            if (playerData == null) {
+                return;
+            }
+            
+            // Check if currently active
+            java.lang.reflect.Method isActiveMethod = playerDataClass.getDeclaredMethod("isActive");
+            isActiveMethod.setAccessible(true);
+            boolean isActive = (boolean) isActiveMethod.invoke(playerData);
+            
+            if (!isActive) {
+                return;
+            }
+            
+            // Remove health modifier
+            java.lang.reflect.Method removeHealthMethod = adrenalineManagerClass.getDeclaredMethod("removeHealthModifier", ServerPlayer.class);
+            removeHealthMethod.setAccessible(true);
+            removeHealthMethod.invoke(null, player);
+            
+            // Deactivate with matching cooldown
+            // Get cooldown duration from config
+            Class<?> configClass = Class.forName("com.tacz.guns.config.common.AdrenalineConfig");
+            java.lang.reflect.Field cooldownField = configClass.getDeclaredField("COOLDOWN_DURATION");
+            cooldownField.setAccessible(true);
+            Object configValue = cooldownField.get(null);
+            java.lang.reflect.Method getMethod = configValue.getClass().getMethod("get");
+            int cooldownSeconds = (int) getMethod.invoke(configValue);
+            
+            // Match cooldown to focus duration for consistency
+            int focusDurationSeconds = getFocusDuration() / 20;
+            long currentTime = System.currentTimeMillis();
+            
+            // Call deactivate
+            java.lang.reflect.Method deactivateMethod = playerDataClass.getDeclaredMethod("deactivate", long.class);
+            deactivateMethod.setAccessible(true);
+            deactivateMethod.invoke(playerData, currentTime);
+            
+            // Override cooldown to match focus cooldown
+            java.lang.reflect.Field cooldownEndTimeField = playerDataClass.getDeclaredField("cooldownEndTime");
+            cooldownEndTimeField.setAccessible(true);
+            cooldownEndTimeField.set(playerData, currentTime + (focusDurationSeconds * 1000L));
+            
+            MatrixCraftMod.LOGGER.info("[FocusManager] Deactivated TACZ Adrenaline Mode for " + player.getName().getString() + 
+                " (Cooldown: " + focusDurationSeconds + "s)");
+            
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.warn("[FocusManager] Failed to deactivate TACZ adrenaline mode: " + e.getMessage());
+            MatrixCraftMod.LOGGER.debug("[FocusManager] TACZ integration error details", e);
+        }
     }
 }

@@ -104,7 +104,10 @@ public class DynamicLightManager {
                 MatrixCraftMod.LOGGER.debug("[DynamicLightManager] LambDynLights reflection failed: " + ex.getMessage());
                 permanentlyDisableDynamicLights("Reflection failed: " + ex.getMessage());
             }
-        } catch (ClassNotFoundException ignored) {}
+        } catch (ClassNotFoundException e) {
+            // Expected when LambDynLights is not installed - not an error
+            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] LambDynLights not found (expected if not installed)");
+        }
 
         dynamicLightsAvailable = false;
         MatrixCraftMod.LOGGER.info("[DynamicLightManager] No dynamic-lights mod found; using particle glow only.");
@@ -410,7 +413,11 @@ public class DynamicLightManager {
                 if (permanentlyDisabled) {
                     // Clean up what we created
                     for (Object p : proxies) {
-                        try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
+                        try { 
+                            invokeRemoveLightSource(p); 
+                        } catch (Throwable e) {
+                            MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Failed to remove light during cleanup: " + e.getMessage());
+                        }
                     }
                     return;
                 }
@@ -419,7 +426,11 @@ public class DynamicLightManager {
         } catch (Throwable t) {
             permanentlyDisableDynamicLights("trackEntityLightChain proxy creation failed: " + t.getMessage());
             for (Object p : proxies) {
-                try { invokeRemoveLightSource(p); } catch (Throwable ignored) {}
+                try { 
+                    invokeRemoveLightSource(p); 
+                } catch (Throwable e) {
+                    MatrixCraftMod.LOGGER.debug("[DynamicLightManager] Failed to remove light during error cleanup: " + e.getMessage());
+                }
             }
         }
     }
@@ -551,12 +562,23 @@ public class DynamicLightManager {
                     MatrixCraftMod.LOGGER.info("[DynamicLightManager] clearLightSources invocation failed: " + ex.getMessage());
                 }
             } else {
-                for (Object p : dlsCache.values()) invokeRemoveLightSource(p);
-                dlsCache.clear();
-                for (Object p : entityDls.values()) invokeRemoveLightSource(p);
-                entityDls.clear();
-                for (List<Object> list : entityDlsChains.values()) for (Object p : list) invokeRemoveLightSource(p);
-                entityDlsChains.clear();
+                // Synchronized iteration to prevent concurrent modification
+                synchronized (dlsCache) {
+                    for (Object p : new ArrayList<>(dlsCache.values())) invokeRemoveLightSource(p);
+                    dlsCache.clear();
+                }
+                synchronized (entityDls) {
+                    for (Object p : new ArrayList<>(entityDls.values())) invokeRemoveLightSource(p);
+                    entityDls.clear();
+                }
+                synchronized (entityDlsChains) {
+                    for (List<Object> list : new ArrayList<>(entityDlsChains.values())) {
+                        if (list != null) {
+                            for (Object p : list) invokeRemoveLightSource(p);
+                        }
+                    }
+                    entityDlsChains.clear();
+                }
                 entityRefs.clear();
                 lastSeenMs.clear();
                 MatrixCraftMod.LOGGER.info("[DynamicLightManager] Cleared all cached dynamic-lights (fallback).");

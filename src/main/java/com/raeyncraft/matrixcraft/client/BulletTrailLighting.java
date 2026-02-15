@@ -315,6 +315,27 @@ public class BulletTrailLighting {
     
     /**
      * Prune oldest lights when at capacity
+     * 
+     * Optimized Algorithm (O(n) instead of O(n log n)):
+     * 1. Find the Nth-smallest ticksRemaining value using partial selection
+     * 2. Remove all lights with ticksRemaining ≤ threshold
+     * 3. Early exit after removing 'count' lights
+     * 
+     * Why not full sort:
+     * - Full sort: O(n log n) - wasteful when we only need N oldest
+     * - Partial selection: O(n) - uses stream.skip() to find threshold
+     * - Iteration removal: O(n) - removes lights below threshold
+     * 
+     * Edge Cases:
+     * - If count >= size: clear all lights (fast path)
+     * - If no lights found: graceful no-op
+     * 
+     * Performance:
+     * - Typical: 300 lights, pruning 50 oldest
+     * - Full sort would be: 300 * log(300) ≈ 2477 operations
+     * - This approach: 300 + 300 ≈ 600 operations (4x faster)
+     * 
+     * @param count Number of oldest lights to remove
      */
     private static void pruneOldestLights(int count) {
         // Optimized approach: use partial sort (select N smallest without full sort)

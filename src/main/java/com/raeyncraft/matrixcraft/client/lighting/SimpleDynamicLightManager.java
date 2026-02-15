@@ -6,6 +6,7 @@ import com.raeyncraft.matrixcraft.registry.ModEntities;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
@@ -49,6 +50,9 @@ public class SimpleDynamicLightManager {
     
     // Max entities to track
     private static final int MAX_ENTITY_LIGHTS = 500;
+    
+    // Cleanup threshold: remove down to 80% of max when limit exceeded
+    private static final int LIGHT_CLEANUP_THRESHOLD = MAX_ENTITY_LIGHTS * 4 / 5;
     
     // Track current level for cleanup on world change
     private static WeakReference<net.minecraft.world.level.Level> lastLevel = new WeakReference<>(null);
@@ -135,20 +139,38 @@ public class SimpleDynamicLightManager {
                 return;
             }
             
-            LightMarkerEntity marker = new LightMarkerEntity(entityType, mc.level);
+            // Double-check world is still valid before creating entity
+            if (mc.level == null) {
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] World became null during entity creation!");
+                return;
+            }
+            
+            // Create marker - re-validate world immediately before constructor
+            Minecraft mcRecheck = Minecraft.getInstance();
+            if (mcRecheck == null || mcRecheck.level == null) {
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] World became null right before entity creation!");
+                return;
+            }
+            
+            LightMarkerEntity marker = new LightMarkerEntity(entityType, mcRecheck.level);
             marker.setPos(entity.getX(), entity.getY(), entity.getZ());
             marker.setTarget(id, Vec3.ZERO);
             marker.setLightProperties(brightness, r, g, b);
             marker.setMaxTicks(100); // 5 seconds (increased from 3)
             
-            mc.level.addFreshEntity(marker);
-            
-            List<LightMarkerEntity> markers = new ArrayList<>();
-            markers.add(marker);
-            markerEntities.put(id, markers);
-            
-            MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created light marker for entity " + id + 
-                " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
+            // Final validation before adding to world (triple-check)
+            if (mcRecheck.level != null && !marker.isRemoved()) {
+                mcRecheck.level.addFreshEntity(marker);
+                
+                List<LightMarkerEntity> markers = new ArrayList<>();
+                markers.add(marker);
+                markerEntities.put(id, markers);
+                
+                MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created light marker for entity " + id + 
+                    " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
+            } else {
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Cannot add marker - world is null or marker is removed");
+            }
         } catch (Exception e) {
             MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Failed to create marker entity: " + e.getMessage());
         }
@@ -192,6 +214,12 @@ public class SimpleDynamicLightManager {
                 return;
             }
             
+            // Double-check world is still valid before creating entities
+            if (mc.level == null) {
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] World became null during chain creation!");
+                return;
+            }
+            
             // Null check for velocity
             Vec3 velocity = entity.getDeltaMovement();
             if (velocity == null) {
@@ -202,8 +230,16 @@ public class SimpleDynamicLightManager {
             Vec3 direction = vLen > 0.001 ? new Vec3(velocity.x / vLen, velocity.y / vLen, velocity.z / vLen) : Vec3.ZERO;
             
             List<LightMarkerEntity> markers = new ArrayList<>();
+            boolean creationSucceeded = true;
             
             for (int i = 0; i < chainCount; i++) {
+                // Re-validate world on each iteration to prevent incomplete chains
+                if (mc.level == null) {
+                    MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] World became null mid-chain creation at marker " + i);
+                    creationSucceeded = false;
+                    break; // Stop creating more markers
+                }
+                
                 // Calculate offset for this marker in the chain
                 Vec3 offset = direction.scale(-i * chainSpacing); // Behind the entity
                 
@@ -213,14 +249,32 @@ public class SimpleDynamicLightManager {
                 marker.setLightProperties(brightness, r, g, b);
                 marker.setMaxTicks(100); // 5 seconds (increased from 3)
                 
-                mc.level.addFreshEntity(marker);
-                markers.add(marker);
+                // Final validation before adding to world
+                if (mc.level != null && !marker.isRemoved()) {
+                    mc.level.addFreshEntity(marker);
+                    markers.add(marker);
+                } else {
+                    MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Cannot add chain marker #" + i + " - world is null or marker is removed");
+                    creationSucceeded = false;
+                    break; // Stop creating more markers
+                }
             }
             
-            markerEntities.put(id, markers);
-            
-            MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created " + chainCount + 
-                " light markers for entity " + id + " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
+            // Only add to tracking if we successfully created ALL markers
+            if (creationSucceeded && !markers.isEmpty()) {
+                markerEntities.put(id, markers);
+                
+                MatrixCraftMod.LOGGER.debug("[SimpleDynamicLightManager] Created " + markers.size() + 
+                    " light markers for entity " + id + " RGB(" + (int)(r*255) + "," + (int)(g*255) + "," + (int)(b*255) + ")");
+            } else if (!markers.isEmpty()) {
+                // Partial chain created - clean up the markers we added
+                MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Chain creation failed mid-way, cleaning up " + markers.size() + " partial markers");
+                for (LightMarkerEntity marker : markers) {
+                    if (marker != null && !marker.isRemoved()) {
+                        marker.discard();
+                    }
+                }
+            }
         } catch (Exception e) {
             MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] Failed to create marker chain: " + e.getMessage());
         }
@@ -342,22 +396,29 @@ public class SimpleDynamicLightManager {
         // Tick bullet trail lighting
         BulletTrailLighting.tick();
         
-        // Clean up old entities
+        // Clean up old entities - use safe iteration to prevent concurrent modification
         long now = System.currentTimeMillis();
-        Iterator<Map.Entry<Integer, WeakReference<Entity>>> it = entityRefs.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry<Integer, WeakReference<Entity>> entry = it.next();
+        List<Integer> toRemove = new ArrayList<>();
+        
+        // First pass: identify entities to remove
+        for (Map.Entry<Integer, WeakReference<Entity>> entry : entityRefs.entrySet()) {
             int id = entry.getKey();
             WeakReference<Entity> ref = entry.getValue();
             Entity e = ref == null ? null : ref.get();
             
-            Long lastSeen = lastSeenMs.get(id);
-            boolean tooOld = (lastSeen == null || now - lastSeen > ENTITY_TTL_MS);
+            // Use getOrDefault to avoid race condition where lastSeen is removed between check and access
+            Long lastSeen = lastSeenMs.getOrDefault(id, now);
+            boolean hasExpired = (now - lastSeen > ENTITY_TTL_MS);
             
-            if (e == null || e.isRemoved() || !e.isAlive() || tooOld) {
-                untrackEntityLightById(id);
-                it.remove();
+            if (e == null || e.isRemoved() || !e.isAlive() || hasExpired) {
+                toRemove.add(id);
             }
+        }
+        
+        // Second pass: remove identified entities
+        for (Integer id : toRemove) {
+            untrackEntityLightById(id);
+            entityRefs.remove(id);
         }
         
         // Enforce size limits
@@ -365,18 +426,16 @@ public class SimpleDynamicLightManager {
             // Remove oldest
             List<Integer> ids = new ArrayList<>(lastSeenMs.keySet());
             ids.sort((a, b) -> {
-                Long timeA = lastSeenMs.get(a);
-                Long timeB = lastSeenMs.get(b);
-                if (timeA == null) return -1;
-                if (timeB == null) return 1;
+                Long timeA = lastSeenMs.getOrDefault(a, now);
+                Long timeB = lastSeenMs.getOrDefault(b, now);
                 return timeA.compareTo(timeB);
             });
             
-            int toRemove = entityLights.size() - (MAX_ENTITY_LIGHTS * 4 / 5);
-            for (int i = 0; i < toRemove && i < ids.size(); i++) {
+            int excessLightCount = entityLights.size() - LIGHT_CLEANUP_THRESHOLD;
+            for (int i = 0; i < excessLightCount && i < ids.size(); i++) {
                 untrackEntityLightById(ids.get(i));
             }
-            MatrixCraftMod.LOGGER.info("[SimpleDynamicLightManager] Cleaned up " + toRemove + " old lights");
+            MatrixCraftMod.LOGGER.info("[SimpleDynamicLightManager] Cleaned up " + excessLightCount + " old lights");
         }
     }
     

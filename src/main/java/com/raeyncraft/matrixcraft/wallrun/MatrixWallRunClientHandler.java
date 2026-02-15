@@ -2,13 +2,17 @@ package com.raeyncraft.matrixcraft.wallrun.client;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
+import com.raeyncraft.matrixcraft.network.WallRunJumpPacket;
 import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunManager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
 import org.joml.AxisAngle4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -21,6 +25,44 @@ import java.util.UUID;
 public class MatrixWallRunClientHandler {
     
     private static final Set<UUID> activePoses = new HashSet<>();
+    // Thread-safe boolean for jump key state tracking
+    private static volatile boolean wasJumpKeyDown = false;
+    
+    /**
+     * Client-side tick to detect jump key press during wallrun
+     * This handles the player's ability to jump off the wall at any time
+     */
+    @SubscribeEvent
+    public static void onClientTick(ClientTickEvent.Pre event) {
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) {
+            return;
+        }
+        
+        // Check if player is wallrunning
+        if (!MatrixWallRunManager.isWallRunning(mc.player)) {
+            wasJumpKeyDown = false;
+            return;
+        }
+        
+        // Check if jump key is pressed (client-side detection)
+        boolean isJumpKeyDown = mc.options.keyJump.isDown();
+        
+        // Detect rising edge (key just pressed, not held)
+        if (isJumpKeyDown && !wasJumpKeyDown) {
+            // Player just pressed jump while wallrunning
+            MatrixCraftMod.LOGGER.info("[WallRunClient] Jump key pressed, sending jump request to server");
+            
+            // Send packet to server to execute the jump
+            // The server is authoritative for wallrun state in multiplayer
+            PacketDistributor.sendToServer(new WallRunJumpPacket());
+            
+            // DO NOT execute locally - let server be authoritative
+            // The server will sync back the state which updates client
+        }
+        
+        wasJumpKeyDown = isJumpKeyDown;
+    }
     
     @SubscribeEvent
     public static void onRenderPre(RenderLivingEvent.Pre<?, ?> event) {

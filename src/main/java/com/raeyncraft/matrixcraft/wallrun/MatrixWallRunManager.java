@@ -179,6 +179,30 @@ public class MatrixWallRunManager {
         consecutiveWallJumps.put(player.getUUID(), count + 1);
     }
     
+    /**
+     * Attempts to initiate a wall run for the player
+     * 
+     * Algorithm Overview:
+     * 1. Validates prerequisites (focus mode, airborne, minimum speed)
+     * 2. Scans adjacent blocks to find walls (solid blocks)
+     * 3. Calculates approach angle using dot product of motion and wall normal
+     * 4. Determines run type (horizontal/vertical) based on approach angle
+     * 5. Applies initial velocity and sets up wall run state
+     * 
+     * Physics:
+     * - Horizontal wallrun: Player runs parallel to wall (30-60° approach angle)
+     *   Run direction computed via cross product: perpendicular to wall normal
+     *   Wall side determined by comparing player's right vector with wall normal
+     * 
+     * - Vertical wallrun: Player climbs up wall (0-25° approach angle)
+     *   Requires near-perpendicular approach (running directly into wall)
+     *   Run direction is straight up (0, 1, 0)
+     * 
+     * Performance: O(4) for wall scanning (4 horizontal directions checked)
+     * 
+     * @param player The player attempting to start wallrunning
+     * @return true if wallrun successfully initiated, false otherwise
+     */
     public static boolean tryStartWallRun(Player player) {
         // Check if both types are disabled
         if (!isHorizontalEnabled() && !isVerticalEnabled()) {
@@ -316,6 +340,7 @@ public class MatrixWallRunManager {
             return state1.isSolid() || state2.isSolid();
         } catch (NullPointerException e) {
             // Chunk unloaded between check and access - treat as no wall
+            MatrixCraftMod.LOGGER.debug("[MatrixWallRun] Chunk unloaded during wall check: " + e.getMessage());
             return false;
         } catch (Exception e) {
             // Log unexpected exceptions for debugging

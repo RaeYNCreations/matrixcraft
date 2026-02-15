@@ -24,6 +24,7 @@ public class MatrixWallRunEventHandler {
         }
         
         // Server-side only from here on
+        // Check Focus first - if not in focus, stop any wallrun immediately
         boolean inFocus = FocusManager.isInFocus(player);
         
         if (!inFocus) {
@@ -33,6 +34,7 @@ public class MatrixWallRunEventHandler {
             return;
         }
         
+        // Player is in focus - allow wallrun mechanics
         if (MatrixWallRunManager.isWallRunning(player)) {
             // Jump detection is now handled inside updateWallRun via velocity changes
             MatrixWallRunManager.updateWallRun(player);
