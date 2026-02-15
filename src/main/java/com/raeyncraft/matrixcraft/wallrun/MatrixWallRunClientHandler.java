@@ -1,4 +1,4 @@
-package com.raeyncraft.matrixcraft.wallrun.client;
+package com.raeyncraft.matrixcraft.wallrun;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
