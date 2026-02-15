@@ -240,6 +240,19 @@ public class BulletTrailTracker {
         }
     }
 
+    /**
+     * Clean up old bullet tracking entries
+     * 
+     * Thread Safety Note:
+     * This method uses removeIf() on ConcurrentHashMap which is thread-safe for the
+     * map structure itself. However, there's a theoretical race condition where
+     * mc.level could become null between the check and access. This is acceptable
+     * because:
+     * 1. The check happens inside the atomic removeIf() operation
+     * 2. If level becomes null, we return false and keep the entry (safe)
+     * 3. The entry will be cleaned up on the next tick when level is available
+     * 4. This prevents crashes at the cost of delayed cleanup (acceptable trade-off)
+     */
     private static void cleanupOldEntries(Minecraft mc) {
         // Add null checks to prevent crashes during world changes
         if (mc == null || mc.level == null) {

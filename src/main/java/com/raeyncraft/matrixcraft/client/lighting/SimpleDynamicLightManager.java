@@ -51,6 +51,9 @@ public class SimpleDynamicLightManager {
     // Max entities to track
     private static final int MAX_ENTITY_LIGHTS = 500;
     
+    // Cleanup threshold: remove down to 80% of max when limit exceeded
+    private static final int LIGHT_CLEANUP_THRESHOLD = MAX_ENTITY_LIGHTS * 4 / 5;
+    
     // Track current level for cleanup on world change
     private static WeakReference<net.minecraft.world.level.Level> lastLevel = new WeakReference<>(null);
     
@@ -381,9 +384,9 @@ public class SimpleDynamicLightManager {
             
             // Use getOrDefault to avoid race condition where lastSeen is removed between check and access
             Long lastSeen = lastSeenMs.getOrDefault(id, now);
-            boolean tooOld = (now - lastSeen > ENTITY_TTL_MS);
+            boolean hasExpired = (now - lastSeen > ENTITY_TTL_MS);
             
-            if (e == null || e.isRemoved() || !e.isAlive() || tooOld) {
+            if (e == null || e.isRemoved() || !e.isAlive() || hasExpired) {
                 toRemove.add(id);
             }
         }
@@ -404,7 +407,7 @@ public class SimpleDynamicLightManager {
                 return timeA.compareTo(timeB);
             });
             
-            int excessLightCount = entityLights.size() - (MAX_ENTITY_LIGHTS * 4 / 5);
+            int excessLightCount = entityLights.size() - LIGHT_CLEANUP_THRESHOLD;
             for (int i = 0; i < excessLightCount && i < ids.size(); i++) {
                 untrackEntityLightById(ids.get(i));
             }

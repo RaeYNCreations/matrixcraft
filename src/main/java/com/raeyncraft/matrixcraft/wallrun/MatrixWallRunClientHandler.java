@@ -25,7 +25,8 @@ import java.util.UUID;
 public class MatrixWallRunClientHandler {
     
     private static final Set<UUID> activePoses = new HashSet<>();
-    private static boolean wasJumpKeyDown = false;
+    // Thread-safe boolean for jump key state tracking
+    private static volatile boolean wasJumpKeyDown = false;
     
     /**
      * Client-side tick to detect jump key press during wallrun

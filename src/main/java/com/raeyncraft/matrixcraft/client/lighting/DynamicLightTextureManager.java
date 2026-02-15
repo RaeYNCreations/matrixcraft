@@ -76,14 +76,29 @@ public class DynamicLightTextureManager {
             return;
         }
 
-        nativeImage = new NativeImage(MAX_TRAIL_LIGHTS, 1, false);
-        for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
-            nativeImage.setPixelRGBA(x, 0, 0);
+        try {
+            nativeImage = new NativeImage(MAX_TRAIL_LIGHTS, 1, false);
+            for (int x = 0; x < MAX_TRAIL_LIGHTS; x++) {
+                nativeImage.setPixelRGBA(x, 0, 0);
+            }
+            dynamicTexture = new DynamicTexture(nativeImage);
+            TextureManager tm = Minecraft.getInstance().getTextureManager();
+            tm.register(TEX_LOC, dynamicTexture);
+            MatrixCraftMod.LOGGER.info("[DynamicLightTextureManager] Initialized trail-light texture (max=" + MAX_TRAIL_LIGHTS + ")");
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.error("[DynamicLightTextureManager] Failed to initialize texture: " + e.getMessage(), e);
+            initialized = false;
+            // Clean up partial state
+            if (nativeImage != null) {
+                try {
+                    nativeImage.close();
+                } catch (Exception ex) {
+                    MatrixCraftMod.LOGGER.debug("[DynamicLightTextureManager] Failed to close NativeImage during cleanup: " + ex.getMessage());
+                }
+                nativeImage = null;
+            }
+            dynamicTexture = null;
         }
-        dynamicTexture = new DynamicTexture(nativeImage);
-        TextureManager tm = Minecraft.getInstance().getTextureManager();
-        tm.register(TEX_LOC, dynamicTexture);
-        MatrixCraftMod.LOGGER.info("[DynamicLightTextureManager] Initialized trail-light texture (max=" + MAX_TRAIL_LIGHTS + ")");
     }
 
     /**
@@ -149,8 +164,14 @@ public class DynamicLightTextureManager {
             }
         }
 
-        dynamicTexture.upload();
-        RenderSystem.setShaderTexture(TEXTURE_UNIT, TEX_LOC);
+        try {
+            dynamicTexture.upload();
+            RenderSystem.setShaderTexture(TEXTURE_UNIT, TEX_LOC);
+        } catch (Exception e) {
+            MatrixCraftMod.LOGGER.error("[DynamicLightTextureManager] Failed to upload texture: " + e.getMessage());
+            // Don't crash - just skip this frame's update
+            return;
+        }
 
         if (written > 0) {
             MatrixCraftMod.LOGGER.debug("[DynamicLightTextureManager] wrote " + written + " trail light texels");

@@ -248,7 +248,8 @@ public class FocusManager {
     // ==================== TACZ ADRENALINE MODE INTEGRATION ====================
     
     // Cache TACZ availability to avoid repeated reflection lookups
-    private static Boolean taczAvailable = null;
+    // Volatile ensures visibility across threads during lazy initialization
+    private static volatile Boolean taczAvailable = null;
     
     /**
      * Check if TACZ is available (cached result)
