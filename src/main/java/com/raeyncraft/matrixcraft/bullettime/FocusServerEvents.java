@@ -10,6 +10,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.MobEffectEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
@@ -90,6 +91,22 @@ public class FocusServerEvents {
                 // Clean up
                 com.raeyncraft.matrixcraft.bullettime.effect.MatrixFocusEffect.onEffectRemoved(player);
                 MatrixCraftMod.LOGGER.info("[MatrixFocus] Focus expired for " + player.getName().getString());
+            }
+        }
+    }
+    
+    /**
+     * Handle player logout - clean up focus state
+     * Prevents memory leak from disconnected players remaining in activeFocusStates
+     */
+    @SubscribeEvent
+    public static void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            // Deactivate focus if active
+            if (FocusManager.isInFocus(player)) {
+                FocusManager.deactivateFocus(player);
+                MatrixCraftMod.LOGGER.info("[MatrixFocus] Cleaned up focus state for disconnected player " + 
+                    player.getName().getString());
             }
         }
     }
