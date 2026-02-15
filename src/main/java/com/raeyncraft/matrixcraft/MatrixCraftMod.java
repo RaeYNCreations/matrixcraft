@@ -3,11 +3,13 @@ package com.raeyncraft.matrixcraft;
 import com.raeyncraft.matrixcraft.registry.ModBlocks;
 import com.raeyncraft.matrixcraft.bullettime.registry.BulletTimeRegistry;
 import com.raeyncraft.matrixcraft.wallrun.MatrixWallRunEventHandler;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.neoforge.common.NeoForge; // ADD THIS
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,9 +28,15 @@ public class MatrixCraftMod {
         com.raeyncraft.matrixcraft.particle.MatrixParticles.register(modEventBus);
         LOGGER.info("Particles registered!");
         
-        // Register entities
+        // Register common entities (currently empty - client entities registered separately)
         com.raeyncraft.matrixcraft.registry.ModEntities.register(modEventBus);
-        LOGGER.info("Entities registered!");
+        LOGGER.info("Common entities registered!");
+        
+        // Register client-only entities ONLY on client side to prevent server crashes
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            com.raeyncraft.matrixcraft.client.ClientEntityRegistration.register(modEventBus);
+            LOGGER.info("Client entities registered!");
+        }
         
         // Register bullet time system (items, effects)
         BulletTimeRegistry.register(modEventBus);

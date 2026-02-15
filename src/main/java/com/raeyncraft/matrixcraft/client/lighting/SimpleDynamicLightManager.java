@@ -2,7 +2,7 @@ package com.raeyncraft.matrixcraft.client.lighting;
 
 import com.raeyncraft.matrixcraft.MatrixCraftMod;
 import com.raeyncraft.matrixcraft.client.BulletTrailLighting;
-import com.raeyncraft.matrixcraft.registry.ModEntities;
+import com.raeyncraft.matrixcraft.client.ClientEntityRegistration;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
@@ -133,7 +133,7 @@ public class SimpleDynamicLightManager {
         // Create marker entity
         try {
             // Null check for entity type
-            EntityType<LightMarkerEntity> entityType = ModEntities.LIGHT_MARKER.get();
+            EntityType<LightMarkerEntity> entityType = ClientEntityRegistration.LIGHT_MARKER.get();
             if (entityType == null) {
                 MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] LIGHT_MARKER entity type not registered yet!");
                 return;
@@ -208,7 +208,7 @@ public class SimpleDynamicLightManager {
         // Create chain of marker entities
         try {
             // Null check for entity type
-            EntityType<LightMarkerEntity> entityType = ModEntities.LIGHT_MARKER.get();
+            EntityType<LightMarkerEntity> entityType = ClientEntityRegistration.LIGHT_MARKER.get();
             if (entityType == null) {
                 MatrixCraftMod.LOGGER.warn("[SimpleDynamicLightManager] LIGHT_MARKER entity type not registered yet!");
                 return;
